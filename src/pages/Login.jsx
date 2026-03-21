@@ -13,14 +13,10 @@ export default function Login({ onLogin, onGoToRegister, onGoToForgot }) {
     try {
       await onLogin(email, password);
     } catch (err) {
-      setError(err.message || "Login failed");
+      setError(err.message || "Invalid email or password");
     } finally {
       setLoading(false);
     }
-  }
-
-  function handleKeyDown(e) {
-    if (e.key === "Enter") handleSubmit();
   }
 
   return (
@@ -34,14 +30,14 @@ export default function Login({ onLogin, onGoToRegister, onGoToForgot }) {
         {error && <div style={styles.error}>{error}</div>}
 
         <div style={styles.formGroup}>
-          <label style={styles.label}>Email</label>
+          <label style={styles.label}>Email address</label>
           <input
             style={styles.input}
             type="email"
             placeholder="you@example.com"
             value={email}
             onChange={e => setEmail(e.target.value)}
-            onKeyDown={handleKeyDown}
+            onKeyDown={e => e.key === "Enter" && handleSubmit()}
           />
         </div>
 
@@ -53,7 +49,7 @@ export default function Login({ onLogin, onGoToRegister, onGoToForgot }) {
             placeholder="Your password"
             value={password}
             onChange={e => setPassword(e.target.value)}
-            onKeyDown={handleKeyDown}
+            onKeyDown={e => e.key === "Enter" && handleSubmit()}
           />
         </div>
 
@@ -71,12 +67,16 @@ export default function Login({ onLogin, onGoToRegister, onGoToForgot }) {
           {loading ? "Signing in..." : "Sign In"}
         </button>
 
-        <div style={styles.footer}>
-          Don't have an account?{" "}
-          <span style={styles.link} onClick={onGoToRegister}>
-            Create one
-          </span>
+        <div style={styles.divider}>
+          <span style={styles.dividerText}>Don't have an account?</span>
         </div>
+
+        <button
+          style={styles.btnOutline}
+          onClick={onGoToRegister}
+        >
+          Create account
+        </button>
 
       </div>
     </div>
@@ -86,91 +86,118 @@ export default function Login({ onLogin, onGoToRegister, onGoToForgot }) {
 const styles = {
   page: {
     minHeight:      "100vh",
-    background:     "#0a0a0a",
+    background:     "#f6f8fa",
     display:        "flex",
     alignItems:     "center",
     justifyContent: "center",
-    fontFamily:     "'DM Sans', 'Segoe UI', sans-serif",
+    fontFamily:     "'Inter', -apple-system, sans-serif",
     padding:        "20px",
   },
   card: {
-    background:   "#111111",
-    border:       "1px solid #222222",
-    borderRadius: "20px",
+    background:   "#ffffff",
+    border:       "1px solid #eaeaea",
+    borderRadius: "16px",
     padding:      "40px",
     width:        "100%",
     maxWidth:     "420px",
-    boxShadow:    "0 20px 60px rgba(0,0,0,0.5)",
+    boxShadow:    "0 8px 40px rgba(0,0,0,0.08)",
   },
   logo: {
-    fontSize:     "40px",
+    fontSize:     "36px",
     textAlign:    "center",
     marginBottom: "8px",
   },
   title: {
-    fontSize:     "24px",
-    fontWeight:   800,
-    color:        "#ffffff",
-    textAlign:    "center",
-    marginBottom: "6px",
+    fontSize:      "22px",
+    fontWeight:    800,
+    color:         "#0d0d0d",
+    textAlign:     "center",
+    marginBottom:  "4px",
+    letterSpacing: "-0.5px",
   },
   subtitle: {
-    fontSize:     "14px",
-    color:        "#555",
+    fontSize:     "13px",
+    color:        "#888",
     textAlign:    "center",
     marginBottom: "28px",
+    fontWeight:   400,
   },
   error: {
-    background:   "#1a0000",
-    border:       "1px solid #440000",
-    color:        "#ff4444",
-    padding:      "12px 16px",
-    borderRadius: "10px",
+    background:   "#fff1f2",
+    border:       "1px solid #fecdd3",
+    color:        "#e11d48",
+    padding:      "10px 14px",
+    borderRadius: "8px",
     fontSize:     "13px",
     marginBottom: "16px",
+    fontWeight:   500,
   },
-  formGroup: { marginBottom: "16px" },
+  formGroup: { marginBottom: "14px" },
   label: {
     display:       "block",
     fontSize:      "11px",
-    color:         "#555",
+    color:         "#666",
     fontWeight:    600,
     textTransform: "uppercase",
-    letterSpacing: "0.5px",
-    marginBottom:  "6px",
+    letterSpacing: "0.6px",
+    marginBottom:  "5px",
   },
   input: {
     width:        "100%",
-    background:   "#161616",
-    border:       "1px solid #2a2a2a",
-    borderRadius: "12px",
-    padding:      "12px 14px",
-    color:        "#e8e8e8",
-    fontSize:     "14px",
+    background:   "#ffffff",
+    border:       "1px solid #eaeaea",
+    borderRadius: "8px",
+    padding:      "10px 12px",
+    color:        "#0d0d0d",
+    fontSize:     "13.5px",
+    fontFamily:   "inherit",
     outline:      "none",
     boxSizing:    "border-box",
+    fontWeight:   500,
+    transition:   "border-color 0.15s",
   },
   btn: {
-    width:        "100%",
-    background:   "#ffffff",
-    color:        "#000000",
-    border:       "none",
-    padding:      "14px",
-    borderRadius: "12px",
-    fontWeight:   700,
-    fontSize:     "15px",
-    cursor:       "pointer",
-    marginBottom: "16px",
+    width:         "100%",
+    background:    "#0070f3",
+    color:         "#ffffff",
+    border:        "none",
+    padding:       "11px",
+    borderRadius:  "8px",
+    fontWeight:    600,
+    fontSize:      "14px",
+    fontFamily:    "inherit",
+    cursor:        "pointer",
+    marginBottom:  "14px",
+    letterSpacing: "-0.1px",
+    transition:    "all 0.15s",
   },
-  footer: {
-    textAlign: "center",
-    fontSize:  "13px",
-    color:     "#555",
+  btnOutline: {
+    width:         "100%",
+    background:    "transparent",
+    color:         "#0d0d0d",
+    border:        "1px solid #eaeaea",
+    padding:       "11px",
+    borderRadius:  "8px",
+    fontWeight:    600,
+    fontSize:      "14px",
+    fontFamily:    "inherit",
+    cursor:        "pointer",
+    transition:    "all 0.15s",
+  },
+  divider: {
+    textAlign:    "center",
+    marginBottom: "12px",
+  },
+  dividerText: {
+    fontSize:   "13px",
+    color:      "#aaa",
+    fontWeight: 400,
   },
   link: {
-    color:          "#888",
+    color:          "#0070f3",
     cursor:         "pointer",
     fontWeight:     600,
-    textDecoration: "underline",
+    fontSize:       "12px",
+    textDecoration: "none",
   },
 };

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { authAPI } from "../utils/api";
+import { useState }  from "react";
+import { authAPI }   from "../utils/api";
 
 export default function ForgotPassword({ onGoToLogin }) {
   const [email,   setEmail]   = useState("");
@@ -26,25 +26,22 @@ export default function ForgotPassword({ onGoToLogin }) {
       <div style={styles.card}>
 
         <div style={styles.logo}>🔐</div>
-        <div style={styles.title}>Reset Password</div>
+        <div style={styles.title}>Reset password</div>
         <div style={styles.subtitle}>
           Enter your email and we'll send you a reset link
         </div>
 
         {success ? (
-          <div style={styles.success}>
-            <div style={{ fontSize:"32px", marginBottom:"12px" }}>📧</div>
-            <div style={{ fontWeight:700, marginBottom:"6px", color:"#00ff88" }}>
-              Check your email!
+          <div style={styles.successBox}>
+            <div style={{ fontSize:"32px", marginBottom:"10px" }}>📬</div>
+            <div style={{ fontWeight:700, marginBottom:"6px", color:"#059669", fontSize:15 }}>
+              Check your inbox!
             </div>
-            <div style={{ fontSize:"13px", color:"#555" }}>
+            <div style={{ fontSize:"13px", color:"#888", marginBottom:"20px" }}>
               If that email exists we've sent a reset link.
             </div>
-            <button
-              style={{ ...styles.btn, marginTop:"20px" }}
-              onClick={onGoToLogin}
-            >
-              Back to Login
+            <button style={styles.btn} onClick={onGoToLogin}>
+              Back to Sign In
             </button>
           </div>
         ) : (
@@ -52,7 +49,7 @@ export default function ForgotPassword({ onGoToLogin }) {
             {error && <div style={styles.error}>{error}</div>}
 
             <div style={styles.formGroup}>
-              <label style={styles.label}>Email</label>
+              <label style={styles.label}>Email address</label>
               <input
                 style={styles.input}
                 type="email"
@@ -71,12 +68,13 @@ export default function ForgotPassword({ onGoToLogin }) {
               {loading ? "Sending..." : "Send Reset Link"}
             </button>
 
-            <div style={styles.footer}>
-              Remember your password?{" "}
-              <span style={styles.link} onClick={onGoToLogin}>
-                Sign in
-              </span>
+            <div style={styles.divider}>
+              <span style={styles.dividerText}>Remember your password?</span>
             </div>
+
+            <button style={styles.btnOutline} onClick={onGoToLogin}>
+              Back to Sign In
+            </button>
           </>
         )}
 
@@ -88,98 +86,115 @@ export default function ForgotPassword({ onGoToLogin }) {
 const styles = {
   page: {
     minHeight:      "100vh",
-    background:     "#0a0a0a",
+    background:     "#f6f8fa",
     display:        "flex",
     alignItems:     "center",
     justifyContent: "center",
-    fontFamily:     "'DM Sans', 'Segoe UI', sans-serif",
+    fontFamily:     "'Inter', -apple-system, sans-serif",
     padding:        "20px",
   },
   card: {
-    background:   "#111111",
-    border:       "1px solid #222222",
-    borderRadius: "20px",
+    background:   "#ffffff",
+    border:       "1px solid #eaeaea",
+    borderRadius: "16px",
     padding:      "40px",
     width:        "100%",
     maxWidth:     "420px",
-    boxShadow:    "0 20px 60px rgba(0,0,0,0.5)",
+    boxShadow:    "0 8px 40px rgba(0,0,0,0.08)",
   },
   logo: {
-    fontSize:     "40px",
+    fontSize:     "36px",
     textAlign:    "center",
     marginBottom: "8px",
   },
   title: {
-    fontSize:     "24px",
-    fontWeight:   800,
-    color:        "#ffffff",
-    textAlign:    "center",
-    marginBottom: "6px",
+    fontSize:      "22px",
+    fontWeight:    800,
+    color:         "#0d0d0d",
+    textAlign:     "center",
+    marginBottom:  "4px",
+    letterSpacing: "-0.5px",
   },
   subtitle: {
-    fontSize:     "14px",
-    color:        "#555",
+    fontSize:     "13px",
+    color:        "#888",
     textAlign:    "center",
     marginBottom: "28px",
+    fontWeight:   400,
   },
-  success: {
+  successBox: {
     textAlign:    "center",
-    background:   "#001a0f",
-    border:       "1px solid #003320",
-    borderRadius: "14px",
+    background:   "#f0fdf4",
+    border:       "1px solid #bbf7d0",
+    borderRadius: "10px",
     padding:      "24px",
   },
   error: {
-    background:   "#1a0000",
-    border:       "1px solid #440000",
-    color:        "#ff4444",
-    padding:      "12px 16px",
-    borderRadius: "10px",
+    background:   "#fff1f2",
+    border:       "1px solid #fecdd3",
+    color:        "#e11d48",
+    padding:      "10px 14px",
+    borderRadius: "8px",
     fontSize:     "13px",
     marginBottom: "16px",
+    fontWeight:   500,
   },
-  formGroup: { marginBottom: "16px" },
+  formGroup: { marginBottom: "14px" },
   label: {
     display:       "block",
     fontSize:      "11px",
-    color:         "#555",
+    color:         "#666",
     fontWeight:    600,
     textTransform: "uppercase",
-    letterSpacing: "0.5px",
-    marginBottom:  "6px",
+    letterSpacing: "0.6px",
+    marginBottom:  "5px",
   },
   input: {
     width:        "100%",
-    background:   "#161616",
-    border:       "1px solid #2a2a2a",
-    borderRadius: "12px",
-    padding:      "12px 14px",
-    color:        "#e8e8e8",
-    fontSize:     "14px",
+    background:   "#ffffff",
+    border:       "1px solid #eaeaea",
+    borderRadius: "8px",
+    padding:      "10px 12px",
+    color:        "#0d0d0d",
+    fontSize:     "13.5px",
+    fontFamily:   "inherit",
     outline:      "none",
     boxSizing:    "border-box",
+    fontWeight:   500,
   },
   btn: {
+    width:         "100%",
+    background:    "#0070f3",
+    color:         "#ffffff",
+    border:        "none",
+    padding:       "11px",
+    borderRadius:  "8px",
+    fontWeight:    600,
+    fontSize:      "14px",
+    fontFamily:    "inherit",
+    cursor:        "pointer",
+    marginBottom:  "14px",
+    letterSpacing: "-0.1px",
+  },
+  btnOutline: {
     width:        "100%",
-    background:   "#ffffff",
-    color:        "#000000",
-    border:       "none",
-    padding:      "14px",
-    borderRadius: "12px",
-    fontWeight:   700,
-    fontSize:     "15px",
+    background:   "transparent",
+    color:        "#0d0d0d",
+    border:       "1px solid #eaeaea",
+    padding:      "11px",
+    borderRadius: "8px",
+    fontWeight:   600,
+    fontSize:     "14px",
+    fontFamily:   "inherit",
     cursor:       "pointer",
-    marginBottom: "16px",
   },
-  footer: {
-    textAlign: "center",
-    fontSize:  "13px",
-    color:     "#555",
+  divider: {
+    textAlign:    "center",
+    marginBottom: "12px",
   },
-  link: {
-    color:          "#888",
-    cursor:         "pointer",
-    fontWeight:     600,
-    textDecoration: "underline",
+  dividerText: {
+    fontSize:   "13px",
+    color:      "#aaa",
+    fontWeight: 400,
   },
 };

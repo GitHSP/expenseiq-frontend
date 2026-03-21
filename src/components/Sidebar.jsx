@@ -1,6 +1,6 @@
-import { useState }           from "react";
-import { NAV_ITEMS }          from "../constants/categories";
-import CurrencySelector       from "./CurrencySelector";
+import { useState }         from "react";
+import { NAV_ITEMS }        from "../constants/categories";
+import CurrencySelector     from "./CurrencySelector";
 
 export default function Sidebar({
   view, setView, onAddExpense, onExportCSV,
@@ -11,9 +11,9 @@ export default function Sidebar({
   return (
     <aside className={`sidebar${collapsed ? " collapsed" : ""}`}>
 
-      {/* Logo */}
+      {/* ── Logo ── */}
       <div className="sidebar-logo">
-        <span style={{ fontSize:22 }}>💰</span>
+        <div className="logo-dot" />
         {!collapsed && <span className="logo-text">ExpenseIQ</span>}
         <button
           className="sidebar-collapse-btn"
@@ -24,7 +24,7 @@ export default function Sidebar({
         </button>
       </div>
 
-      {/* Navigation */}
+      {/* ── Navigation ── */}
       <nav className="sidebar-nav">
         {NAV_ITEMS.map(item => (
           <button
@@ -38,7 +38,7 @@ export default function Sidebar({
         ))}
       </nav>
 
-      {/* Actions */}
+      {/* ── Bottom Actions ── */}
       <div className="sidebar-actions">
 
         {/* Currency selector */}
@@ -52,27 +52,33 @@ export default function Sidebar({
         {!collapsed && user && (
           <div style={{
             padding:      "10px 12px",
-            background:   "#f5f6fa",
-            borderRadius: "12px",
-            marginBottom: "8px",
-            border:       "1px solid #e8eaf0",
+            background:   "#f6f8fa",
+            borderRadius: "8px",
+            marginBottom: "4px",
+            border:       "1px solid #eaeaea",
           }}>
-            <div style={{ fontSize:11, color:"#888", marginBottom:2 }}>Logged in as</div>
-            <div style={{ fontSize:13, fontWeight:700, color:"#1a1a2e",
-              whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+            <div style={{ fontSize:10, color:"#aaa", marginBottom:2, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px" }}>
+              Signed in as
+            </div>
+            <div style={{
+              fontSize:13, fontWeight:600, color:"#0d0d0d",
+              whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis",
+            }}>
               {user.email}
             </div>
           </div>
         )}
 
         <button className="sidebar-btn primary" onClick={onAddExpense}>
-          <span>＋</span>
+          <span style={{ fontSize:16 }}>＋</span>
           {!collapsed && <span>Add Expense</span>}
         </button>
+
         <button className="sidebar-btn secondary" onClick={onExportCSV}>
           <span>⬇</span>
           {!collapsed && <span>Export CSV</span>}
         </button>
+
         <button className="sidebar-btn secondary" onClick={onLogout}>
           <span>🚪</span>
           {!collapsed && <span>Logout</span>}
