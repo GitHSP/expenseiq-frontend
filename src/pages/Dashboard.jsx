@@ -41,14 +41,14 @@ export default function Dashboard({
   });
 
   // ── Totals ──
-  const totalExpenses = thisMonthExp.reduce((s, e) => s + parseFloat(e.amount), 0);
-  const totalIncome   = thisMonthInc.reduce((s, i) => s + parseFloat(i.amount), 0);
+  const totalExpenses = thisMonthExp.reduce((s, e) => s + parseFloat(e.amount) || 0, 0);
+  const totalIncome   = thisMonthInc.reduce((s, i) => s + parseFloat(i.amount) || 0, 0);
   const netBalance    = totalIncome - totalExpenses;
 
   const overBudget = CATEGORIES.filter(cat => {
     const spent = thisMonthExp
       .filter(e => e.category === cat.name)
-      .reduce((s, e) => s + parseFloat(e.amount), 0);
+      .reduce((s, e) => s + parseFloat(e.amount) || 0, 0);
     return spent > (budgets[cat.name] || 0) && (budgets[cat.name] || 0) > 0;
   });
 
@@ -57,7 +57,7 @@ export default function Dashboard({
     name:  cat.name,
     value: thisMonthExp
       .filter(e => e.category === cat.name)
-      .reduce((s, e) => s + parseFloat(e.amount), 0),
+      .reduce((s, e) => s + parseFloat(e.amount) || 0, 0),
     color: cat.color,
   })).filter(c => c.value > 0);
 
@@ -65,10 +65,10 @@ export default function Dashboard({
   const incomeVsExpenseData = MONTHS.map((m, i) => {
     const monthExp = expenses
       .filter(e => new Date(e.date).getMonth() === i && new Date(e.date).getFullYear() === currentYear)
-      .reduce((s, e) => s + parseFloat(e.amount), 0);
+      .reduce((s, e) => s + parseFloat(e.amount) || 0, 0);
     const monthInc = incomes
       .filter(inc => new Date(inc.date).getMonth() === i && new Date(inc.date).getFullYear() === currentYear)
-      .reduce((s, inc) => s + parseFloat(inc.amount), 0);
+      .reduce((s, inc) => s + parseFloat(inc.amount) || 0 , 0);
     return {
       name:    m.slice(0, 3),
       Income:  parseFloat(monthInc.toFixed(2)),

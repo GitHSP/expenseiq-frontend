@@ -24,7 +24,7 @@ export default function Analytics({ expenses, budgets, formatAmount }) {
   const catSpend = CATEGORIES.map(cat => {
     const spent  = thisMonthExp
       .filter(e => e.category === cat.name)
-      .reduce((s, e) => s + parseFloat(e.amount), 0);
+      .reduce((s, e) => s + parseFloat(e.amount) || 0, 0);
     const budget = budgets[cat.name] || 0;
     return {
       ...cat,
@@ -48,7 +48,7 @@ export default function Analytics({ expenses, budgets, formatAmount }) {
           new Date(e.date).getMonth() === i &&
           new Date(e.date).getFullYear() === currentYear
         )
-        .reduce((s, e) => s + parseFloat(e.amount), 0)
+        .reduce((s, e) => s + parseFloat(e.amount) || 0, 0)
         .toFixed(2)
     ),
   }));
@@ -211,13 +211,13 @@ export default function Analytics({ expenses, budgets, formatAmount }) {
           {[
             {
               label: "Total Spent",
-              value: thisMonthExp.reduce((s, e) => s + parseFloat(e.amount), 0),
+              value: thisMonthExp.reduce((s, e) => s + parseFloat(e.amount) || 0, 0),
               color: "#ff4444",
             },
             {
               label: "Avg per Transaction",
               value: thisMonthExp.length > 0
-                ? thisMonthExp.reduce((s, e) => s + parseFloat(e.amount), 0) / thisMonthExp.length
+                ? thisMonthExp.reduce((s, e) => s + parseFloat(e.amount) || 0, 0) / thisMonthExp.length
                 : 0,
               color: "#888",
             },

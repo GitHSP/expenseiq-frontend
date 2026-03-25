@@ -15,7 +15,7 @@ export default function Expenses({ expenses, onEdit, onDelete }) {
     );
   });
 
-  const total = filtered.reduce((s, e) => s + e.amount, 0);
+  const total = filtered.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
 
   return (
     <>
