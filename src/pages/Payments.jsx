@@ -1,6 +1,6 @@
 import { useState } from "react";
-import DebtCard          from "../components/DebtCard";
-import { DEBT_TYPES }    from "../hooks/useDebts";
+import DebtCard       from "../components/DebtCard";
+import { DEBT_TYPES } from "../hooks/useDebts";
 
 export default function Payments({
   debts, paymentHistory,
@@ -24,24 +24,33 @@ export default function Payments({
     filterType === "All" || d.type === filterType
   );
 
+  const fmt = v => formatAmount ? formatAmount(v) : `$${parseFloat(v).toFixed(2)}`;
+
   return (
     <>
-      <div className="page-title">Payments & Debt</div>
-      <div className="page-sub">Track your debts, loans and payment reminders</div>
+      <div style={{ marginBottom:28 }}>
+        <div className="page-title">Payments & Debt</div>
+        <div className="page-sub">Track your debts, loans and payment reminders</div>
+      </div>
 
       {/* ── Overdue alert ── */}
       {overdueDebts.length > 0 && (
         <div style={{
-          background:"#1a0000", border:"1.5px solid #440000",
-          borderRadius:"14px", padding:"14px 18px", marginBottom:"16px",
-          display:"flex", alignItems:"center", gap:"12px",
+          background:   "#fff1f2",
+          border:       "1px solid #fecdd3",
+          borderRadius: 12,
+          padding:      "14px 18px",
+          marginBottom: 16,
+          display:      "flex",
+          alignItems:   "center",
+          gap:          12,
         }}>
-          <span style={{ fontSize:24 }}>⚠️</span>
+          <span style={{ fontSize:22 }}>⚠️</span>
           <div>
-            <div style={{ fontWeight:700, color:"#ff4444", fontSize:14 }}>
+            <div style={{ fontWeight:700, color:"#e11d48", fontSize:14 }}>
               {overdueDebts.length} payment{overdueDebts.length > 1 ? "s" : ""} overdue!
             </div>
-            <div style={{ fontSize:12, color:"#555", marginTop:2 }}>
+            <div style={{ fontSize:12, color:"#888", marginTop:2 }}>
               {overdueDebts.map(d => d.name).join(", ")}
             </div>
           </div>
@@ -51,16 +60,21 @@ export default function Payments({
       {/* ── Due soon alert ── */}
       {dueSoonDebts.length > 0 && (
         <div style={{
-          background:"#1a1400", border:"1.5px solid #443800",
-          borderRadius:"14px", padding:"14px 18px", marginBottom:"16px",
-          display:"flex", alignItems:"center", gap:"12px",
+          background:   "#fffbeb",
+          border:       "1px solid #fde68a",
+          borderRadius: 12,
+          padding:      "14px 18px",
+          marginBottom: 16,
+          display:      "flex",
+          alignItems:   "center",
+          gap:          12,
         }}>
-          <span style={{ fontSize:24 }}>🔔</span>
+          <span style={{ fontSize:22 }}>🔔</span>
           <div>
-            <div style={{ fontWeight:700, color:"#ffaa00", fontSize:14 }}>
+            <div style={{ fontWeight:700, color:"#d97706", fontSize:14 }}>
               {dueSoonDebts.length} payment{dueSoonDebts.length > 1 ? "s" : ""} due within 7 days
             </div>
-            <div style={{ fontSize:12, color:"#555", marginTop:2 }}>
+            <div style={{ fontSize:12, color:"#888", marginTop:2 }}>
               {dueSoonDebts.map(d => `${d.name} (${daysUntilDue(d.nextPaymentDate)} days)`).join(", ")}
             </div>
           </div>
@@ -68,55 +82,48 @@ export default function Payments({
       )}
 
       {/* ── Stat cards ── */}
-      <div className="stat-grid" style={{ marginBottom:20 }}>
+      <div className="stat-grid" style={{ marginBottom:24 }}>
         {[
           {
             label:    "Total Debt",
-            value:    formatAmount(totalDebt),
+            value:    fmt(totalDebt),
             sub:      `${activeDebts.length} active debts`,
-            gradient: "linear-gradient(135deg,#1a0000,#2a0000)",
-            color:    "#ff4444",
+            gradient: "linear-gradient(135deg, #e11d48, #be123c)",
           },
           {
             label:    "Monthly Payments",
-            value:    formatAmount(totalMonthly),
+            value:    fmt(totalMonthly),
             sub:      "total due per month",
-            gradient: "linear-gradient(135deg,#111,#1a1a1a)",
-            color:    "#ffffff",
+            gradient: "linear-gradient(135deg, #0070f3, #0050b3)",
           },
           {
             label:    "Overdue",
             value:    overdueDebts.length,
             sub:      "payments overdue",
             gradient: overdueDebts.length > 0
-              ? "linear-gradient(135deg,#1a0000,#2a0000)"
-              : "linear-gradient(135deg,#001a0f,#002a18)",
-            color: overdueDebts.length > 0 ? "#ff4444" : "#00ff88",
+              ? "linear-gradient(135deg, #e11d48, #be123c)"
+              : "linear-gradient(135deg, #059669, #047857)",
           },
           {
             label:    "Paid Off",
             value:    paidOffDebts.length,
             sub:      "debts cleared 🎉",
-            gradient: "linear-gradient(135deg,#001a0f,#002a18)",
-            color:    "#00ff88",
+            gradient: "linear-gradient(135deg, #059669, #047857)",
           },
         ].map(card => (
-          <div
-            key={card.label}
-            style={{
-              background:   card.gradient,
-              borderRadius: 14,
-              padding:      20,
-              border:       "1px solid #222",
-            }}
-          >
-            <div style={{ fontSize:11, color:card.color, opacity:.6, textTransform:"uppercase", letterSpacing:1, marginBottom:6 }}>
+          <div key={card.label} style={{
+            background:   card.gradient,
+            borderRadius: 12,
+            padding:      20,
+            color:        "#fff",
+          }}>
+            <div style={{ fontSize:10, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.8px", opacity:0.75, marginBottom:8 }}>
               {card.label}
             </div>
-            <div style={{ fontSize:24, fontWeight:800, color:card.color, lineHeight:1.2 }}>
+            <div style={{ fontSize:22, fontWeight:800, letterSpacing:"-0.8px", lineHeight:1.1, marginBottom:6 }}>
               {card.value}
             </div>
-            <div style={{ fontSize:12, color:card.color, opacity:.5, marginTop:4 }}>
+            <div style={{ fontSize:11, opacity:0.65, fontWeight:500 }}>
               {card.sub}
             </div>
           </div>
@@ -126,7 +133,7 @@ export default function Payments({
       {/* ── Debt type breakdown ── */}
       <div className="card" style={{ marginBottom:20 }}>
         <div className="card-title" style={{ marginBottom:14 }}>Debt by Type</div>
-        <div style={{ display:"flex", gap:"10px", flexWrap:"wrap" }}>
+        <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
           {DEBT_TYPES.map(type => {
             const typeDebts = activeDebts.filter(d => d.type === type.name);
             if (typeDebts.length === 0) return null;
@@ -136,40 +143,40 @@ export default function Payments({
                 key={type.name}
                 onClick={() => setFilterType(f => f === type.name ? "All" : type.name)}
                 style={{
-                  display:    "flex",
-                  alignItems: "center",
-                  gap:        8,
-                  background: filterType === type.name ? "#1a1a1a" : "#161616",
-                  borderRadius: 12,
-                  padding:    "10px 14px",
-                  border:     filterType === type.name
-                    ? "1.5px solid #444"
-                    : "1px solid #222",
-                  cursor: "pointer",
-                  transition: "all 0.15s",
+                  display:      "flex",
+                  alignItems:   "center",
+                  gap:          8,
+                  background:   filterType === type.name ? "#f0f7ff" : "#fafafa",
+                  borderRadius: 10,
+                  padding:      "10px 14px",
+                  border:       filterType === type.name
+                    ? "1.5px solid #0070f3"
+                    : "1px solid #eaeaea",
+                  cursor:    "pointer",
+                  transition:"all 0.15s",
                 }}
               >
                 <span style={{ fontSize:18 }}>{type.icon}</span>
                 <div>
-                  <div style={{ fontSize:11, color:"#555" }}>{type.name}</div>
-                  <div style={{ fontWeight:700, fontSize:13, color:"#e8e8e8" }}>
-                    {formatAmount(total)}
+                  <div style={{ fontSize:11, color:"#888", fontWeight:500 }}>{type.name}</div>
+                  <div style={{ fontWeight:700, fontSize:13, color:"#0d0d0d", letterSpacing:"-0.2px" }}>
+                    {fmt(total)}
                   </div>
                 </div>
               </div>
             );
           })}
           {activeDebts.length === 0 && (
-            <div style={{ color:"#333", fontSize:13 }}>No active debts</div>
+            <div style={{ color:"#ccc", fontSize:13 }}>No active debts</div>
           )}
         </div>
       </div>
 
       {/* ── Debt list header ── */}
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
-        <div style={{ fontWeight:700, fontSize:16, color:"#e8e8e8" }}>
+        <div style={{ fontWeight:700, fontSize:15, color:"#0d0d0d", letterSpacing:"-0.2px" }}>
           {filterType === "All" ? "All Debts" : filterType}
-          <span style={{ fontSize:12, color:"#444", fontWeight:400, marginLeft:8 }}>
+          <span style={{ fontSize:12, color:"#aaa", fontWeight:400, marginLeft:8 }}>
             ({filteredDebts.length})
           </span>
         </div>
@@ -177,24 +184,16 @@ export default function Payments({
           {filterType !== "All" && (
             <button
               onClick={() => setFilterType("All")}
-              style={{
-                background:"#1a1a1a", color:"#999",
-                border:"1px solid #2a2a2a",
-                padding:"8px 14px", borderRadius:"10px",
-                fontWeight:600, fontSize:12, cursor:"pointer",
-              }}
+              className="btn-secondary"
+              style={{ padding:"8px 14px", fontSize:12 }}
             >
               Clear Filter
             </button>
           )}
           <button
             onClick={onAdd}
-            style={{
-              background:"#ffffff", color:"#000000",
-              border:"none", padding:"8px 18px",
-              borderRadius:"10px", fontWeight:700,
-              fontSize:13, cursor:"pointer",
-            }}
+            className="btn-primary"
+            style={{ padding:"8px 18px", fontSize:13 }}
           >
             + Add Debt
           </button>
@@ -205,10 +204,10 @@ export default function Payments({
       {filteredDebts.length === 0 ? (
         <div className="empty-state">
           <div className="empty-icon">💳</div>
-          <div style={{ fontWeight:600, fontSize:16, marginBottom:6, color:"#333" }}>
+          <div style={{ fontWeight:600, fontSize:15, color:"#ccc", marginBottom:6 }}>
             No debts tracked yet
           </div>
-          <div style={{ fontSize:13, color:"#333" }}>
+          <div style={{ fontSize:13, color:"#ccc" }}>
             Click "+ Add Debt" to start tracking
           </div>
         </div>
@@ -235,9 +234,15 @@ export default function Payments({
           <button
             onClick={() => setShowPaidOff(p => !p)}
             style={{
-              background:"transparent", border:"none",
-              color:"#444", fontWeight:600, fontSize:13,
-              cursor:"pointer", padding:"8px 0", marginBottom:8,
+              background:  "transparent",
+              border:      "none",
+              color:       "#0070f3",
+              fontWeight:  600,
+              fontSize:    13,
+              cursor:      "pointer",
+              padding:     "8px 0",
+              marginBottom:8,
+              fontFamily:  "inherit",
             }}
           >
             {showPaidOff ? "▼" : "▶"} Paid Off Debts ({paidOffDebts.length})
@@ -262,16 +267,15 @@ export default function Payments({
       {/* ── Payment History ── */}
       <div className="card" style={{ marginTop:8 }}>
         <div style={{
-          display:"flex", justifyContent:"space-between",
-          alignItems:"center", marginBottom: showHistory ? 14 : 0,
+          display:        "flex",
+          justifyContent: "space-between",
+          alignItems:     "center",
+          marginBottom:   showHistory ? 14 : 0,
         }}>
           <div className="card-title">Payment History</div>
           <button
             onClick={() => setShowHistory(p => !p)}
-            style={{
-              background:"transparent", border:"none",
-              color:"#444", fontWeight:600, fontSize:13, cursor:"pointer",
-            }}
+            className="btn-ghost"
           >
             {showHistory ? "Hide ▲" : "Show ▼"}
           </button>
@@ -280,29 +284,34 @@ export default function Payments({
         {showHistory && (
           <>
             {paymentHistory.length === 0 ? (
-              <div style={{ textAlign:"center", color:"#333", padding:"20px 0", fontSize:13 }}>
+              <div style={{ textAlign:"center", color:"#ccc", padding:"20px 0", fontSize:13 }}>
                 No payment history yet
               </div>
             ) : paymentHistory.slice(0, 20).map(payment => {
               const debt = debts.find(d => d.id === payment.debtId);
               return (
                 <div key={payment.id} style={{
-                  display:"flex", alignItems:"center", gap:12,
-                  padding:"11px", background:"#161616",
-                  borderRadius:"12px", border:"1px solid #222",
-                  marginBottom:"8px",
+                  display:      "flex",
+                  alignItems:   "center",
+                  gap:          12,
+                  padding:      "11px 14px",
+                  background:   "#fafafa",
+                  borderRadius: 10,
+                  border:       "1px solid #f0f0f0",
+                  marginBottom: 8,
+                  transition:   "all 0.12s",
                 }}>
-                  <span style={{ fontSize:20 }}>✅</span>
+                  <span style={{ fontSize:18 }}>✅</span>
                   <div style={{ flex:1 }}>
-                    <div style={{ fontWeight:600, fontSize:13, color:"#e8e8e8" }}>
+                    <div style={{ fontWeight:600, fontSize:13, color:"#0d0d0d" }}>
                       {debt?.name || "Deleted debt"}
                     </div>
-                    <div style={{ fontSize:11, color:"#555" }}>
+                    <div style={{ fontSize:11, color:"#aaa", marginTop:2 }}>
                       {payment.date}{payment.note ? ` · ${payment.note}` : ""}
                     </div>
                   </div>
-                  <div style={{ fontWeight:800, fontSize:14, color:"#00ff88" }}>
-                    -{formatAmount(payment.amount)}
+                  <div style={{ fontWeight:700, fontSize:14, color:"#059669", letterSpacing:"-0.3px" }}>
+                    -{fmt(payment.amount)}
                   </div>
                 </div>
               );
