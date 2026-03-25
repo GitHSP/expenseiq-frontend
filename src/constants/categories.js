@@ -20,6 +20,7 @@ export const NAV_ITEMS = [
   { id: "analytics", label: "Analytics", icon: "📊" },
   { id: "budgets",   label: "Budgets",   icon: "🎯" },
   { id: "payments",  label: "Payments",  icon: "💳" },
+  { id: "payoff",    label: "Payoff",    icon: "🏁" },
 ];
 
 export const DEFAULT_BUDGETS = Object.fromEntries(

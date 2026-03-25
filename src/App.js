@@ -33,6 +33,8 @@ import Payments  from "./pages/Payments";
 // Utils
 import { exportToCSV } from "./utils/helpers";
 
+import DebtPayoffTracker from "./pages/DebtPayoffTracker";
+
 export default function App() {
 
   // ── Auth ──────────────────────────────────
@@ -320,6 +322,13 @@ export default function App() {
             expenses={expenses}
             budgets={budgets}
             onSaveBudgets={handleSaveBudgets}
+            formatAmount={formatAmount}
+          />
+        );
+      case "payoff":
+        return (
+          <DebtPayoffTracker
+            debts={debts}
             formatAmount={formatAmount}
           />
         );
