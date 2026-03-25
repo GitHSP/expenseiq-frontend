@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { DEBT_TYPES } from "../hooks/useDebts";
 
+
 function calculateAmortization(balance, annualRate, monthlyPayment) {
   if (!balance || !monthlyPayment || monthlyPayment <= 0) return null;
   const monthlyRate = annualRate / 100 / 12;
@@ -65,6 +66,7 @@ export default function DebtCard({
   const days    = daysUntilDue(debt.nextPaymentDate);
   const overdue = isOverdue(debt.nextPaymentDate);
   const dueSoon = isDueSoon(debt.nextPaymentDate);
+  const [addAsExpense, setAddAsExpense] = useState(false);
 
   const utilPct = debt.limit > 0
     ? Math.min((debt.balance / debt.limit) * 100, 100)
@@ -86,12 +88,13 @@ export default function DebtCard({
   const fmt = v => formatAmount ? formatAmount(v) : `$${parseFloat(v).toFixed(2)}`;
 
   async function handlePayment() {
-    if (!payAmount || isNaN(parseFloat(payAmount))) return;
-    await onRecordPayment(debt.id, payAmount, payNote);
-    setPayAmount("");
-    setPayNote("");
-    setShowPayment(false);
-  }
+      if (!payAmount || isNaN(parseFloat(payAmount))) return;
+      await onRecordPayment(debt.id, payAmount, payNote, addAsExpense);
+      setPayAmount("");
+      setPayNote("");
+      setAddAsExpense(false);
+      setShowPayment(false);
+    }
 
   const inputStyle = {
     width:        "100%",
@@ -441,7 +444,7 @@ export default function DebtCard({
         </button>
       )}
 
-      {/* ── Record payment form ── */}
+      {/* ── Record payment inline form ── */}
       {showPayment && (
         <div style={{
           marginTop:    14,
@@ -453,6 +456,7 @@ export default function DebtCard({
           <div style={{ fontWeight:700, fontSize:13, marginBottom:10, color:"#0d0d0d" }}>
             Record Payment
           </div>
+
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:10 }}>
             <div>
               <label style={{ fontSize:10, color:"#888", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px", display:"block", marginBottom:4 }}>
@@ -479,6 +483,51 @@ export default function DebtCard({
               />
             </div>
           </div>
+
+          {/* ── Add as expense checkbox ── */}
+          <div
+            onClick={() => setAddAsExpense(p => !p)}
+            style={{
+              display:      "flex",
+              alignItems:   "center",
+              gap:          10,
+              padding:      "10px 12px",
+              background:   addAsExpense ? "#f0f7ff" : "#ffffff",
+              border:       `1.5px solid ${addAsExpense ? "#0070f3" : "#eaeaea"}`,
+              borderRadius: 8,
+              cursor:       "pointer",
+              marginBottom: 10,
+              transition:   "all 0.15s",
+              userSelect:   "none",
+            }}
+          >
+            {/* Custom checkbox */}
+            <div style={{
+              width:        18,
+              height:       18,
+              borderRadius: 4,
+              border:       `2px solid ${addAsExpense ? "#0070f3" : "#ccc"}`,
+              background:   addAsExpense ? "#0070f3" : "#fff",
+              display:      "flex",
+              alignItems:   "center",
+              justifyContent:"center",
+              flexShrink:   0,
+              transition:   "all 0.15s",
+            }}>
+              {addAsExpense && (
+                <span style={{ color:"#fff", fontSize:11, fontWeight:800 }}>✓</span>
+              )}
+            </div>
+            <div>
+              <div style={{ fontSize:13, fontWeight:600, color: addAsExpense ? "#0070f3" : "#0d0d0d" }}>
+                Also add as an expense
+              </div>
+              <div style={{ fontSize:11, color:"#888", marginTop:1 }}>
+                Records this payment under Bills & Utilities
+              </div>
+            </div>
+          </div>
+
           <div style={{ display:"flex", gap:8 }}>
             <button
               onClick={handlePayment}
@@ -497,7 +546,10 @@ export default function DebtCard({
               Confirm Payment
             </button>
             <button
-              onClick={() => setShowPayment(false)}
+              onClick={() => {
+                setShowPayment(false);
+                setAddAsExpense(false);
+              }}
               className="btn-secondary"
               style={{ padding:"10px 16px", fontSize:13 }}
             >

@@ -341,10 +341,24 @@ export default function App() {
             onEdit={openEditDebtModal}
             onDelete={handleDeleteDebt}
             onMarkPaidOff={handleMarkPaidOff}
-            onRecordPayment={async (debtId, amount, note) => {
+            onRecordPayment={async (debtId, amount, note, addAsExpense) => {
               try {
                 await recordPayment(debtId, amount, note);
                 showToast("Payment recorded! 💰");
+
+                // ── Also add as expense if checkbox was ticked ──
+                if (addAsExpense) {
+                  const debt = debts.find(d => d.id === debtId);
+                  await addExpense({
+                    title:    `Bill Payment — ${debt?.name || "Debt"}`,
+                    amount:   amount,
+                    category: "Bills & Utilities",
+                    date:     new Date().toISOString().split("T")[0],
+                    tags:     "bill,payment",
+                    notes:    note || `Payment for ${debt?.name || "debt"}`,
+                  });
+                  showToast("Added as expense too! ✅");
+                }
               } catch (err) {
                 showToast(err.message || "Failed to record payment", "error");
               }

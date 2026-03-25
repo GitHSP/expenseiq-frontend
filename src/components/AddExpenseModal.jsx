@@ -1,14 +1,5 @@
-// ─────────────────────────────────────────────
-// AddExpenseModal — slide-up form to add or edit
-//
-// Props:
-//   editingExpense — expense object if editing, null if adding
-//   onSave         — called with formData when Save is clicked
-//   onClose        — closes the modal
-// ─────────────────────────────────────────────
-
 import { useState, useEffect } from "react";
-import { CATEGORIES } from "../constants/categories";
+import { CATEGORIES }          from "../constants/categories";
 
 const EMPTY_FORM = {
   title:    "",
@@ -19,63 +10,83 @@ const EMPTY_FORM = {
   notes:    "",
 };
 
+const inputStyle = {
+  width:        "100%",
+  background:   "#ffffff",
+  border:       "1px solid #eaeaea",
+  borderRadius: "8px",
+  padding:      "10px 12px",
+  color:        "#0d0d0d",
+  fontSize:     "13.5px",
+  fontFamily:   "inherit",
+  fontWeight:   500,
+  outline:      "none",
+  boxSizing:    "border-box",
+  transition:   "border-color 0.15s",
+};
+
+const labelStyle = {
+  display:       "block",
+  fontSize:      "11px",
+  color:         "#666",
+  fontWeight:    600,
+  textTransform: "uppercase",
+  letterSpacing: "0.6px",
+  marginBottom:  "5px",
+};
+
 export default function AddExpenseModal({ editingExpense, onSave, onClose }) {
   const [form, setForm] = useState(EMPTY_FORM);
 
-  // If editing, pre-fill the form with existing expense data
-  // If adding new, reset the form to empty
   useEffect(() => {
     if (editingExpense) {
       setForm({
-        title:    editingExpense.title,
-        amount:   editingExpense.amount,
-        category: editingExpense.category,
-        date:     editingExpense.date,
-        tags:     editingExpense.tags.join(", "),
-        notes:    editingExpense.notes || "",
+        title:    editingExpense.title    || "",
+        amount:   editingExpense.amount   || "",
+        category: editingExpense.category || "Food & Dining",
+        date:     editingExpense.date     || new Date().toISOString().split("T")[0],
+        tags:     Array.isArray(editingExpense.tags)
+                    ? editingExpense.tags.join(", ")
+                    : editingExpense.tags || "",
+        notes:    editingExpense.notes    || "",
       });
     } else {
       setForm(EMPTY_FORM);
     }
   }, [editingExpense]);
 
-  // Helper to update a single field without overwriting others
   function update(field, value) {
     setForm(prev => ({ ...prev, [field]: value }));
   }
 
-  function handleSave() {
-    onSave(form);
-  }
+  // Find selected category for icon preview
+  const selectedCat = CATEGORIES.find(c => c.name === form.category);
 
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal-box">
-
-        {/* Drag handle — visible on mobile only via CSS */}
         <div className="modal-handle" />
-
         <div className="modal-title">
-          {editingExpense ? "✏️ Edit Expense" : "➕ New Expense"}
+          {editingExpense ? "✏️ Edit Expense" : "➕ Add Expense"}
         </div>
 
-        {/* Title field */}
+        {/* Title */}
         <div className="form-group">
-          <label className="label">Title *</label>
+          <label style={labelStyle}>Title *</label>
           <input
-            className="input"
-            placeholder="e.g. Lunch at Chipotle"
+            style={inputStyle}
+            placeholder="e.g. Lunch at restaurant"
             value={form.title}
             onChange={e => update("title", e.target.value)}
           />
         </div>
 
-        {/* Amount + Date side by side */}
+        {/* Amount + Date */}
         <div className="form-grid-2">
           <div className="form-group">
-            <label className="label">Amount ($) *</label>
+            <label style={labelStyle}>Amount ($) *</label>
             <input
-              className="input"
+              style={inputStyle}
               type="number"
               inputMode="decimal"
               placeholder="0.00"
@@ -84,9 +95,9 @@ export default function AddExpenseModal({ editingExpense, onSave, onClose }) {
             />
           </div>
           <div className="form-group">
-            <label className="label">Date</label>
+            <label style={labelStyle}>Date *</label>
             <input
-              className="input"
+              style={inputStyle}
               type="date"
               value={form.date}
               onChange={e => update("date", e.target.value)}
@@ -94,35 +105,54 @@ export default function AddExpenseModal({ editingExpense, onSave, onClose }) {
           </div>
         </div>
 
-        {/* Category dropdown */}
+        {/* Category — scrollable dropdown with icon preview */}
         <div className="form-group">
-          <label className="label">Category</label>
-          <select className="input"
+          <label style={labelStyle}>Category *</label>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+
+            {/* Icon preview */}
+            <div style={{
+              width:        42,
+              height:       42,
+              borderRadius: 8,
+              background:   selectedCat ? `${selectedCat.color}15` : "#f6f8fa",
+              border:       `1.5px solid ${selectedCat ? selectedCat.color : "#eaeaea"}`,
+              display:      "flex",
+              alignItems:   "center",
+              justifyContent:"center",
+              fontSize:     20,
+              flexShrink:   0,
+              transition:   "all 0.2s",
+            }}>
+              {selectedCat?.icon || "📦"}
+            </div>
+
+            {/* Dropdown */}
+            <select
+              style={{
+                ...inputStyle,
+                cursor:      "pointer",
+                fontWeight:  600,
+                color:       selectedCat?.color || "#0d0d0d",
+              }}
               value={form.category}
               onChange={e => update("category", e.target.value)}
-              style={{
-                background: "#161616",
-                color:      "#e8e8e8",
-              }}
             >
               {CATEGORIES.map(c => (
-                <option
-                  key={c.name}
-                  value={c.name}
-                  style={{ background:"#161616", color:"#e8e8e8" }}
-                >
+                <option key={c.name} value={c.name}>
                   {c.icon} {c.name}
                 </option>
               ))}
-</select>
+            </select>
+          </div>
         </div>
 
         {/* Tags */}
         <div className="form-group">
-          <label className="label">Tags (comma-separated)</label>
+          <label style={labelStyle}>Tags (comma separated)</label>
           <input
-            className="input"
-            placeholder="e.g. work, reimbursable"
+            style={inputStyle}
+            placeholder="e.g. work, lunch, client"
             value={form.tags}
             onChange={e => update("tags", e.target.value)}
           />
@@ -130,21 +160,27 @@ export default function AddExpenseModal({ editingExpense, onSave, onClose }) {
 
         {/* Notes */}
         <div className="form-group">
-          <label className="label">Notes</label>
+          <label style={labelStyle}>Notes</label>
           <input
-            className="input"
+            style={inputStyle}
             placeholder="Optional note..."
             value={form.notes}
             onChange={e => update("notes", e.target.value)}
           />
         </div>
 
-        {/* Footer buttons */}
+        {/* Buttons */}
         <div className="modal-footer">
-          <button className="btn-primary" onClick={handleSave} style={{ flex: 1 }}>
+          <button
+            className="btn-primary"
+            onClick={() => onSave(form)}
+            style={{ flex:1 }}
+          >
             {editingExpense ? "Update Expense" : "Add Expense"}
           </button>
-          <button className="btn-secondary" onClick={onClose}>Cancel</button>
+          <button className="btn-secondary" onClick={onClose}>
+            Cancel
+          </button>
         </div>
 
       </div>
