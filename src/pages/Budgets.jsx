@@ -43,7 +43,7 @@ export default function Budgets({ expenses, budgets, onSaveBudgets }) {
 
       <div className="budgets-grid">
         {CATEGORIES.map(cat => {
-          const spent  = thisMonthExp.filter(e => e.category === cat.name).reduce((s, e) => s + e.amount, 0);
+          const spent  = thisMonthExp.filter(e => e.category === cat.name).reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
           const budget = editing ? (tempBudgets[cat.name] || 0) : (budgets[cat.name] || 0);
           const pct    = budget > 0 ? Math.min((spent / budget) * 100, 100) : 0;
           const over   = spent > budget && budget > 0;
