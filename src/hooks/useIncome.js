@@ -1,20 +1,15 @@
-// ─────────────────────────────────────────────
-// useIncome — manages income entries
-// Now connected to Django API
-// ─────────────────────────────────────────────
-
 import { useState, useEffect, useCallback } from "react";
 import { incomeAPI } from "../utils/api";
 
 export const INCOME_CATEGORIES = [
-  { name: "Salary",     icon: "💼", color: "#55EFC4" },
-  { name: "Freelance",  icon: "💻", color: "#74B9FF" },
-  { name: "Investment", icon: "📈", color: "#A29BFE" },
-  { name: "Business",   icon: "🏢", color: "#FFE66D" },
-  { name: "Rental",     icon: "🏠", color: "#FD79A8" },
-  { name: "Gift",       icon: "🎁", color: "#FF6B6B" },
-  { name: "Refund",     icon: "↩️", color: "#4ECDC4" },
-  { name: "Other",      icon: "💡", color: "#B2BEC3" },
+  { name: "Salary",     icon: "💼", color: "#059669" },
+  { name: "Freelance",  icon: "💻", color: "#0070f3" },
+  { name: "Investment", icon: "📈", color: "#7c3aed" },
+  { name: "Business",   icon: "🏢", color: "#d97706" },
+  { name: "Rental",     icon: "🏠", color: "#db2777" },
+  { name: "Gift",       icon: "🎁", color: "#e11d48" },
+  { name: "Refund",     icon: "↩️", color: "#0891b2" },
+  { name: "Other",      icon: "💡", color: "#6b7280" },
 ];
 
 export function useIncome() {
@@ -22,15 +17,18 @@ export function useIncome() {
   const [loaded,  setLoaded]  = useState(false);
   const [error,   setError]   = useState(null);
 
-  // ── Load all income on startup ──
   const loadData = useCallback(async () => {
     try {
       setLoaded(false);
+      const token = localStorage.getItem("access_token");
+      if (!token) { setLoaded(true); return; }
+
       const data = await incomeAPI.getAll();
-      setIncomes(data);
+      setIncomes(Array.isArray(data) ? data : []);
     } catch (err) {
       setError(err.message);
       console.error("Failed to load income:", err);
+      setIncomes([]);
     } finally {
       setLoaded(true);
     }
@@ -40,7 +38,6 @@ export function useIncome() {
     loadData();
   }, [loadData]);
 
-  // ── Add new income ──
   async function addIncome(formData) {
     try {
       const newIncome = await incomeAPI.create({
@@ -56,7 +53,6 @@ export function useIncome() {
     }
   }
 
-  // ── Update existing income ──
   async function updateIncome(id, formData) {
     try {
       const updated = await incomeAPI.update(id, {
@@ -72,7 +68,6 @@ export function useIncome() {
     }
   }
 
-  // ── Delete income ──
   async function deleteIncome(id) {
     try {
       await incomeAPI.delete(id);
@@ -83,12 +78,8 @@ export function useIncome() {
   }
 
   return {
-    incomes,
-    loaded,
-    error,
-    addIncome,
-    updateIncome,
-    deleteIncome,
+    incomes, loaded, error,
+    addIncome, updateIncome, deleteIncome,
     reload: loadData,
   };
 }

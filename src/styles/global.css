@@ -2,6 +2,44 @@
    ExpenseIQ — Modern Professional Light Theme
    Inspired by Stripe & Vercel design systems
    ───────────────────────────────────────────── */
+/* ── CSS Variables — Light theme default ── */
+:root {
+  --bg:       #f6f8fa;
+  --card:     #ffffff;
+  --border:   #eaeaea;
+  --text:     #0d0d0d;
+  --muted:    #888;
+  --subtle:   #fafafa;
+}
+
+/* ── Dark theme ── */
+body.dark {
+  --bg:       #0a0a0a;
+  --card:     #111111;
+  --border:   #222222;
+  --text:     #e8e8e8;
+  --muted:    #666;
+  --subtle:   #161616;
+}
+
+body { background: var(--bg); color: var(--text); }
+.app { background: var(--bg); }
+.sidebar { background: var(--card); border-right: 1px solid var(--border); }
+.card { background: var(--card); border-color: var(--border); }
+.expense-row { background: var(--subtle); border-color: var(--border); }
+.modal-box { background: var(--card); border-color: var(--border); }
+.input { background: var(--card); border-color: var(--border); color: var(--text); }
+.filter-select { background: var(--card); border-color: var(--border); color: var(--text); }
+.sidebar-item { color: var(--muted); }
+.sidebar-item:hover { background: var(--subtle); }
+.page-title { color: var(--text); }
+.card-title { color: var(--text); }
+.exp-title { color: var(--text); }
+.summary-bar { background: var(--card); border-color: var(--border); }
+.topbar { background: var(--card); border-bottom: 1px solid var(--border); }
+.bottom-nav { background: var(--card); border-top: 1px solid var(--border); }
+.budget-card { background: var(--card); border-color: var(--border); }
+.progress-bar-bg { background: var(--border); }
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 

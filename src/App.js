@@ -1,5 +1,6 @@
 import "./styles/global.css";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
 
 // Hooks
 import { useExpenses }  from "./hooks/useExpenses";
@@ -14,7 +15,7 @@ import Login          from "./pages/Login";
 import Register       from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 
-// Layout components
+// Layout
 import Sidebar         from "./components/Sidebar";
 import TopBar          from "./components/TopBar";
 import BottomNav       from "./components/BottomNav";
@@ -24,16 +25,16 @@ import AddIncomeModal  from "./components/AddIncomeModal";
 import AddDebtModal    from "./components/AddDebtModal";
 
 // Pages
-import Dashboard from "./pages/Dashboard";
-import Expenses  from "./pages/Expenses";
-import Analytics from "./pages/Analytics";
-import Budgets   from "./pages/Budgets";
-import Payments  from "./pages/Payments";
+import Dashboard         from "./pages/Dashboard";
+import Expenses          from "./pages/Expenses";
+import Analytics         from "./pages/Analytics";
+import Budgets           from "./pages/Budgets";
+import Payments          from "./pages/Payments";
+import DebtPayoffTracker from "./pages/DebtPayoffTracker";
+import Profile           from "./pages/Profile";
 
 // Utils
 import { exportToCSV } from "./utils/helpers";
-
-import DebtPayoffTracker from "./pages/DebtPayoffTracker";
 
 export default function App() {
 
@@ -44,17 +45,27 @@ export default function App() {
   // ── Navigation ────────────────────────────
   const [view, setView] = useState("dashboard");
 
-  // ── Expense modal ─────────────────────────
+  // ── Dark mode ─────────────────────────────
+  const [darkMode, setDarkMode] = useState(
+    () => localStorage.getItem("expenseiq_theme") === "dark"
+  );
+
+useEffect(() => {
+  localStorage.setItem("expenseiq_theme", darkMode ? "dark" : "light");
+  if (darkMode) {
+    document.body.classList.add("dark");
+  } else {
+    document.body.classList.remove("dark");
+  }
+}, [darkMode]);
+
+  // ── Modals ────────────────────────────────
   const [showModal,      setShowModal]      = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
-
-  // ── Income modal ──────────────────────────
   const [showIncomeModal, setShowIncomeModal] = useState(false);
   const [editingIncome,   setEditingIncome]   = useState(null);
-
-  // ── Debt modal ────────────────────────────
-  const [showDebtModal, setShowDebtModal] = useState(false);
-  const [editingDebt,   setEditingDebt]   = useState(null);
+  const [showDebtModal,  setShowDebtModal]  = useState(false);
+  const [editingDebt,    setEditingDebt]    = useState(null);
 
   // ── Data hooks ────────────────────────────
   const {
@@ -74,7 +85,7 @@ export default function App() {
     isDueSoon, isOverdue, daysUntilDue,
   } = useDebts();
 
-  // ── Currency hook ─────────────────────────
+  // ── Currency ──────────────────────────────
   const {
     currency, setCurrency,
     rates, loading: ratesLoading, error: ratesError,
@@ -84,6 +95,17 @@ export default function App() {
 
   // ── Toast ─────────────────────────────────
   const { toast, showToast } = useToast();
+
+  // ── Notification badges ───────────────────
+  const overdueCount = debts.filter(
+    d => !d.isPaidOff && isOverdue(d.nextPaymentDate)
+  ).length;
+  const dueSoonCount = debts.filter(
+    d => !d.isPaidOff && isDueSoon(d.nextPaymentDate)
+  ).length;
+  const badges = {
+    payments: overdueCount + dueSoonCount,
+  };
 
   // ── Auth pages ────────────────────────────
   if (!isLoggedIn && !loading) {
@@ -113,14 +135,47 @@ export default function App() {
     );
   }
 
-  // ── Loading ───────────────────────────────
+  // ── Skeleton loading ──────────────────────
   if (loading || !loaded || !incomeLoaded || !debtLoaded) {
     return (
       <div style={{
-        display:"flex", alignItems:"center", justifyContent:"center",
-        height:"100vh", background:"#f5f6fa", color:"#1a1a2e", fontFamily:"sans-serif",
+        display:    "flex",
+        minHeight:  "100vh",
+        background: "#f6f8fa",
+        fontFamily: "'Inter', sans-serif",
       }}>
-        Loading...
+        {/* Fake sidebar */}
+        <div style={{
+          width:       248,
+          background:  "#ffffff",
+          borderRight: "1px solid #eaeaea",
+          padding:     "20px 16px",
+          flexShrink:  0,
+        }}>
+          <div style={{ display:"flex", gap:8, marginBottom:28, alignItems:"center" }}>
+            <div style={{ width:10, height:10, borderRadius:"50%", background:"#eaeaea" }} />
+            <div style={{ width:80, height:14, borderRadius:6, background:"#eaeaea" }} />
+          </div>
+          {[1,2,3,4,5,6].map(i => (
+            <div key={i} style={{ height:36, borderRadius:8, background:"#f6f8fa", marginBottom:6 }} />
+          ))}
+        </div>
+        {/* Fake content */}
+        <div style={{ flex:1, padding:"32px" }}>
+          <div style={{ width:160, height:28, borderRadius:8, background:"#eaeaea", marginBottom:8 }} />
+          <div style={{ width:120, height:14, borderRadius:6, background:"#f0f0f0", marginBottom:28 }} />
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:16, marginBottom:24 }}>
+            {[1,2,3,4].map(i => (
+              <div key={i} style={{ height:110, borderRadius:12, background:"linear-gradient(135deg,#e0e0e0,#ececec)" }} />
+            ))}
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
+            {[1,2].map(i => (
+              <div key={i} style={{ height:280, borderRadius:12, background:"#ffffff", border:"1px solid #eaeaea" }} />
+            ))}
+          </div>
+        </div>
+        <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }`}</style>
       </div>
     );
   }
@@ -128,20 +183,12 @@ export default function App() {
   // ─────────────────────────────────────────
   // EXPENSE HANDLERS
   // ─────────────────────────────────────────
-  function openAddModal() {
-    setEditingExpense(null);
-    setShowModal(true);
-  }
-
-  function openEditModal(expense) {
-    setEditingExpense(expense);
-    setShowModal(true);
-  }
+  function openAddModal() { setEditingExpense(null); setShowModal(true); }
+  function openEditModal(expense) { setEditingExpense(expense); setShowModal(true); }
 
   async function handleSave(formData) {
     if (!formData.title.trim() || !formData.amount || isNaN(parseFloat(formData.amount))) {
-      showToast("Please fill in title and a valid amount", "error");
-      return;
+      showToast("Please fill in title and a valid amount", "error"); return;
     }
     try {
       if (editingExpense) {
@@ -152,46 +199,28 @@ export default function App() {
         showToast("Expense added!");
       }
       setShowModal(false);
-    } catch (err) {
-      showToast(err.message || "Something went wrong", "error");
-    }
+    } catch (err) { showToast(err.message || "Something went wrong", "error"); }
   }
 
   async function handleDelete(id) {
-    try {
-      await deleteExpense(id);
-      showToast("Expense deleted", "error");
-    } catch (err) {
-      showToast(err.message || "Failed to delete", "error");
-    }
+    try { await deleteExpense(id); showToast("Expense deleted", "error"); }
+    catch (err) { showToast(err.message || "Failed to delete", "error"); }
   }
 
   async function handleSaveBudgets(newBudgets) {
-    try {
-      await saveBudgets(newBudgets);
-      showToast("Budgets saved!");
-    } catch (err) {
-      showToast(err.message || "Failed to save budgets", "error");
-    }
+    try { await saveBudgets(newBudgets); showToast("Budgets saved!"); }
+    catch (err) { showToast(err.message || "Failed to save", "error"); }
   }
 
   // ─────────────────────────────────────────
   // INCOME HANDLERS
   // ─────────────────────────────────────────
-  function openAddIncomeModal() {
-    setEditingIncome(null);
-    setShowIncomeModal(true);
-  }
-
-  function openEditIncomeModal(income) {
-    setEditingIncome(income);
-    setShowIncomeModal(true);
-  }
+  function openAddIncomeModal() { setEditingIncome(null); setShowIncomeModal(true); }
+  function openEditIncomeModal(income) { setEditingIncome(income); setShowIncomeModal(true); }
 
   async function handleSaveIncome(formData) {
     if (!formData.title.trim() || !formData.amount || isNaN(parseFloat(formData.amount))) {
-      showToast("Please fill in title and a valid amount", "error");
-      return;
+      showToast("Please fill in title and a valid amount", "error"); return;
     }
     try {
       if (editingIncome) {
@@ -202,37 +231,23 @@ export default function App() {
         showToast("Income added! 💰");
       }
       setShowIncomeModal(false);
-    } catch (err) {
-      showToast(err.message || "Something went wrong", "error");
-    }
+    } catch (err) { showToast(err.message || "Something went wrong", "error"); }
   }
 
   async function handleDeleteIncome(id) {
-    try {
-      await deleteIncome(id);
-      showToast("Income deleted", "error");
-    } catch (err) {
-      showToast(err.message || "Failed to delete", "error");
-    }
+    try { await deleteIncome(id); showToast("Income deleted", "error"); }
+    catch (err) { showToast(err.message || "Failed to delete", "error"); }
   }
 
   // ─────────────────────────────────────────
   // DEBT HANDLERS
   // ─────────────────────────────────────────
-  function openAddDebtModal() {
-    setEditingDebt(null);
-    setShowDebtModal(true);
-  }
-
-  function openEditDebtModal(debt) {
-    setEditingDebt(debt);
-    setShowDebtModal(true);
-  }
+  function openAddDebtModal() { setEditingDebt(null); setShowDebtModal(true); }
+  function openEditDebtModal(debt) { setEditingDebt(debt); setShowDebtModal(true); }
 
   async function handleSaveDebt(formData) {
     if (!formData.name.trim() || !formData.balance) {
-      showToast("Please fill in name and balance", "error");
-      return;
+      showToast("Please fill in name and balance", "error"); return;
     }
     try {
       if (editingDebt) {
@@ -243,30 +258,19 @@ export default function App() {
         showToast("Debt added!");
       }
       setShowDebtModal(false);
-    } catch (err) {
-      showToast(err.message || "Something went wrong", "error");
-    }
+    } catch (err) { showToast(err.message || "Something went wrong", "error"); }
   }
 
   async function handleDeleteDebt(id) {
-    try {
-      await deleteDebt(id);
-      showToast("Debt removed", "error");
-    } catch (err) {
-      showToast(err.message || "Failed to delete", "error");
-    }
+    try { await deleteDebt(id); showToast("Debt removed", "error"); }
+    catch (err) { showToast(err.message || "Failed to delete", "error"); }
   }
 
   async function handleMarkPaidOff(id) {
-    try {
-      await markPaidOff(id);
-      showToast("Congratulations! Debt paid off! 🎉");
-    } catch (err) {
-      showToast(err.message || "Something went wrong", "error");
-    }
+    try { await markPaidOff(id); showToast("Debt paid off! 🎉"); }
+    catch (err) { showToast(err.message || "Something went wrong", "error"); }
   }
 
-  // ── Logout ────────────────────────────────
   async function handleLogout() {
     await logout();
     showToast("Logged out!");
@@ -297,6 +301,7 @@ export default function App() {
             ratesLoading={ratesLoading}
             ratesError={ratesError}
             refreshRates={refreshRates}
+            debts={debts}
           />
         );
       case "expenses":
@@ -325,13 +330,6 @@ export default function App() {
             formatAmount={formatAmount}
           />
         );
-      case "payoff":
-        return (
-          <DebtPayoffTracker
-            debts={debts}
-            formatAmount={formatAmount}
-          />
-        );
       case "payments":
         return (
           <Payments
@@ -345,8 +343,6 @@ export default function App() {
               try {
                 await recordPayment(debtId, amount, note);
                 showToast("Payment recorded! 💰");
-
-                // ── Also add as expense if checkbox was ticked ──
                 if (addAsExpense) {
                   const debt = debts.find(d => d.id === debtId);
                   await addExpense({
@@ -367,6 +363,20 @@ export default function App() {
             isOverdue={isOverdue}
             daysUntilDue={daysUntilDue}
             formatAmount={formatAmount}
+          />
+        );
+      case "payoff":
+        return (
+          <DebtPayoffTracker
+            debts={debts}
+            formatAmount={formatAmount}
+          />
+        );
+      case "profile":
+        return (
+          <Profile
+            user={user}
+            onLogout={handleLogout}
           />
         );
       default:
@@ -391,6 +401,9 @@ export default function App() {
         onLogout={handleLogout}
         currency={currency}
         setCurrency={setCurrency}
+        badges={badges}
+        darkMode={darkMode}
+        onToggleDark={() => setDarkMode(p => !p)}
       />
 
       <div className="content-wrap">
@@ -407,7 +420,11 @@ export default function App() {
           {renderPage()}
         </div>
 
-        <BottomNav view={view} setView={setView} />
+        <BottomNav
+          view={view}
+          setView={setView}
+          badges={badges}
+        />
       </div>
 
       {showModal && (

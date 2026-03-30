@@ -25,12 +25,13 @@ export const MONTHS = [
 ];
 
 export const NAV_ITEMS = [
-  { id: "dashboard", label: "Dashboard", icon: "⊞" },
+  { id: "dashboard", label: "Dashboard", icon: "⊞"  },
   { id: "expenses",  label: "Expenses",  icon: "📋" },
   { id: "analytics", label: "Analytics", icon: "📊" },
   { id: "budgets",   label: "Budgets",   icon: "🎯" },
   { id: "payments",  label: "Payments",  icon: "💳" },
   { id: "payoff",    label: "Payoff",    icon: "🏁" },
+  { id: "profile",   label: "Profile",   icon: "👤" },
 ];
 
 export const DEFAULT_BUDGETS = Object.fromEntries(

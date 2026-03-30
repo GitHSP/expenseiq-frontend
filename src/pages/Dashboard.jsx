@@ -6,6 +6,8 @@ import {
 import ExchangeRatesWidget from "../components/ExchangeRatesWidget";
 import { CATEGORIES, MONTHS } from "../constants/categories";
 import { INCOME_CATEGORIES }  from "../hooks/useIncome";
+import FinancialTips from "../components/FinancialTips";
+
 
 const TOOLTIP_STYLE = {
   background:   "#ffffff",
@@ -35,6 +37,7 @@ export default function Dashboard({
   incomes, onEditIncome, onDeleteIncome, onAddIncome,
   currency, rates, getRate, formatAmount,
   getLastUpdatedText, ratesLoading, ratesError, refreshRates,
+  debts,
 }) {
   const now          = new Date();
   const currentMonth = now.getMonth();
@@ -152,6 +155,13 @@ export default function Dashboard({
           {MONTHS[currentMonth]} {currentYear}
         </div>
       </div>
+
+      <FinancialTips
+        expenses={expenses}
+        incomes={incomes}
+        budgets={budgets}
+        debts={debts || []}
+      />
 
       {/* ── Clickable Stat cards ── */}
       <div className="stat-grid" style={{ marginBottom:16 }}>
