@@ -22,14 +22,12 @@ import BottomNav       from "./components/BottomNav";
 import Toast           from "./components/Toast";
 import AddExpenseModal from "./components/AddExpenseModal";
 import AddIncomeModal  from "./components/AddIncomeModal";
-import AddDebtModal    from "./components/AddDebtModal";
 
 // Pages
 import Dashboard         from "./pages/Dashboard";
 import Expenses          from "./pages/Expenses";
 import Analytics         from "./pages/Analytics";
 import Budgets           from "./pages/Budgets";
-import Payments          from "./pages/Payments";
 import DebtPayoffTracker from "./pages/DebtPayoffTracker";
 import Profile           from "./pages/Profile";
 
@@ -66,7 +64,6 @@ useEffect(() => {
   const [editingExpense, setEditingExpense] = useState(null);
   const [showIncomeModal, setShowIncomeModal] = useState(false);
   const [editingIncome,   setEditingIncome]   = useState(null);
-  const [showDebtModal,  setShowDebtModal]  = useState(false);
   const [editingDebt,    setEditingDebt]    = useState(null);
 
   // ── Data hooks ────────────────────────────
@@ -81,10 +78,8 @@ useEffect(() => {
   } = useIncome();
 
   const {
-    debts, paymentHistory, loaded: debtLoaded,
-    addDebt, updateDebt, deleteDebt,
-    markPaidOff, recordPayment,
-    isDueSoon, isOverdue, daysUntilDue,
+    debts, loaded: debtLoaded,
+    isDueSoon, isOverdue,
   } = useDebts();
 
   // ── Currency ──────────────────────────────
@@ -242,42 +237,15 @@ useEffect(() => {
   }
 
   // ─────────────────────────────────────────
-  // DEBT HANDLERS
+   // DEBT HANDLERS
   // ─────────────────────────────────────────
-  function openAddDebtModal() { setEditingDebt(null); setShowDebtModal(true); }
-  function openEditDebtModal(debt) { setEditingDebt(debt); setShowDebtModal(true); }
-
-  async function handleSaveDebt(formData) {
-    if (!formData.name.trim() || !formData.balance) {
-      showToast("Please fill in name and balance", "error"); return;
-    }
-    try {
-      if (editingDebt) {
-        await updateDebt(editingDebt.id, formData);
-        showToast("Debt updated!");
-      } else {
-        await addDebt(formData);
-        showToast("Debt added!");
-      }
-      setShowDebtModal(false);
-    } catch (err) { showToast(err.message || "Something went wrong", "error"); }
-  }
-
-  async function handleDeleteDebt(id) {
-    try { await deleteDebt(id); showToast("Debt removed", "error"); }
-    catch (err) { showToast(err.message || "Failed to delete", "error"); }
-  }
-
-  async function handleMarkPaidOff(id) {
-    try { await markPaidOff(id); showToast("Debt paid off! 🎉"); }
-    catch (err) { showToast(err.message || "Something went wrong", "error"); }
-  }
-
-  async function handleLogout() {
-    await logout();
-    showToast("Logged out!");
-  }
-
+  // ─────────────────────────────────────────────
+// LOGOUT
+// ─────────────────────────────────────────────
+async function handleLogout() {
+  await logout();
+  showToast("Logged out!");
+}
   // ─────────────────────────────────────────
   // RENDER PAGE
   // ─────────────────────────────────────────
@@ -416,13 +384,6 @@ useEffect(() => {
         />
       )}
 
-      {showDebtModal && (
-        <AddDebtModal
-          editingDebt={editingDebt}
-          onSave={handleSaveDebt}
-          onClose={() => setShowDebtModal(false)}
-        />
-      )}
 
     </div>
   );
