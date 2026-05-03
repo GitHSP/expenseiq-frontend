@@ -235,3 +235,120 @@ export const paymentsAPI = {
     return handleResponse(res);
   },
 };
+
+// ─────────────────────────────────────────────
+// FINANCIAL PLANNER API
+// ─────────────────────────────────────────────
+const FP_URL = `${BASE_URL}/fp`;
+
+export const financialPlannerAPI = {
+
+  // ── Debts ──
+  getDebts: async () => {
+    const res = await fetch(`${FP_URL}/debts/`, {
+      method: "GET", headers: getHeaders(true),
+    });
+    return handleResponse(res);
+  },
+
+  createDebt: async (data) => {
+    const res = await fetch(`${FP_URL}/debts/`, {
+      method: "POST", headers: getHeaders(true),
+      body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+  },
+
+  updateDebt: async (id, data) => {
+    const res = await fetch(`${FP_URL}/debts/${id}/`, {
+      method: "PATCH", headers: getHeaders(true),
+      body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+  },
+
+  deleteDebt: async (id) => {
+    const res = await fetch(`${FP_URL}/debts/${id}/`, {
+      method: "DELETE", headers: getHeaders(true),
+    });
+    return handleResponse(res);
+  },
+
+  // ── Emergency Fund ──
+  getEmergencyFund: async () => {
+    const res = await fetch(`${FP_URL}/emergency-fund/`, {
+      method: "GET", headers: getHeaders(true),
+    });
+    return handleResponse(res);
+  },
+
+  updateEmergencyFund: async (data) => {
+    const res = await fetch(`${FP_URL}/emergency-fund/`, {
+      method: "PATCH", headers: getHeaders(true),
+      body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+  },
+
+  // ── Monthly Plan ──
+  getCurrentPlan: async () => {
+    const res = await fetch(`${FP_URL}/plans/current/`, {
+      method: "GET", headers: getHeaders(true),
+    });
+    return handleResponse(res);
+  },
+
+  updatePlan: async (id, data) => {
+    const res = await fetch(`${FP_URL}/plans/${id}/`, {
+      method: "PATCH", headers: getHeaders(true),
+      body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+  },
+
+  // ── Checklist ──
+  getChecklist: async (planId) => {
+    const res = await fetch(`${FP_URL}/plans/${planId}/checklist/`, {
+      method: "GET", headers: getHeaders(true),
+    });
+    return handleResponse(res);
+  },
+
+  createChecklist: async (planId, data) => {
+    const res = await fetch(`${FP_URL}/plans/${planId}/checklist/`, {
+      method: "POST", headers: getHeaders(true),
+      body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+  },
+
+  toggleChecklist: async (id) => {
+    const res = await fetch(`${FP_URL}/checklist/${id}/toggle/`, {
+      method: "POST", headers: getHeaders(true),
+    });
+    return handleResponse(res);
+  },
+
+  deleteChecklist: async (id) => {
+    const res = await fetch(`${FP_URL}/checklist/${id}/`, {
+      method: "DELETE", headers: getHeaders(true),
+    });
+    return handleResponse(res);
+  },
+
+  // ── Paychecks ──
+  getPaychecks: async (planId) => {
+    const res = await fetch(`${FP_URL}/plans/${planId}/paychecks/`, {
+      method: "GET", headers: getHeaders(true),
+    });
+    return handleResponse(res);
+  },
+
+  createPaycheck: async (planId, data) => {
+    const res = await fetch(`${FP_URL}/plans/${planId}/paychecks/`, {
+      method: "POST", headers: getHeaders(true),
+      body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+  },
+};

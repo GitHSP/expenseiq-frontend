@@ -36,6 +36,8 @@ import Profile           from "./pages/Profile";
 // Utils
 import { exportToCSV } from "./utils/helpers";
 
+import FinancialPlanner   from "./pages/FinancialPlanner";
+
 export default function App() {
 
   // ── Auth ──────────────────────────────────
@@ -332,36 +334,7 @@ useEffect(() => {
         );
       case "payments":
         return (
-          <Payments
-            debts={debts}
-            paymentHistory={paymentHistory}
-            onAdd={openAddDebtModal}
-            onEdit={openEditDebtModal}
-            onDelete={handleDeleteDebt}
-            onMarkPaidOff={handleMarkPaidOff}
-            onRecordPayment={async (debtId, amount, note, addAsExpense) => {
-              try {
-                await recordPayment(debtId, amount, note);
-                showToast("Payment recorded! 💰");
-                if (addAsExpense) {
-                  const debt = debts.find(d => d.id === debtId);
-                  await addExpense({
-                    title:    `Bill Payment — ${debt?.name || "Debt"}`,
-                    amount:   amount,
-                    category: "Bills & Utilities",
-                    date:     new Date().toISOString().split("T")[0],
-                    tags:     "bill,payment",
-                    notes:    note || `Payment for ${debt?.name || "debt"}`,
-                  });
-                  showToast("Added as expense too! ✅");
-                }
-              } catch (err) {
-                showToast(err.message || "Failed to record payment", "error");
-              }
-            }}
-            isDueSoon={isDueSoon}
-            isOverdue={isOverdue}
-            daysUntilDue={daysUntilDue}
+          <FinancialPlanner
             formatAmount={formatAmount}
           />
         );
