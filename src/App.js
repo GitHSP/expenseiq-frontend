@@ -64,7 +64,7 @@ useEffect(() => {
   const [editingExpense, setEditingExpense] = useState(null);
   const [showIncomeModal, setShowIncomeModal] = useState(false);
   const [editingIncome,   setEditingIncome]   = useState(null);
-  const [editingDebt,    setEditingDebt]    = useState(null);
+
 
   // ── Data hooks ────────────────────────────
   const {
