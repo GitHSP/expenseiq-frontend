@@ -304,6 +304,14 @@ async function handleLogout() {
         return (
           <FinancialPlanner
             formatAmount={formatAmount}
+            onAddExpense={async (formData) => {
+              try {
+                await addExpense(formData);
+                showToast("Expense added from planner! ✅");
+              } catch (err) {
+                showToast(err.message || "Failed to add expense", "error");
+              }
+            }}
           />
         );
       case "payoff":
