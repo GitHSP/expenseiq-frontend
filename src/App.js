@@ -30,6 +30,7 @@ import Analytics         from "./pages/Analytics";
 import Budgets           from "./pages/Budgets";
 import DebtPayoffTracker from "./pages/DebtPayoffTracker";
 import Profile           from "./pages/Profile";
+import Forecast from "./pages/Forecast";
 
 // Utils
 import { exportToCSV } from "./utils/helpers";
@@ -328,6 +329,17 @@ async function handleLogout() {
             onLogout={handleLogout}
           />
         );
+
+        case "forecast":
+          return (
+            <Forecast
+              expenses={expenses}
+              incomes={incomes}
+              budgets={budgets}
+              formatAmount={formatAmount}
+            />
+          );
+
       default:
         return null;
     }

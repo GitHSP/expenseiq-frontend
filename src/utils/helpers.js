@@ -21,3 +21,9 @@ export function exportToCSV(expenses) {
   a.download = "expenses.csv";
   a.click();
 }
+
+export function isSameMonth(dateStr, month, year) {
+  if (!dateStr) return false;
+  const [y, m] = dateStr.split("-").map(Number);
+  return m - 1 === month && y === year;
+}

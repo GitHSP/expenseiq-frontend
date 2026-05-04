@@ -7,7 +7,7 @@ import ExchangeRatesWidget from "../components/ExchangeRatesWidget";
 import { CATEGORIES, MONTHS } from "../constants/categories";
 import { INCOME_CATEGORIES }  from "../hooks/useIncome";
 import FinancialTips from "../components/FinancialTips";
-
+import { isSameMonth } from "../utils/helpers";
 
 const TOOLTIP_STYLE = {
   background:   "#ffffff",
@@ -48,16 +48,13 @@ export default function Dashboard({
   const [activeCard, setActiveCard] = useState(null);
 
   // ── Filter this month ──
-  const thisMonthExp = expenses.filter(e => {
-    const d = new Date(e.date);
-    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-  });
+  const thisMonthExp = expenses.filter(e =>
+    isSameMonth(e.date, currentMonth, currentYear)
+  );
 
-  const thisMonthInc = incomes.filter(i => {
-    const d = new Date(i.date);
-    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-  });
-
+  const thisMonthInc = incomes.filter(i =>
+    isSameMonth(i.date, currentMonth, currentYear)
+  );
   // ── Totals ──
   const totalExpenses = thisMonthExp.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
   const totalIncome   = thisMonthInc.reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);

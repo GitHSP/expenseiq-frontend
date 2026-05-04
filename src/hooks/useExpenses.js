@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { expensesAPI, budgetsAPI }          from "../utils/api";
-import { DEFAULT_BUDGETS }                  from "../constants/categories";
+
+const DEFAULT_BUDGETS = {};
 
 export function useExpenses() {
   const [expenses, setExpenses] = useState([]);
@@ -14,19 +15,20 @@ export function useExpenses() {
       const token = localStorage.getItem("access_token");
       if (!token) { setLoaded(true); return; }
 
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       const [expensesData, budgetsData] = await Promise.all([
         expensesAPI.getAll(),
         budgetsAPI.getAll(),
       ]);
 
-      // ── Make sure we always set state even if empty ──
       setExpenses(Array.isArray(expensesData) ? expensesData : []);
 
       if (Array.isArray(budgetsData) && budgetsData.length > 0) {
         const budgetsObj = Object.fromEntries(
           budgetsData.map(b => [b.category, parseFloat(b.amount) || 0])
         );
-        setBudgets(prev => ({ ...DEFAULT_BUDGETS, ...budgetsObj }));
+        setBudgets(budgetsObj);
       } else {
         setBudgets(DEFAULT_BUDGETS);
       }
@@ -34,10 +36,8 @@ export function useExpenses() {
     } catch (err) {
       setError(err.message);
       console.error("Failed to load expenses:", err);
-      // ── Set empty arrays on error so UI doesn't stay at 0 ──
       setExpenses([]);
     } finally {
-      // ── Always mark as loaded so UI shows ──
       setLoaded(true);
     }
   }, []);
@@ -95,7 +95,7 @@ export function useExpenses() {
     try {
       await Promise.all(
         Object.entries(newBudgets).map(([category, amount]) =>
-          budgetsAPI.update(category, amount)
+          budgetsAPI.update(category, parseFloat(amount) || 0)
         )
       );
       setBudgets(newBudgets);

@@ -22,7 +22,7 @@ export function useDebts() {
       setLoaded(false);
       const token = localStorage.getItem("access_token");
       if (!token) { setLoaded(true); return; }
-
+      await new Promise(resolve => setTimeout(resolve, 100)); // Simulate loading delay
       const [debtsData, paymentsData] = await Promise.all([
         debtsAPI.getAll(),
         paymentsAPI.getAll(),
