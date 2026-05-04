@@ -1,5 +1,6 @@
-import { useState }              from "react";
-import { useFinancialPlanner }   from "../hooks/useFinancialPlanner";
+import { useState }                from "react";
+import { useFinancialPlanner }     from "../hooks/useFinancialPlanner";
+import ChecklistConfirmModal       from "../components/ChecklistConfirmModal";
 
 // ── Design tokens ──
 const C = {
@@ -57,12 +58,14 @@ const labelStyle = {
   marginBottom:  "5px",
 };
 
-export default function FinancialPlanner({ formatAmount }) {
+export default function FinancialPlanner({ formatAmount, onAddExpense }) {
   const {
     debts, emergencyFund, currentPlan, checklist, loaded,
+    rolledOver,
     addDebt, updateDebt, deleteDebt,
     updateEmergencyFund,
     addChecklistItem, toggleChecklistItem, deleteChecklistItem,
+    rolloverToNextMonth,
   } = useFinancialPlanner();
 
   const [activeTab,    setActiveTab]    = useState("debts");
@@ -71,6 +74,7 @@ export default function FinancialPlanner({ formatAmount }) {
   const [showItemForm, setShowItemForm] = useState(false);
   const [saving,       setSaving]       = useState(false);
   const [toast,        setToast]        = useState("");
+  const [confirmItem,  setConfirmItem]  = useState(null);
 
   // ── Debt form state ──
   const [debtForm, setDebtForm] = useState({
@@ -178,8 +182,51 @@ export default function FinancialPlanner({ formatAmount }) {
 
   // ── Checklist handlers ──
   async function handleToggle(id) {
+    const item = checklist.find(i => i.id === id);
+    if (!item) return;
+
+    // If unticking — just toggle, no confirmation
+    if (item.is_completed) {
+      try {
+        await toggleChecklistItem(id);
+        showMsg("Unmarked ↩️");
+      } catch (err) {
+        showMsg(err.message || "Failed to update");
+      }
+      return;
+    }
+
+    // If ticking ON — show confirmation modal
+    setConfirmItem(item);
+  }
+
+  async function handleConfirm({ addAsExpense, expenseCategory }) {
+    const item = confirmItem;
+    setConfirmItem(null);
+
     try {
-      await toggleChecklistItem(id);
+      const result = await toggleChecklistItem(item.id);
+
+      // ── Also add as expense if checkbox ticked ──
+      if (addAsExpense && item.amount && onAddExpense) {
+        await onAddExpense({
+          title:    item.label
+            .replace(/[⚠️🎯✅☐🏦💳🎓📱🌏✈️⏳💰🏠⏱↔️💵]/g, "")
+            .trim(),
+          amount:   parseFloat(item.amount),
+          category: expenseCategory,
+          date:     new Date().toISOString().split("T")[0],
+          tags:     "planner,checklist",
+          notes:    `From monthly checklist — ${item.category}`,
+        });
+        showMsg("✅ Marked complete + added as expense!");
+      } else if (result.debt_updated) {
+        showMsg(`✅ Balance updated! New: $${parseFloat(result.debt_updated.current_balance).toFixed(2)}`);
+      } else if (result.fund_updated) {
+        showMsg(`✅ Emergency fund: $${parseFloat(result.fund_updated.current_balance).toFixed(2)}`);
+      } else {
+        showMsg("✅ Marked complete!");
+      }
     } catch (err) {
       showMsg(err.message || "Failed to update");
     }
@@ -194,7 +241,10 @@ export default function FinancialPlanner({ formatAmount }) {
         amount:    itemForm.amount ? parseFloat(itemForm.amount) : null,
         due_day:   itemForm.due_day ? parseInt(itemForm.due_day) : null,
       });
-      setItemForm({ label:"", amount:"", category:"debt_min", due_day:"", is_auto_debit:false, sort_order:0 });
+      setItemForm({
+        label:"", amount:"", category:"debt_min",
+        due_day:"", is_auto_debit:false, sort_order:0,
+      });
       setShowItemForm(false);
       showMsg("Item added! ✅");
     } catch (err) {
@@ -224,9 +274,35 @@ export default function FinancialPlanner({ formatAmount }) {
     }
   }
 
+  // ── Rollover handler ──
+  async function handleRollover() {
+    const now     = new Date();
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const today   = now.getDate();
+    const daysLeft = lastDay - today;
+
+    if (!window.confirm(
+        `⚠️ Force Rollover Warning\n\n` +
+        `You still have ${daysLeft} days left in this month.\n\n` +
+        `This will:\n` +
+        `• Apply this month's interest to ALL debts early\n` +
+        `• Create next month's plan\n` +
+        `• Reset all checklist items to ☐\n\n` +
+        `❌ Do NOT click OK unless you're sure!\n` +
+        `✅ Auto rollover happens on the 1st automatically.`
+    )) return;
+
+    try {
+        const result = await rolloverToNextMonth();
+        showMsg(`✅ ${result.message}`);
+    } catch (err) {
+        showMsg(err.message || "Failed to rollover");
+    }
+    }
+
   // ── Computed values ──
-  const totalDebt     = debts.filter(d => d.is_active).reduce((s, d) => s + (parseFloat(d.current_balance) || 0), 0);
-  const totalMinimums = debts.filter(d => d.is_active).reduce((s, d) => s + (parseFloat(d.minimum_payment) || 0), 0);
+  const totalDebt      = debts.filter(d => d.is_active).reduce((s, d) => s + (parseFloat(d.current_balance) || 0), 0);
+  const totalMinimums  = debts.filter(d => d.is_active).reduce((s, d) => s + (parseFloat(d.minimum_payment) || 0), 0);
   const completedItems = checklist.filter(i => i.is_completed).length;
 
   if (!loaded) {
@@ -266,6 +342,35 @@ export default function FinancialPlanner({ formatAmount }) {
           Avalanche debt payoff · Monthly checklist · Emergency fund
         </div>
       </div>
+
+      {/* ── Auto rollover notification ── */}
+{rolledOver && (
+  <div style={{
+    background:   "#f0fdf4",
+    border:       "1px solid #bbf7d0",
+    borderRadius: 12,
+    padding:      "14px 18px",
+    marginBottom: 20,
+    display:      "flex",
+    alignItems:   "center",
+    gap:          12,
+  }}>
+    <span style={{ fontSize:24 }}>🎉</span>
+    <div>
+      <div style={{ fontWeight:700, color:"#059669", fontSize:14, marginBottom:3 }}>
+        New month detected — plan auto-generated!
+      </div>
+      <div style={{ fontSize:12, color:"#888" }}>
+        Interest has been applied to all debts and your checklist has been reset for{" "}
+        {currentPlan
+          ? new Date(currentPlan.year, currentPlan.month - 1)
+              .toLocaleDateString("en-US", { month:"long", year:"numeric" })
+          : "this month"
+        }
+      </div>
+    </div>
+  </div>
+)}
 
       {/* ── Summary cards ── */}
       <div className="stat-grid" style={{ marginBottom:24 }}>
@@ -512,7 +617,7 @@ export default function FinancialPlanner({ formatAmount }) {
           ) : (
             debts.map((debt, i) => {
               const utilPct = debt.utilization_percent;
-              const colors  = ["#e11d48","#f59e0b","#0070f3","#7c3aed","#059669","#0891b2"];
+              const colors  = [C.red, C.amber, C.blue, "#7c3aed", C.green, "#0891b2"];
               const color   = colors[i % colors.length];
 
               return (
@@ -568,11 +673,11 @@ export default function FinancialPlanner({ formatAmount }) {
                   </div>
 
                   {/* Debt stats */}
-                  <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(120px,1fr))", gap:10, marginBottom:14 }}>
+                  <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(120px,1fr))", gap:10, marginBottom: utilPct !== null ? 14 : 0 }}>
                     {[
-                      { label:"Balance",  value:fmt(debt.current_balance),  color:C.red    },
-                      { label:"Min Pay",  value:fmt(debt.minimum_payment),  color:C.text   },
-                      { label:"Monthly ⚡", value:fmt(debt.monthly_interest_amount), color:C.amber  },
+                      { label:"Balance",    value:fmt(debt.current_balance),        color:C.red   },
+                      { label:"Min Pay",    value:fmt(debt.minimum_payment),        color:C.text  },
+                      { label:"Monthly ⚡", value:fmt(debt.monthly_interest_amount),color:C.amber },
                       debt.credit_limit
                         ? { label:"Limit", value:fmt(debt.credit_limit), color:C.muted }
                         : null,
@@ -632,269 +737,353 @@ export default function FinancialPlanner({ formatAmount }) {
       {/* ════════════════════════════════════
           TAB 2 — MONTHLY CHECKLIST
       ════════════════════════════════════ */}
-      {activeTab === "checklist" && (
-        <>
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
-            <div style={{ fontSize:13, color:C.muted }}>
-              {currentPlan
-                ? `${currentPlan.year}-${String(currentPlan.month).padStart(2,"0")} · ${completedItems}/${checklist.length} done`
-                : "Loading plan..."
-              }
-            </div>
-            <button
-              className="btn-primary"
-              onClick={() => setShowItemForm(p => !p)}
-              style={{ padding:"9px 18px", fontSize:13 }}
-            >
-              + Add Item
-            </button>
+        {activeTab === "checklist" && (
+  <>
+    {/* ── Header ── */}
+    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16, flexWrap:"wrap", gap:10 }}>
+      <div>
+        <div style={{ fontSize:14, fontWeight:700, color:"#0d0d0d", letterSpacing:"-0.2px" }}>
+          {currentPlan
+            ? new Date(currentPlan.year, currentPlan.month - 1)
+                .toLocaleDateString("en-US", { month:"long", year:"numeric" })
+            : "Loading..."
+          }
+        </div>
+        <div style={{ fontSize:12, color:"#888", marginTop:2 }}>
+          {completedItems}/{checklist.length} items complete
+          {checklist.length > 0 && completedItems === checklist.length && " 🎉"}
+        </div>
+      </div>
+      <div style={{ display:"flex", gap:8 }}>
+        <button
+          onClick={handleRollover}
+          style={{
+            background:   "#f6f8fa",
+            color:        "#888",
+            border:       "1px solid #eaeaea",
+            padding:      "7px 12px",
+            borderRadius: 8,
+            fontWeight:   600,
+            fontSize:     11,
+            cursor:       "pointer",
+            fontFamily:   "inherit",
+          }}
+        >
+          🔄 Force Rollover
+        </button>
+        <button
+          className="btn-primary"
+          onClick={() => setShowItemForm(p => !p)}
+          style={{ padding:"9px 18px", fontSize:13 }}
+        >
+          + Add Item
+        </button>
+      </div>
+    </div>
+
+    {/* ── Add item form ── */}
+    {showItemForm && (
+      <div className="card" style={{ marginBottom:16, border:`1.5px solid ${C.blue}` }}>
+        <div className="card-title" style={{ marginBottom:14 }}>New Checklist Item</div>
+        <div className="form-grid-2">
+          <div className="form-group">
+            <label style={labelStyle}>Label *</label>
+            <input
+              style={inputStyle}
+              placeholder="e.g. Pay CIBC minimum"
+              value={itemForm.label}
+              onChange={e => setItemForm(p => ({ ...p, label: e.target.value }))}
+            />
           </div>
+          <div className="form-group">
+            <label style={labelStyle}>Amount ($)</label>
+            <input
+              style={inputStyle}
+              type="number"
+              inputMode="decimal"
+              placeholder="Optional"
+              value={itemForm.amount}
+              onChange={e => setItemForm(p => ({ ...p, amount: e.target.value }))}
+            />
+          </div>
+          <div className="form-group">
+            <label style={labelStyle}>Category</label>
+            <select
+              style={inputStyle}
+              value={itemForm.category}
+              onChange={e => setItemForm(p => ({ ...p, category: e.target.value }))}
+            >
+              {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
+                <option key={k} value={k}>{v}</option>
+              ))}
+            </select>
+          </div>
+          <div className="form-group">
+            <label style={labelStyle}>Due Day</label>
+            <input
+              style={inputStyle}
+              type="number"
+              placeholder="e.g. 15"
+              value={itemForm.due_day}
+              onChange={e => setItemForm(p => ({ ...p, due_day: e.target.value }))}
+            />
+          </div>
+        </div>
 
-          {/* ── Add item form ── */}
-          {showItemForm && (
-            <div className="card" style={{ marginBottom:16, border:`1.5px solid ${C.blue}` }}>
-              <div className="card-title" style={{ marginBottom:14 }}>New Checklist Item</div>
-              <div className="form-grid-2">
-                <div className="form-group">
-                  <label style={labelStyle}>Label *</label>
-                  <input
-                    style={inputStyle}
-                    placeholder="e.g. Pay CIBC minimum"
-                    value={itemForm.label}
-                    onChange={e => setItemForm(p => ({ ...p, label: e.target.value }))}
-                  />
-                </div>
-                <div className="form-group">
-                  <label style={labelStyle}>Amount ($)</label>
-                  <input
-                    style={inputStyle}
-                    type="number"
-                    inputMode="decimal"
-                    placeholder="Optional"
-                    value={itemForm.amount}
-                    onChange={e => setItemForm(p => ({ ...p, amount: e.target.value }))}
-                  />
-                </div>
-                <div className="form-group">
-                  <label style={labelStyle}>Category</label>
-                  <select
-                    style={inputStyle}
-                    value={itemForm.category}
-                    onChange={e => setItemForm(p => ({ ...p, category: e.target.value }))}
-                  >
-                    {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
-                      <option key={k} value={k}>{v}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label style={labelStyle}>Due Day</label>
-                  <input
-                    style={inputStyle}
-                    type="number"
-                    placeholder="e.g. 15"
-                    value={itemForm.due_day}
-                    onChange={e => setItemForm(p => ({ ...p, due_day: e.target.value }))}
-                  />
-                </div>
-              </div>
-
-              {/* Auto debit toggle */}
-              <div
-                onClick={() => setItemForm(p => ({ ...p, is_auto_debit: !p.is_auto_debit }))}
-                style={{
-                  display:      "flex",
-                  alignItems:   "center",
-                  gap:          10,
-                  padding:      "10px 12px",
-                  background:   itemForm.is_auto_debit ? "#fffbeb" : "#fafafa",
-                  border:       `1.5px solid ${itemForm.is_auto_debit ? C.amber : C.border}`,
-                  borderRadius: 8,
-                  cursor:       "pointer",
-                  marginBottom: 12,
-                  userSelect:   "none",
-                }}
-              >
-                <div style={{
-                  width:         18,
-                  height:        18,
-                  borderRadius:  4,
-                  border:        `2px solid ${itemForm.is_auto_debit ? C.amber : "#ccc"}`,
-                  background:    itemForm.is_auto_debit ? C.amber : "#fff",
-                  display:       "flex",
-                  alignItems:    "center",
-                  justifyContent:"center",
-                  flexShrink:    0,
-                }}>
-                  {itemForm.is_auto_debit && <span style={{ color:"#fff", fontSize:11, fontWeight:800 }}>✓</span>}
-                </div>
-                <div>
-                  <div style={{ fontWeight:600, fontSize:13, color: itemForm.is_auto_debit ? C.amber : C.text }}>
-                    ⚠️ Auto Debit
-                  </div>
-                  <div style={{ fontSize:11, color:C.muted }}>
-                    Mark as automatic payment
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ display:"flex", gap:8 }}>
-                <button
-                  className="btn-primary"
-                  onClick={handleAddItem}
-                  disabled={saving}
-                  style={{ flex:1 }}
-                >
-                  {saving ? "Adding..." : "Add Item"}
-                </button>
-                <button className="btn-secondary" onClick={() => setShowItemForm(false)}>
-                  Cancel
-                </button>
-              </div>
+        {/* Auto debit toggle */}
+        <div
+          onClick={() => setItemForm(p => ({ ...p, is_auto_debit: !p.is_auto_debit }))}
+          style={{
+            display:      "flex",
+            alignItems:   "center",
+            gap:          10,
+            padding:      "10px 12px",
+            background:   itemForm.is_auto_debit ? "#fffbeb" : "#fafafa",
+            border:       `1.5px solid ${itemForm.is_auto_debit ? C.amber : C.border}`,
+            borderRadius: 8,
+            cursor:       "pointer",
+            marginBottom: 12,
+            userSelect:   "none",
+          }}
+        >
+          <div style={{
+            width:         18,
+            height:        18,
+            borderRadius:  4,
+            border:        `2px solid ${itemForm.is_auto_debit ? C.amber : "#ccc"}`,
+            background:    itemForm.is_auto_debit ? C.amber : "#fff",
+            display:       "flex",
+            alignItems:    "center",
+            justifyContent:"center",
+            flexShrink:    0,
+          }}>
+            {itemForm.is_auto_debit && (
+              <span style={{ color:"#fff", fontSize:11, fontWeight:800 }}>✓</span>
+            )}
+          </div>
+          <div>
+            <div style={{ fontWeight:600, fontSize:13, color: itemForm.is_auto_debit ? C.amber : C.text }}>
+              ⚠️ Auto Debit
             </div>
-          )}
+            <div style={{ fontSize:11, color:C.muted }}>Mark as automatic payment</div>
+          </div>
+        </div>
 
-          {/* ── Checklist items ── */}
-          {checklist.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-icon">☑️</div>
-              <div style={{ fontWeight:600, color:"#ccc", fontSize:15, marginBottom:6 }}>
-                No checklist items yet
-              </div>
-              <div style={{ fontSize:13, color:"#ccc" }}>
-                Add items to track your monthly payments
-              </div>
-            </div>
-          ) : (
+        <div style={{ display:"flex", gap:8 }}>
+          <button
+            className="btn-primary"
+            onClick={handleAddItem}
+            disabled={saving}
+            style={{ flex:1 }}
+          >
+            {saving ? "Adding..." : "Add Item"}
+          </button>
+          <button className="btn-secondary" onClick={() => setShowItemForm(false)}>
+            Cancel
+          </button>
+        </div>
+      </div>
+    )}
+
+    {/* ── Checklist items sorted by due day ── */}
+    {checklist.length === 0 ? (
+      <div className="empty-state">
+        <div className="empty-icon">☑️</div>
+        <div style={{ fontWeight:600, color:"#ccc", fontSize:15, marginBottom:6 }}>
+          No checklist items yet
+        </div>
+        <div style={{ fontSize:13, color:"#ccc" }}>
+          Add items to track your monthly payments
+        </div>
+      </div>
+    ) : (
+      <div style={{
+        background:   C.card,
+        border:       `1px solid ${C.border}`,
+        borderRadius: 12,
+        overflow:     "hidden",
+        boxShadow:    "0 1px 3px rgba(0,0,0,0.04)",
+      }}>
+        {/* Progress bar */}
+        <div style={{ padding:"14px 18px", borderBottom:`1px solid ${C.border}` }}>
+          <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, marginBottom:6, fontWeight:600 }}>
+            <span style={{ color:C.muted }}>Progress</span>
+            <span style={{ color: completedItems === checklist.length ? C.green : C.blue }}>
+              {completedItems}/{checklist.length} complete
+            </span>
+          </div>
+          <div style={{ background:"#f0f0f0", borderRadius:100, height:6, overflow:"hidden" }}>
             <div style={{
-              background:   C.card,
-              border:       `1px solid ${C.border}`,
-              borderRadius: 12,
-              overflow:     "hidden",
-              boxShadow:    "0 1px 3px rgba(0,0,0,0.04)",
-            }}>
-              {/* Progress bar */}
-              <div style={{ padding:"14px 18px", borderBottom:`1px solid ${C.border}` }}>
-                <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, marginBottom:6, fontWeight:600 }}>
-                  <span style={{ color:C.muted }}>Progress</span>
-                  <span style={{ color: completedItems === checklist.length ? C.green : C.blue }}>
-                    {completedItems}/{checklist.length} complete
-                  </span>
-                </div>
-                <div style={{ background:"#f0f0f0", borderRadius:100, height:6, overflow:"hidden" }}>
-                  <div style={{
-                    height:       "100%",
-                    borderRadius: 100,
-                    background:   completedItems === checklist.length ? C.green : C.blue,
-                    width:        `${checklist.length > 0 ? (completedItems/checklist.length)*100 : 0}%`,
-                    transition:   "width 0.6s",
-                  }} />
-                </div>
+              height:       "100%",
+              borderRadius: 100,
+              background:   completedItems === checklist.length ? C.green : C.blue,
+              width:        `${checklist.length > 0 ? (completedItems/checklist.length)*100 : 0}%`,
+              transition:   "width 0.6s",
+            }} />
+          </div>
+        </div>
+
+        {/* ── Groups sorted by due day ── */}
+        {(() => {
+          const today = new Date().getDate();
+
+          const sorted = [...checklist].sort((a, b) => {
+            const dayA = a.due_day || 99;
+            const dayB = b.due_day || 99;
+            return dayA - dayB;
+          });
+
+          const overdue  = sorted.filter(i => i.due_day && i.due_day < today  && !i.is_completed);
+          const dueToday = sorted.filter(i => i.due_day && i.due_day === today && !i.is_completed);
+          const upcoming = sorted.filter(i => i.due_day && i.due_day > today  && !i.is_completed);
+          const noDate   = sorted.filter(i => !i.due_day && !i.is_completed);
+          const completed= sorted.filter(i => i.is_completed);
+
+          const groups = [
+            { label:"🔴 Overdue",     items:overdue,   color:"#fff1f2", borderColor:"#fecdd3", textColor:"#e11d48" },
+            { label:"🔔 Due Today",   items:dueToday,  color:"#fffbeb", borderColor:"#fde68a", textColor:"#d97706" },
+            { label:"📅 Upcoming",    items:upcoming,  color:"#ffffff", borderColor:C.border,  textColor:C.muted   },
+            { label:"📋 No Due Date", items:noDate,    color:"#ffffff", borderColor:C.border,  textColor:C.muted   },
+            { label:"✅ Completed",   items:completed, color:"#f0fdf4", borderColor:"#bbf7d0", textColor:"#059669" },
+          ].filter(g => g.items.length > 0);
+
+          return groups.map(group => (
+            <div key={group.label}>
+              {/* Group header */}
+              <div style={{
+                padding:       "8px 18px",
+                background:    group.color,
+                fontSize:      11,
+                fontWeight:    700,
+                color:         group.textColor,
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+                borderBottom:  `1px solid ${group.borderColor}`,
+                borderTop:     `1px solid ${group.borderColor}`,
+              }}>
+                {group.label} ({group.items.length})
               </div>
 
-              {/* Items grouped by category */}
-              {Object.entries(CATEGORY_LABELS).map(([catKey, catLabel]) => {
-                const items = checklist.filter(i => i.category === catKey);
-                if (items.length === 0) return null;
-                return (
-                  <div key={catKey}>
-                    <div style={{
-                      padding:     "8px 18px",
-                      background:  "#f6f8fa",
-                      fontSize:    11,
-                      fontWeight:  700,
-                      color:       C.muted,
-                      textTransform:"uppercase",
-                      letterSpacing:"0.5px",
-                      borderBottom:`1px solid ${C.border}`,
-                    }}>
-                      {catLabel}
-                    </div>
-                    {items.map((item, idx) => (
-                      <div
-                        key={item.id}
-                        style={{
-                          display:      "flex",
-                          alignItems:   "center",
-                          gap:          12,
-                          padding:      "13px 18px",
-                          borderBottom: idx < items.length - 1 ? `1px solid #f5f5f5` : "none",
-                          background:   item.is_completed ? "#f0fdf4" : "#ffffff",
-                          transition:   "background 0.15s",
-                        }}
-                      >
-                        {/* Toggle checkbox */}
-                        <div
-                          onClick={() => handleToggle(item.id)}
-                          style={{
-                            width:         24,
-                            height:        24,
-                            borderRadius:  6,
-                            border:        `2px solid ${item.is_completed ? C.green : "#ccc"}`,
-                            background:    item.is_completed ? C.green : "#fff",
-                            display:       "flex",
-                            alignItems:    "center",
-                            justifyContent:"center",
-                            cursor:        "pointer",
-                            flexShrink:    0,
-                            transition:    "all 0.15s",
-                          }}
-                        >
-                          {item.is_completed && (
-                            <span style={{ color:"#fff", fontSize:13, fontWeight:800 }}>✓</span>
-                          )}
-                        </div>
-
-                        {/* Label */}
-                        <div style={{ flex:1, minWidth:0 }}>
-                          <div style={{
-                            fontWeight:      600,
-                            fontSize:        13,
-                            color:           item.is_completed ? C.muted : C.text,
-                            textDecoration:  item.is_completed ? "line-through" : "none",
-                            letterSpacing:   "-0.1px",
-                          }}>
-                            {item.is_auto_debit && "⚠️ "}{item.label}
-                          </div>
-                          {item.due_day && (
-                            <div style={{ fontSize:11, color:C.muted, marginTop:1 }}>
-                              Due: day {item.due_day}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Amount */}
-                        {item.amount && (
-                          <div style={{ fontWeight:700, fontSize:14, color:C.text, flexShrink:0 }}>
-                            {fmt(item.amount)}
-                          </div>
-                        )}
-
-                        {/* Delete */}
-                        <button
-                          onClick={() => handleDeleteItem(item.id)}
-                          style={{
-                            background:   "transparent",
-                            border:       "none",
-                            color:        "#ccc",
-                            cursor:       "pointer",
-                            fontSize:     14,
-                            padding:      "2px 6px",
-                            borderRadius: 4,
-                            flexShrink:   0,
-                          }}
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ))}
+              {/* Items */}
+              {group.items.map((item, idx) => (
+                <div
+                  key={item.id}
+                  style={{
+                    display:      "flex",
+                    alignItems:   "center",
+                    gap:          12,
+                    padding:      "13px 18px",
+                    borderBottom: idx < group.items.length - 1
+                      ? `1px solid #f5f5f5`
+                      : "none",
+                    background:   item.is_completed ? "#f0fdf4" : "#ffffff",
+                    transition:   "background 0.15s",
+                  }}
+                >
+                  {/* Toggle checkbox */}
+                  <div
+                    onClick={() => handleToggle(item.id)}
+                    style={{
+                      width:         24,
+                      height:        24,
+                      borderRadius:  6,
+                      border:        `2px solid ${item.is_completed ? C.green : "#ccc"}`,
+                      background:    item.is_completed ? C.green : "#fff",
+                      display:       "flex",
+                      alignItems:    "center",
+                      justifyContent:"center",
+                      cursor:        "pointer",
+                      flexShrink:    0,
+                      transition:    "all 0.15s",
+                    }}
+                  >
+                    {item.is_completed && (
+                      <span style={{ color:"#fff", fontSize:13, fontWeight:800 }}>✓</span>
+                    )}
                   </div>
-                );
-              })}
+
+                  {/* Label */}
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{
+                      fontWeight:     600,
+                      fontSize:       13,
+                      color:          item.is_completed ? C.muted : C.text,
+                      textDecoration: item.is_completed ? "line-through" : "none",
+                      letterSpacing:  "-0.1px",
+                    }}>
+                      {item.is_auto_debit && "⚠️ "}{item.label}
+                    </div>
+                    <div style={{ display:"flex", gap:8, marginTop:2, flexWrap:"wrap" }}>
+                      {/* Category badge */}
+                      <span style={{
+                        fontSize:     10,
+                        fontWeight:   600,
+                        color:        C.muted,
+                        background:   "#f6f8fa",
+                        padding:      "1px 6px",
+                        borderRadius: 4,
+                        border:       `1px solid ${C.border}`,
+                      }}>
+                        {CATEGORY_LABELS[item.category]}
+                      </span>
+                      {/* Due day info */}
+                      {item.due_day && !item.is_completed && (
+                        <span style={{
+                          fontSize:   10,
+                          fontWeight: 600,
+                          color:      item.due_day < today
+                            ? "#e11d48"
+                            : item.due_day === today
+                            ? "#d97706"
+                            : C.muted,
+                        }}>
+                          Day {item.due_day}
+                          {item.due_day === today && " — TODAY!"}
+                          {item.due_day < today && ` — ${today - item.due_day} days overdue`}
+                          {item.due_day > today && ` — ${item.due_day - today} days left`}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Amount */}
+                  {item.amount && (
+                    <div style={{
+                      fontWeight:    700,
+                      fontSize:      14,
+                      color:         item.is_completed ? C.muted : C.text,
+                      flexShrink:    0,
+                      letterSpacing: "-0.3px",
+                    }}>
+                      {fmt(item.amount)}
+                    </div>
+                  )}
+
+                  {/* Delete */}
+                  <button
+                    onClick={() => handleDeleteItem(item.id)}
+                    style={{
+                      background:   "transparent",
+                      border:       "none",
+                      color:        "#ccc",
+                      cursor:       "pointer",
+                      fontSize:     14,
+                      padding:      "2px 6px",
+                      borderRadius: 4,
+                      flexShrink:   0,
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
             </div>
-          )}
-        </>
-      )}
+          ));
+        })()}
+      </div>
+    )}
+  </>
+)}
 
       {/* ════════════════════════════════════
           TAB 3 — EMERGENCY FUND
@@ -933,10 +1122,10 @@ export default function FinancialPlanner({ formatAmount }) {
                 </span>
                 <div>
                   <div style={{
-                    fontWeight: 700,
-                    fontSize:   14,
-                    color:      emergencyFund.is_funded ? C.green : C.amber,
-                    marginBottom:3,
+                    fontWeight:   700,
+                    fontSize:     14,
+                    color:        emergencyFund.is_funded ? C.green : C.amber,
+                    marginBottom: 3,
                   }}>
                     {emergencyFund.is_funded
                       ? "Emergency fund fully funded!"
@@ -955,9 +1144,9 @@ export default function FinancialPlanner({ formatAmount }) {
               {/* Stats */}
               <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12, marginBottom:20 }}>
                 {[
-                  { label:"Current",     value:fmt(emergencyFund.current_balance), color:C.green },
-                  { label:"Target",      value:fmt(emergencyFund.target_amount),   color:C.text  },
-                  { label:"Monthly",     value:fmt(emergencyFund.monthly_contribution), color:C.blue },
+                  { label:"Current",  value:fmt(emergencyFund.current_balance),    color:C.green },
+                  { label:"Target",   value:fmt(emergencyFund.target_amount),      color:C.text  },
+                  { label:"Monthly",  value:fmt(emergencyFund.monthly_contribution),color:C.blue  },
                 ].map(s => (
                   <div key={s.label} style={{
                     background:   "#fafafa",
@@ -1044,6 +1233,16 @@ export default function FinancialPlanner({ formatAmount }) {
             </div>
           )}
         </>
+      )}
+
+      {/* ── Confirm Modal ── */}
+      {confirmItem && (
+        <ChecklistConfirmModal
+          item={confirmItem}
+          debt={debts.find(d => d.id === confirmItem.linked_debt)}
+          onConfirm={handleConfirm}
+          onCancel={() => setConfirmItem(null)}
+        />
       )}
     </>
   );

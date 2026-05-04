@@ -4,7 +4,7 @@
 
 const BASE_URL = process.env.REACT_APP_API_URL || "http://127.0.0.1:8000/api";
 
-// ── Helpers ───────────────────────────────────
+// ── Helpers ──
 function getToken() {
   return localStorage.getItem("access_token");
 }
@@ -19,7 +19,7 @@ function getHeaders(auth = true) {
 }
 
 async function handleResponse(res) {
-  if (res.status === 204) return null; // DELETE returns no content
+  if (res.status === 204) return null;
   const data = await res.json();
   if (!res.ok) {
     throw new Error(data.error || data.detail || JSON.stringify(data));
@@ -74,6 +74,18 @@ export const authAPI = {
     const res = await fetch(`${BASE_URL}/auth/reset-password/`, {
       method: "POST", headers: getHeaders(false),
       body: JSON.stringify({ uid, token, password }),
+    });
+    return handleResponse(res);
+  },
+
+  changePassword: async (currentPassword, newPassword, newPassword2) => {
+    const res = await fetch(`${BASE_URL}/auth/change-password/`, {
+      method: "POST", headers: getHeaders(true),
+      body: JSON.stringify({
+        old_password:  currentPassword,
+        new_password:  newPassword,
+        new_password2: newPassword2,
+      }),
     });
     return handleResponse(res);
   },
@@ -170,7 +182,7 @@ export const incomeAPI = {
 };
 
 // ─────────────────────────────────────────────
-// DEBTS
+// DEBTS (old expenses app — kept for compatibility)
 // ─────────────────────────────────────────────
 export const debtsAPI = {
   getAll: async () => {
@@ -302,6 +314,14 @@ export const financialPlannerAPI = {
     const res = await fetch(`${FP_URL}/plans/${id}/`, {
       method: "PATCH", headers: getHeaders(true),
       body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+  },
+
+  // ── Rollover ──
+  rollover: async () => {
+    const res = await fetch(`${FP_URL}/plans/rollover/`, {
+      method: "POST", headers: getHeaders(true),
     });
     return handleResponse(res);
   },
