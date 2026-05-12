@@ -1,6 +1,7 @@
 import { useState }                from "react";
 import { useFinancialPlanner }     from "../hooks/useFinancialPlanner";
 import ChecklistConfirmModal       from "../components/ChecklistConfirmModal";
+import PaycheckAllocation          from "./PaycheckAllocation";
 
 const C = {
   blue:    "#0070f3",
@@ -64,7 +65,7 @@ export default function FinancialPlanner({ formatAmount, onAddExpense }) {
     addDebt, updateDebt, deleteDebt,
     updateEmergencyFund,
     addChecklistItem, toggleChecklistItem, deleteChecklistItem,
-    rolloverToNextMonth,
+    rolloverToNextMonth, generateChecklist,
   } = useFinancialPlanner();
 
   const [activeTab,    setActiveTab]    = useState("debts");
@@ -76,24 +77,15 @@ export default function FinancialPlanner({ formatAmount, onAddExpense }) {
   const [confirmItem,  setConfirmItem]  = useState(null);
 
   const [debtForm, setDebtForm] = useState({
-    name:                "",
-    debt_type:           "credit_card",
-    current_balance:     "",
-    annual_interest_rate:"",
-    minimum_payment:     "",
-    credit_limit:        "",
-    due_day:             "",
-    avalanche_order:     "",
-    notes:               "",
+    name:"", debt_type:"credit_card",
+    current_balance:"", annual_interest_rate:"",
+    minimum_payment:"", credit_limit:"",
+    due_day:"", avalanche_order:"", notes:"",
   });
 
   const [itemForm, setItemForm] = useState({
-    label:        "",
-    amount:       "",
-    category:     "debt_min",
-    due_day:      "",
-    is_auto_debit:false,
-    sort_order:   0,
+    label:"", amount:"", category:"debt_min",
+    due_day:"", is_auto_debit:false, sort_order:0,
   });
 
   const [fundBalance, setFundBalance] = useState("");
@@ -176,11 +168,31 @@ export default function FinancialPlanner({ formatAmount, onAddExpense }) {
     }
   }
 
+  async function handleGenerateChecklist() {
+    if (!window.confirm(
+      "Auto-generate checklist from your debts?\n\n" +
+      "This will:\n" +
+      "• Sort debts by highest APR (avalanche method)\n" +
+      "• Create minimum payment items for each debt\n" +
+      "• Add an extra payment item for your #1 priority debt\n" +
+      "• Add emergency savings item\n\n" +
+      "⚠️ Existing debt payment items will be replaced!"
+    )) return;
+    try {
+      const result = await generateChecklist();
+      showMsg(`✅ ${result.message}`);
+      setActiveTab("checklist");
+    } catch (err) {
+      showMsg(err.message || "Failed to generate checklist");
+    }
+  }
+
   // ── Checklist handlers ──
   async function handleToggle(id) {
     const item = checklist.find(i => i.id === id);
     if (!item) return;
 
+    // Unticking — no confirmation needed
     if (item.is_completed) {
       try {
         await toggleChecklistItem(id);
@@ -191,6 +203,7 @@ export default function FinancialPlanner({ formatAmount, onAddExpense }) {
       return;
     }
 
+    // Ticking ON — show confirm modal
     setConfirmItem(item);
   }
 
@@ -211,9 +224,9 @@ export default function FinancialPlanner({ formatAmount, onAddExpense }) {
           notes:    `From monthly checklist — ${item.category}`,
         });
         showMsg("✅ Marked complete + added as expense!");
-      } else if (result.debt_updated) {
+      } else if (result?.debt_updated) {
         showMsg(`✅ Balance updated! New: $${parseFloat(result.debt_updated.current_balance).toFixed(2)}`);
-      } else if (result.fund_updated) {
+      } else if (result?.fund_updated) {
         showMsg(`✅ Emergency fund: $${parseFloat(result.fund_updated.current_balance).toFixed(2)}`);
       } else {
         showMsg("✅ Marked complete!");
@@ -314,9 +327,7 @@ export default function FinancialPlanner({ formatAmount, onAddExpense }) {
       {/* ── Page header ── */}
       <div style={{ marginBottom:24 }}>
         <div className="page-title">Financial Planner</div>
-        <div className="page-sub">
-          Avalanche debt payoff · Monthly checklist · Emergency fund
-        </div>
+        <div className="page-sub">Avalanche debt payoff · Monthly checklist · Emergency fund</div>
       </div>
 
       {/* ── Auto rollover notification ── */}
@@ -345,40 +356,15 @@ export default function FinancialPlanner({ formatAmount, onAddExpense }) {
       {/* ── Summary cards ── */}
       <div className="stat-grid" style={{ marginBottom:24 }}>
         {[
-          {
-            label:    "Total Debt",
-            value:    fmt(totalDebt),
-            sub:      `${debts.filter(d => d.is_active).length} active debts`,
-            gradient: "linear-gradient(135deg, #e11d48, #be123c)",
-          },
-          {
-            label:    "Monthly Minimums",
-            value:    fmt(totalMinimums),
-            sub:      "total minimum payments",
-            gradient: "linear-gradient(135deg, #0070f3, #0050b3)",
-          },
-          {
-            label:    "Emergency Fund",
-            value:    emergencyFund ? fmt(emergencyFund.current_balance) : "$0",
-            sub:      emergencyFund
-              ? `${emergencyFund.progress_percent}% of $${emergencyFund.target_amount}`
-              : "Not set up",
-            gradient: emergencyFund?.is_funded
-              ? "linear-gradient(135deg, #059669, #047857)"
-              : "linear-gradient(135deg, #f59e0b, #d97706)",
-          },
-          {
-            label:    "Checklist",
-            value:    `${completedItems}/${checklist.length}`,
-            sub:      "items completed this month",
-            gradient: completedItems === checklist.length && checklist.length > 0
-              ? "linear-gradient(135deg, #059669, #047857)"
-              : "linear-gradient(135deg, #7c3aed, #6d28d9)",
-          },
+          { label:"Total Debt",       value:fmt(totalDebt),      sub:`${debts.filter(d=>d.is_active).length} active debts`, gradient:"linear-gradient(135deg, #e11d48, #be123c)" },
+          { label:"Monthly Minimums", value:fmt(totalMinimums),  sub:"total minimum payments",                              gradient:"linear-gradient(135deg, #0070f3, #0050b3)" },
+          { label:"Emergency Fund",   value:emergencyFund?fmt(emergencyFund.current_balance):"$0",
+            sub:emergencyFund?`${emergencyFund.progress_percent}% of $${emergencyFund.target_amount}`:"Not set up",
+            gradient:emergencyFund?.is_funded?"linear-gradient(135deg, #059669, #047857)":"linear-gradient(135deg, #f59e0b, #d97706)" },
+          { label:"Checklist",        value:`${completedItems}/${checklist.length}`, sub:"items completed this month",
+            gradient:completedItems===checklist.length&&checklist.length>0?"linear-gradient(135deg, #059669, #047857)":"linear-gradient(135deg, #7c3aed, #6d28d9)" },
         ].map(card => (
-          <div key={card.label} style={{
-            background:card.gradient, borderRadius:12, padding:20, color:"#fff",
-          }}>
+          <div key={card.label} style={{ background:card.gradient, borderRadius:12, padding:20, color:"#fff" }}>
             <div style={{ fontSize:10, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.8px", opacity:0.75, marginBottom:8 }}>{card.label}</div>
             <div style={{ fontSize:22, fontWeight:800, letterSpacing:"-0.8px", lineHeight:1.1, marginBottom:6 }}>{card.value}</div>
             <div style={{ fontSize:11, opacity:0.65, fontWeight:500 }}>{card.sub}</div>
@@ -388,38 +374,24 @@ export default function FinancialPlanner({ formatAmount, onAddExpense }) {
 
       {/* ── Tabs ── */}
       <div style={{
-        display:    "flex",
-        gap:        4,
-        marginBottom:20,
-        background: C.card,
-        border:     `1px solid ${C.border}`,
-        borderRadius:10,
-        padding:    4,
-        overflowX:  "auto",
-        WebkitOverflowScrolling:"touch",
+        display:"flex", gap:4, marginBottom:20,
+        background:C.card, border:`1px solid ${C.border}`,
+        borderRadius:10, padding:4,
+        overflowX:"auto", WebkitOverflowScrolling:"touch",
       }}>
         {[
-          { id:"debts",     label:"💳 Debts"     },
-          { id:"checklist", label:"☑️ Checklist" },
-          { id:"fund",      label:"🛡️ Fund"      },
+          { id:"debts",     label:"💳 Debts"      },
+          { id:"checklist", label:"☑️ Checklist"  },
+          { id:"fund",      label:"🛡️ Fund"       },
+          { id:"paychecks", label:"💰 Paychecks"  },
         ].map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            style={{
-              background:   activeTab === tab.id ? C.blue : "transparent",
-              color:        activeTab === tab.id ? "#fff" : C.muted,
-              border:       "none",
-              padding:      "8px 18px",
-              borderRadius: 7,
-              fontWeight:   600,
-              fontSize:     13,
-              fontFamily:   "inherit",
-              cursor:       "pointer",
-              transition:   "all 0.15s",
-              whiteSpace:   "nowrap",
-            }}
-          >
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
+            background:   activeTab===tab.id ? C.blue : "transparent",
+            color:        activeTab===tab.id ? "#fff" : C.muted,
+            border:       "none", padding:"8px 18px", borderRadius:7,
+            fontWeight:   600, fontSize:13, fontFamily:"inherit",
+            cursor:       "pointer", transition:"all 0.15s", whiteSpace:"nowrap",
+          }}>
             {tab.label}
           </button>
         ))}
@@ -430,10 +402,23 @@ export default function FinancialPlanner({ formatAmount, onAddExpense }) {
       ════════════════════════════════════ */}
       {activeTab === "debts" && (
         <>
-          <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:16 }}>
-            <button className="btn-primary" onClick={openAddDebt} style={{ padding:"9px 20px", fontSize:13 }}>
-              + Add Debt
-            </button>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16, flexWrap:"wrap", gap:8 }}>
+            <div style={{ fontSize:13, color:C.muted }}>
+              Sorted by highest APR — avalanche method
+            </div>
+            <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+              {debts.length > 0 && (
+                <button
+                  onClick={handleGenerateChecklist}
+                  style={{ background:"#f0fdf4", color:C.green, border:"1px solid #bbf7d0", padding:"9px 16px", borderRadius:8, fontWeight:600, fontSize:13, cursor:"pointer", fontFamily:"inherit", whiteSpace:"nowrap" }}
+                >
+                  ⚡ Generate Checklist
+                </button>
+              )}
+              <button className="btn-primary" onClick={openAddDebt} style={{ padding:"9px 20px", fontSize:13 }}>
+                + Add Debt
+              </button>
+            </div>
           </div>
 
           {/* Add/Edit form */}
@@ -477,8 +462,8 @@ export default function FinancialPlanner({ formatAmount, onAddExpense }) {
                   <input style={inputStyle} type="number" placeholder="e.g. 15" value={debtForm.due_day} onChange={e => setDebtForm(p => ({ ...p, due_day:e.target.value }))} />
                 </div>
                 <div className="form-group">
-                  <label style={labelStyle}>Avalanche Priority</label>
-                  <input style={inputStyle} type="number" placeholder="1 = highest priority" value={debtForm.avalanche_order} onChange={e => setDebtForm(p => ({ ...p, avalanche_order:e.target.value }))} />
+                  <label style={labelStyle}>Avalanche Priority (auto-set)</label>
+                  <input style={{ ...inputStyle, background:"#f6f8fa", color:C.muted }} type="number" placeholder="Auto-calculated from APR" value={debtForm.avalanche_order} readOnly />
                 </div>
               </div>
               <div className="form-group">
@@ -505,7 +490,6 @@ export default function FinancialPlanner({ formatAmount, onAddExpense }) {
             const utilPct = debt.utilization_percent;
             const colors  = [C.red, C.amber, C.blue, "#7c3aed", C.green, "#0891b2"];
             const color   = colors[i % colors.length];
-
             return (
               <div key={debt.id} className="card" style={{ marginBottom:14, border:debt.is_active?`1px solid ${C.border}`:"1px dashed #eaeaea", opacity:debt.is_active?1:0.6 }}>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:14 }}>
@@ -579,11 +563,8 @@ export default function FinancialPlanner({ formatAmount, onAddExpense }) {
                 {checklist.length > 0 && completedItems === checklist.length && " 🎉"}
               </div>
             </div>
-            <div style={{ display:"flex", gap:8 }}>
-              <button
-                onClick={handleRollover}
-                style={{ background:"#f6f8fa", color:"#888", border:"1px solid #eaeaea", padding:"7px 12px", borderRadius:8, fontWeight:600, fontSize:11, cursor:"pointer", fontFamily:"inherit" }}
-              >
+            <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+              <button onClick={handleRollover} style={{ background:"#f6f8fa", color:"#888", border:"1px solid #eaeaea", padding:"7px 12px", borderRadius:8, fontWeight:600, fontSize:11, cursor:"pointer", fontFamily:"inherit" }}>
                 🔄 Force Rollover
               </button>
               <button className="btn-primary" onClick={() => setShowItemForm(p => !p)} style={{ padding:"9px 18px", fontSize:13 }}>
@@ -639,12 +620,14 @@ export default function FinancialPlanner({ formatAmount, onAddExpense }) {
             </div>
           )}
 
-          {/* Checklist items sorted by due day */}
+          {/* Checklist items */}
           {checklist.length === 0 ? (
             <div className="empty-state">
               <div className="empty-icon">☑️</div>
               <div style={{ fontWeight:600, color:"#ccc", fontSize:15, marginBottom:6 }}>No checklist items yet</div>
-              <div style={{ fontSize:13, color:"#ccc" }}>Add items to track your monthly payments</div>
+              <div style={{ fontSize:13, color:"#ccc" }}>
+                Go to Debts tab and click "⚡ Generate Checklist"
+              </div>
             </div>
           ) : (
             <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:12, overflow:"hidden", boxShadow:"0 1px 3px rgba(0,0,0,0.04)" }}>
@@ -685,7 +668,10 @@ export default function FinancialPlanner({ formatAmount, onAddExpense }) {
                     {group.items.map((item, idx) => (
                       <div key={item.id} style={{ display:"flex", alignItems:"center", gap:12, padding:"13px 18px", borderBottom:idx<group.items.length-1?`1px solid #f5f5f5`:"none", background:item.is_completed?"#f0fdf4":"#ffffff", transition:"background 0.15s" }}>
                         {/* Checkbox */}
-                        <div onClick={() => handleToggle(item.id)} style={{ width:24, height:24, borderRadius:6, border:`2px solid ${item.is_completed?C.green:"#ccc"}`, background:item.is_completed?C.green:"#fff", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0, transition:"all 0.15s" }}>
+                        <div
+                          onClick={() => handleToggle(item.id)}
+                          style={{ width:24, height:24, borderRadius:6, border:`2px solid ${item.is_completed?C.green:"#ccc"}`, background:item.is_completed?C.green:"#fff", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0, transition:"all 0.15s" }}
+                        >
                           {item.is_completed && <span style={{ color:"#fff", fontSize:13, fontWeight:800 }}>✓</span>}
                         </div>
 
@@ -731,218 +717,104 @@ export default function FinancialPlanner({ formatAmount, onAddExpense }) {
       )}
 
       {/* ════════════════════════════════════
-    TAB 3 — EMERGENCY FUND
-════════════════════════════════════ */}
-{activeTab === "fund" && (
-  <>
-    {emergencyFund ? (
-      <div className="card">
-        {/* Header */}
-        <div style={{
-          display:        "flex",
-          justifyContent: "space-between",
-          alignItems:     "center",
-          marginBottom:   20,
-          flexWrap:       "wrap",
-          gap:            10,
-        }}>
-          <div className="card-title">🛡️ Emergency Fund</div>
-          <button
-            className="btn-primary"
-            style={{ padding:"7px 16px", fontSize:12 }}
-            onClick={() => {
-              setFundBalance(emergencyFund.current_balance);
-              setEditingFund(true);
-            }}
-          >
-            ✏️ Update Balance
-          </button>
-        </div>
-
-        {/* Status banner */}
-        <div style={{
-          background:   emergencyFund.is_funded ? "#f0fdf4" : "#fffbeb",
-          border:       `1px solid ${emergencyFund.is_funded ? "#bbf7d0" : "#fde68a"}`,
-          borderRadius: 10,
-          padding:      "14px 16px",
-          marginBottom: 20,
-          display:      "flex",
-          gap:          12,
-          alignItems:   "flex-start",
-        }}>
-          <span style={{ fontSize:28, flexShrink:0 }}>
-            {emergencyFund.is_funded ? "🎉" : "🎯"}
-          </span>
-          <div style={{ minWidth:0 }}>
-            <div style={{
-              fontWeight:   700,
-              fontSize:     14,
-              color:        emergencyFund.is_funded ? C.green : C.amber,
-              marginBottom: 3,
-              wordBreak:    "break-word",
-            }}>
-              {emergencyFund.is_funded
-                ? "Emergency fund fully funded!"
-                : `${fmt(parseFloat(emergencyFund.target_amount) - parseFloat(emergencyFund.current_balance))} to go`
-              }
-            </div>
-            <div style={{ fontSize:12, color:C.muted }}>
-              {emergencyFund.is_funded
-                ? "All extra income now goes to avalanche target"
-                : `Contributing ${fmt(emergencyFund.monthly_contribution)}/month`
-              }
-            </div>
-          </div>
-        </div>
-
-        {/* Stats — 1 column on mobile, 3 on desktop */}
-        <div style={{
-          display:             "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
-          gap:                 12,
-          marginBottom:        20,
-        }}>
-          {[
-            { label:"Current Balance", value:fmt(emergencyFund.current_balance),     color:C.green },
-            { label:"Target",          value:fmt(emergencyFund.target_amount),       color:C.text  },
-            { label:"Monthly Contrib", value:fmt(emergencyFund.monthly_contribution), color:C.blue  },
-          ].map(s => (
-            <div key={s.label} style={{
-              background:   "#fafafa",
-              borderRadius: 10,
-              padding:      "14px 12px",
-              border:       "1px solid #f0f0f0",
-              textAlign:    "center",
-            }}>
-              <div style={{
-                fontSize:      10,
-                color:         C.muted,
-                fontWeight:    600,
-                textTransform: "uppercase",
-                letterSpacing: "0.5px",
-                marginBottom:  6,
-              }}>
-                {s.label}
+          TAB 3 — EMERGENCY FUND
+      ════════════════════════════════════ */}
+      {activeTab === "fund" && (
+        <>
+          {emergencyFund ? (
+            <div className="card">
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20, flexWrap:"wrap", gap:10 }}>
+                <div className="card-title">🛡️ Emergency Fund</div>
+                <button className="btn-primary" style={{ padding:"7px 16px", fontSize:12 }} onClick={() => { setFundBalance(emergencyFund.current_balance); setEditingFund(true); }}>
+                  ✏️ Update Balance
+                </button>
               </div>
-              <div style={{
-                fontWeight:    800,
-                fontSize:      16,
-                color:         s.color,
-                letterSpacing: "-0.5px",
-                wordBreak:     "break-word",
-              }}>
-                {s.value}
-              </div>
-            </div>
-          ))}
-        </div>
 
-        {/* Progress bar */}
-        <div style={{ marginBottom:16 }}>
-          <div style={{
-            display:        "flex",
-            justifyContent: "space-between",
-            fontSize:       12,
-            marginBottom:   6,
-            fontWeight:     600,
-            flexWrap:       "wrap",
-            gap:            4,
-          }}>
-            <span style={{ color:C.muted }}>
-              {fmt(emergencyFund.current_balance)} of {fmt(emergencyFund.target_amount)}
-            </span>
-            <span style={{ color:emergencyFund.is_funded ? C.green : C.amber }}>
-              {emergencyFund.progress_percent}%
-            </span>
-          </div>
-          <div style={{ background:"#f0f0f0", borderRadius:100, height:12, overflow:"hidden" }}>
-            <div style={{
-              height:       "100%",
-              borderRadius: 100,
-              background:   emergencyFund.is_funded
-                ? C.green
-                : `linear-gradient(90deg, ${C.amber}, ${C.green})`,
-              width:        `${emergencyFund.progress_percent}%`,
-              transition:   "width 0.6s",
-            }} />
-          </div>
-          {!emergencyFund.is_funded && (
-            <div style={{ fontSize:11, color:C.muted, marginTop:6 }}>
-              {fmt(parseFloat(emergencyFund.target_amount) - parseFloat(emergencyFund.current_balance))} remaining to reach goal
+              <div style={{ background:emergencyFund.is_funded?"#f0fdf4":"#fffbeb", border:`1px solid ${emergencyFund.is_funded?"#bbf7d0":"#fde68a"}`, borderRadius:10, padding:"14px 16px", marginBottom:20, display:"flex", gap:12, alignItems:"flex-start" }}>
+                <span style={{ fontSize:28, flexShrink:0 }}>{emergencyFund.is_funded?"🎉":"🎯"}</span>
+                <div style={{ minWidth:0 }}>
+                  <div style={{ fontWeight:700, fontSize:14, color:emergencyFund.is_funded?C.green:C.amber, marginBottom:3, wordBreak:"break-word" }}>
+                    {emergencyFund.is_funded ? "Emergency fund fully funded!" : `${fmt(parseFloat(emergencyFund.target_amount)-parseFloat(emergencyFund.current_balance))} to go`}
+                  </div>
+                  <div style={{ fontSize:12, color:C.muted }}>
+                    {emergencyFund.is_funded ? "All extra income now goes to avalanche target" : `Contributing ${fmt(emergencyFund.monthly_contribution)}/month`}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(120px,1fr))", gap:12, marginBottom:20 }}>
+                {[
+                  { label:"Current Balance", value:fmt(emergencyFund.current_balance),     color:C.green },
+                  { label:"Target",          value:fmt(emergencyFund.target_amount),       color:C.text  },
+                  { label:"Monthly Contrib", value:fmt(emergencyFund.monthly_contribution), color:C.blue  },
+                ].map(s => (
+                  <div key={s.label} style={{ background:"#fafafa", borderRadius:10, padding:"14px 12px", border:"1px solid #f0f0f0", textAlign:"center" }}>
+                    <div style={{ fontSize:10, color:C.muted, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:6 }}>{s.label}</div>
+                    <div style={{ fontWeight:800, fontSize:16, color:s.color, letterSpacing:"-0.5px", wordBreak:"break-word" }}>{s.value}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ marginBottom:16 }}>
+                <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, marginBottom:6, fontWeight:600, flexWrap:"wrap", gap:4 }}>
+                  <span style={{ color:C.muted }}>{fmt(emergencyFund.current_balance)} of {fmt(emergencyFund.target_amount)}</span>
+                  <span style={{ color:emergencyFund.is_funded?C.green:C.amber }}>{emergencyFund.progress_percent}%</span>
+                </div>
+                <div style={{ background:"#f0f0f0", borderRadius:100, height:12, overflow:"hidden" }}>
+                  <div style={{ height:"100%", borderRadius:100, background:emergencyFund.is_funded?C.green:`linear-gradient(90deg, ${C.amber}, ${C.green})`, width:`${emergencyFund.progress_percent}%`, transition:"width 0.6s" }} />
+                </div>
+                {!emergencyFund.is_funded && (
+                  <div style={{ fontSize:11, color:C.muted, marginTop:6 }}>
+                    {fmt(parseFloat(emergencyFund.target_amount)-parseFloat(emergencyFund.current_balance))} remaining to reach goal
+                  </div>
+                )}
+              </div>
+
+              {!emergencyFund.is_funded && parseFloat(emergencyFund.monthly_contribution) > 0 && (
+                <div style={{ background:"#f0f7ff", border:"1px solid #bfdbfe", borderRadius:8, padding:"10px 14px", marginBottom:16, fontSize:12, color:C.blue, fontWeight:500 }}>
+                  💡 At {fmt(emergencyFund.monthly_contribution)}/month you'll reach your goal in{" "}
+                  <strong>
+                    {Math.ceil((parseFloat(emergencyFund.target_amount)-parseFloat(emergencyFund.current_balance))/parseFloat(emergencyFund.monthly_contribution))} months
+                  </strong>
+                </div>
+              )}
+
+              {editingFund && (
+                <div style={{ background:"#f6f8fa", borderRadius:10, padding:14, border:"1px solid #eaeaea", marginTop:8 }}>
+                  <div style={{ fontWeight:700, fontSize:13, marginBottom:10 }}>Update Balance</div>
+                  <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                    <input style={{ ...inputStyle, flex:1, minWidth:120 }} type="number" inputMode="decimal" placeholder="New balance..." value={fundBalance} onChange={e => setFundBalance(e.target.value)} />
+                    <button className="btn-primary" onClick={handleUpdateFund} style={{ padding:"10px 20px" }}>Save</button>
+                    <button className="btn-secondary" onClick={() => setEditingFund(false)}>Cancel</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="empty-state">
+              <div className="empty-icon">🛡️</div>
+              <div style={{ fontWeight:600, color:"#ccc", fontSize:15 }}>Loading emergency fund...</div>
             </div>
           )}
-        </div>
+        </>
+      )}
 
-        {/* Months to goal */}
-        {!emergencyFund.is_funded && parseFloat(emergencyFund.monthly_contribution) > 0 && (
-          <div style={{
-            background:   "#f0f7ff",
-            border:       "1px solid #bfdbfe",
-            borderRadius: 8,
-            padding:      "10px 14px",
-            marginBottom: 16,
-            fontSize:     12,
-            color:        C.blue,
-            fontWeight:   500,
-          }}>
-            💡 At {fmt(emergencyFund.monthly_contribution)}/month you'll reach your goal in{" "}
-            <strong>
-              {Math.ceil(
-                (parseFloat(emergencyFund.target_amount) - parseFloat(emergencyFund.current_balance)) /
-                parseFloat(emergencyFund.monthly_contribution)
-              )} months
-            </strong>
-          </div>
-        )}
+      {/* ════════════════════════════════════
+          TAB 4 — PAYCHECK ALLOCATION
+      ════════════════════════════════════ */}
+      {activeTab === "paychecks" && (
+        <PaycheckAllocation formatAmount={formatAmount} />
+      )}
 
-        {/* Edit balance form */}
-        {editingFund && (
-          <div style={{
-            background:   "#f6f8fa",
-            borderRadius: 10,
-            padding:      14,
-            border:       "1px solid #eaeaea",
-            marginTop:    8,
-          }}>
-            <div style={{ fontWeight:700, fontSize:13, marginBottom:10 }}>
-              Update Balance
-            </div>
-            <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-              <input
-                style={{ ...inputStyle, flex:1, minWidth:120 }}
-                type="number"
-                inputMode="decimal"
-                placeholder="New balance..."
-                value={fundBalance}
-                onChange={e => setFundBalance(e.target.value)}
-              />
-              <button
-                className="btn-primary"
-                onClick={handleUpdateFund}
-                style={{ padding:"10px 20px" }}
-              >
-                Save
-              </button>
-              <button
-                className="btn-secondary"
-                onClick={() => setEditingFund(false)}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-    ) : (
-      <div className="empty-state">
-        <div className="empty-icon">🛡️</div>
-        <div style={{ fontWeight:600, color:"#ccc", fontSize:15 }}>
-          Loading emergency fund...
-        </div>
-      </div>
-    )}
-  </>
-    )}
+      {/* ── Confirm Modal ── */}
+      {confirmItem && (
+        <ChecklistConfirmModal
+          item={confirmItem}
+          debt={debts.find(d => d.id === confirmItem.linked_debt)}
+          onConfirm={handleConfirm}
+          onCancel={() => setConfirmItem(null)}
+        />
+      )}
     </>
   );
 }

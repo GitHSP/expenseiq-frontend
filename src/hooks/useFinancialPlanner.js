@@ -28,36 +28,29 @@ export function useFinancialPlanner() {
       let planData = await financialPlannerAPI.getCurrentPlan();
 
       // ── Auto rollover check ──
-      // If plan month != current month → auto generate new month
       const now          = new Date();
-      const currentMonth = now.getMonth() + 1; // 1-12
+      const currentMonth = now.getMonth() + 1;
       const currentYear  = now.getFullYear();
 
       if (
         planData &&
         (planData.month !== currentMonth || planData.year !== currentYear)
       ) {
-        // Old plan exists but it's a new month — auto rollover!
         try {
           const rolloverResult = await financialPlannerAPI.rollover();
           planData = rolloverResult.plan;
-          // Update debts with new interest-applied balances
           if (rolloverResult.debts_updated) {
             setDebts(rolloverResult.debts_updated);
           }
           setRolledOver(true);
-          // Hide the notification after 5 seconds
           setTimeout(() => setRolledOver(false), 5000);
-        } catch (rollErr) {
-          // Rollover might fail if plan already exists for this month
-          // In that case just get current plan
+        } catch {
           planData = await financialPlannerAPI.getCurrentPlan();
         }
       }
 
       setCurrentPlan(planData);
 
-      // ── Load checklist for current plan ──
       if (planData?.id) {
         const checklistData = await financialPlannerAPI.getChecklist(planData.id);
         setChecklist(Array.isArray(checklistData) ? checklistData : []);
@@ -78,21 +71,24 @@ export function useFinancialPlanner() {
   // ── Debt actions ──
   async function addDebt(data) {
     const newDebt = await financialPlannerAPI.createDebt(data);
-    setDebts(prev => [...prev, newDebt]
-      .sort((a, b) => a.avalanche_order - b.avalanche_order));
+    // Reload to get updated avalanche order
+    await loadData();
+    return newDebt;
   }
 
   async function updateDebt(id, data) {
     const updated = await financialPlannerAPI.updateDebt(id, data);
-    setDebts(prev => prev.map(d => d.id === id ? updated : d));
+    // Reload to get updated avalanche order
+    await loadData();
+    return updated;
   }
 
   async function deleteDebt(id) {
     await financialPlannerAPI.deleteDebt(id);
-    setDebts(prev => prev.filter(d => d.id !== id));
+    await loadData();
   }
 
-  // ── Emergency fund actions ──
+  // ── Emergency fund ──
   async function updateEmergencyFund(data) {
     const updated = await financialPlannerAPI.updateEmergencyFund(data);
     setEmergencyFund(updated);
@@ -103,26 +99,30 @@ export function useFinancialPlanner() {
     if (!currentPlan?.id) return;
     const newItem = await financialPlannerAPI.createChecklist(currentPlan.id, data);
     setChecklist(prev => [...prev, newItem]);
+    return newItem;
   }
 
   async function toggleChecklistItem(id) {
-    const result = await financialPlannerAPI.toggleChecklist(id);
+    const response = await financialPlannerAPI.toggleChecklist(id);
 
-    setChecklist(prev => prev.map(item =>
-      item.id === id ? result.item : item
+    // ── Handle both old and new response formats ──
+    const item = response?.item || response;
+
+    setChecklist(prev => prev.map(i =>
+      i.id === id ? item : i
     ));
 
-    if (result.debt_updated) {
+    if (response?.debt_updated) {
       setDebts(prev => prev.map(d =>
-        d.id === result.debt_updated.id ? result.debt_updated : d
+        d.id === response.debt_updated.id ? response.debt_updated : d
       ));
     }
 
-    if (result.fund_updated) {
-      setEmergencyFund(result.fund_updated);
+    if (response?.fund_updated) {
+      setEmergencyFund(response.fund_updated);
     }
 
-    return result;
+    return response;
   }
 
   async function deleteChecklistItem(id) {
@@ -130,9 +130,16 @@ export function useFinancialPlanner() {
     setChecklist(prev => prev.filter(item => item.id !== id));
   }
 
-  // ── Manual rollover (still available as backup) ──
+  // ── Rollover ──
   async function rolloverToNextMonth() {
     const result = await financialPlannerAPI.rollover();
+    await loadData();
+    return result;
+  }
+
+  // ── Generate checklist from debts ──
+  async function generateChecklist() {
+    const result = await financialPlannerAPI.generateChecklist();
     await loadData();
     return result;
   }
@@ -143,7 +150,7 @@ export function useFinancialPlanner() {
     addDebt, updateDebt, deleteDebt,
     updateEmergencyFund,
     addChecklistItem, toggleChecklistItem, deleteChecklistItem,
-    rolloverToNextMonth,
+    rolloverToNextMonth, generateChecklist,
     reload: loadData,
   };
 }

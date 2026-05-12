@@ -4,7 +4,6 @@
 
 const BASE_URL = process.env.REACT_APP_API_URL || "http://127.0.0.1:8000/api";
 
-// ── Helpers ──
 function getToken() {
   return localStorage.getItem("access_token");
 }
@@ -38,7 +37,6 @@ export const authAPI = {
     });
     return handleResponse(res);
   },
-
   login: async (email, password) => {
     const res = await fetch(`${BASE_URL}/auth/login/`, {
       method: "POST", headers: getHeaders(false),
@@ -46,7 +44,6 @@ export const authAPI = {
     });
     return handleResponse(res);
   },
-
   logout: async (refresh_token) => {
     const res = await fetch(`${BASE_URL}/auth/logout/`, {
       method: "POST", headers: getHeaders(true),
@@ -54,14 +51,12 @@ export const authAPI = {
     });
     return handleResponse(res);
   },
-
   me: async () => {
     const res = await fetch(`${BASE_URL}/auth/me/`, {
       method: "GET", headers: getHeaders(true),
     });
     return handleResponse(res);
   },
-
   forgotPassword: async (email) => {
     const res = await fetch(`${BASE_URL}/auth/forgot-password/`, {
       method: "POST", headers: getHeaders(false),
@@ -69,7 +64,6 @@ export const authAPI = {
     });
     return handleResponse(res);
   },
-
   resetPassword: async (uid, token, password) => {
     const res = await fetch(`${BASE_URL}/auth/reset-password/`, {
       method: "POST", headers: getHeaders(false),
@@ -77,7 +71,6 @@ export const authAPI = {
     });
     return handleResponse(res);
   },
-
   changePassword: async (currentPassword, newPassword, newPassword2) => {
     const res = await fetch(`${BASE_URL}/auth/change-password/`, {
       method: "POST", headers: getHeaders(true),
@@ -101,7 +94,6 @@ export const expensesAPI = {
     });
     return handleResponse(res);
   },
-
   create: async (data) => {
     const res = await fetch(`${BASE_URL}/expenses/`, {
       method: "POST", headers: getHeaders(true),
@@ -109,7 +101,6 @@ export const expensesAPI = {
     });
     return handleResponse(res);
   },
-
   update: async (id, data) => {
     const res = await fetch(`${BASE_URL}/expenses/${id}/`, {
       method: "PUT", headers: getHeaders(true),
@@ -117,7 +108,6 @@ export const expensesAPI = {
     });
     return handleResponse(res);
   },
-
   delete: async (id) => {
     const res = await fetch(`${BASE_URL}/expenses/${id}/`, {
       method: "DELETE", headers: getHeaders(true),
@@ -136,7 +126,6 @@ export const budgetsAPI = {
     });
     return handleResponse(res);
   },
-
   update: async (category, amount) => {
     const res = await fetch(`${BASE_URL}/budgets/`, {
       method: "POST", headers: getHeaders(true),
@@ -156,7 +145,6 @@ export const incomeAPI = {
     });
     return handleResponse(res);
   },
-
   create: async (data) => {
     const res = await fetch(`${BASE_URL}/income/`, {
       method: "POST", headers: getHeaders(true),
@@ -164,7 +152,6 @@ export const incomeAPI = {
     });
     return handleResponse(res);
   },
-
   update: async (id, data) => {
     const res = await fetch(`${BASE_URL}/income/${id}/`, {
       method: "PUT", headers: getHeaders(true),
@@ -172,77 +159,9 @@ export const incomeAPI = {
     });
     return handleResponse(res);
   },
-
   delete: async (id) => {
     const res = await fetch(`${BASE_URL}/income/${id}/`, {
       method: "DELETE", headers: getHeaders(true),
-    });
-    return handleResponse(res);
-  },
-};
-
-// ─────────────────────────────────────────────
-// DEBTS (old expenses app — kept for compatibility)
-// ─────────────────────────────────────────────
-export const debtsAPI = {
-  getAll: async () => {
-    const res = await fetch(`${BASE_URL}/debts/`, {
-      method: "GET", headers: getHeaders(true),
-    });
-    return handleResponse(res);
-  },
-
-  create: async (data) => {
-    const res = await fetch(`${BASE_URL}/debts/`, {
-      method: "POST", headers: getHeaders(true),
-      body: JSON.stringify(data),
-    });
-    return handleResponse(res);
-  },
-
-  update: async (id, data) => {
-    const res = await fetch(`${BASE_URL}/debts/${id}/`, {
-      method: "PUT", headers: getHeaders(true),
-      body: JSON.stringify(data),
-    });
-    return handleResponse(res);
-  },
-
-  delete: async (id) => {
-    const res = await fetch(`${BASE_URL}/debts/${id}/`, {
-      method: "DELETE", headers: getHeaders(true),
-    });
-    return handleResponse(res);
-  },
-
-  markPaidOff: async (id) => {
-    const res = await fetch(`${BASE_URL}/debts/${id}/paid-off/`, {
-      method: "POST", headers: getHeaders(true),
-    });
-    return handleResponse(res);
-  },
-};
-
-// ─────────────────────────────────────────────
-// PAYMENT RECORDS
-// ─────────────────────────────────────────────
-export const paymentsAPI = {
-  getAll: async () => {
-    const res = await fetch(`${BASE_URL}/payments/`, {
-      method: "GET", headers: getHeaders(true),
-    });
-    return handleResponse(res);
-  },
-
-  create: async (debtId, amount, note) => {
-    const res = await fetch(`${BASE_URL}/payments/`, {
-      method: "POST", headers: getHeaders(true),
-      body: JSON.stringify({
-        debt:   debtId,
-        amount: amount,
-        note:   note || "",
-        date:   new Date().toISOString().split("T")[0],
-      }),
     });
     return handleResponse(res);
   },
@@ -262,7 +181,6 @@ export const financialPlannerAPI = {
     });
     return handleResponse(res);
   },
-
   createDebt: async (data) => {
     const res = await fetch(`${FP_URL}/debts/`, {
       method: "POST", headers: getHeaders(true),
@@ -270,7 +188,6 @@ export const financialPlannerAPI = {
     });
     return handleResponse(res);
   },
-
   updateDebt: async (id, data) => {
     const res = await fetch(`${FP_URL}/debts/${id}/`, {
       method: "PATCH", headers: getHeaders(true),
@@ -278,7 +195,6 @@ export const financialPlannerAPI = {
     });
     return handleResponse(res);
   },
-
   deleteDebt: async (id) => {
     const res = await fetch(`${FP_URL}/debts/${id}/`, {
       method: "DELETE", headers: getHeaders(true),
@@ -293,7 +209,6 @@ export const financialPlannerAPI = {
     });
     return handleResponse(res);
   },
-
   updateEmergencyFund: async (data) => {
     const res = await fetch(`${FP_URL}/emergency-fund/`, {
       method: "PATCH", headers: getHeaders(true),
@@ -309,7 +224,6 @@ export const financialPlannerAPI = {
     });
     return handleResponse(res);
   },
-
   updatePlan: async (id, data) => {
     const res = await fetch(`${FP_URL}/plans/${id}/`, {
       method: "PATCH", headers: getHeaders(true),
@@ -326,6 +240,14 @@ export const financialPlannerAPI = {
     return handleResponse(res);
   },
 
+  // ── Generate Checklist ──
+  generateChecklist: async () => {
+    const res = await fetch(`${FP_URL}/plans/generate-checklist/`, {
+      method: "POST", headers: getHeaders(true),
+    });
+    return handleResponse(res);
+  },
+
   // ── Checklist ──
   getChecklist: async (planId) => {
     const res = await fetch(`${FP_URL}/plans/${planId}/checklist/`, {
@@ -333,7 +255,6 @@ export const financialPlannerAPI = {
     });
     return handleResponse(res);
   },
-
   createChecklist: async (planId, data) => {
     const res = await fetch(`${FP_URL}/plans/${planId}/checklist/`, {
       method: "POST", headers: getHeaders(true),
@@ -341,14 +262,12 @@ export const financialPlannerAPI = {
     });
     return handleResponse(res);
   },
-
   toggleChecklist: async (id) => {
     const res = await fetch(`${FP_URL}/checklist/${id}/toggle/`, {
       method: "POST", headers: getHeaders(true),
     });
     return handleResponse(res);
   },
-
   deleteChecklist: async (id) => {
     const res = await fetch(`${FP_URL}/checklist/${id}/`, {
       method: "DELETE", headers: getHeaders(true),
@@ -356,19 +275,27 @@ export const financialPlannerAPI = {
     return handleResponse(res);
   },
 
-  // ── Paychecks ──
-  getPaychecks: async (planId) => {
-    const res = await fetch(`${FP_URL}/plans/${planId}/paychecks/`, {
+  // ── Paycheck Config ──
+  getPaycheckConfig: async () => {
+    const res = await fetch(`${FP_URL}/paycheck-config/`, {
       method: "GET", headers: getHeaders(true),
     });
     return handleResponse(res);
   },
-
-  createPaycheck: async (planId, data) => {
-    const res = await fetch(`${FP_URL}/plans/${planId}/paychecks/`, {
-      method: "POST", headers: getHeaders(true),
+  updatePaycheckConfig: async (data) => {
+    const res = await fetch(`${FP_URL}/paycheck-config/`, {
+      method: "PATCH", headers: getHeaders(true),
       body: JSON.stringify(data),
     });
+    return handleResponse(res);
+  },
+
+  // ── Paycheck Allocation ──
+  calculatePaychecks: async (year, month) => {
+    const res = await fetch(
+      `${FP_URL}/paychecks/calculate/?year=${year}&month=${month}`,
+      { method: "GET", headers: getHeaders(true) }
+    );
     return handleResponse(res);
   },
 };
