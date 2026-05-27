@@ -253,6 +253,22 @@ async function handleLogout() {
   function renderPage() {
     switch (view) {
       case "dashboard":
+        if (!loaded || !incomeLoaded) {
+          return (
+            <div style={{
+              display:        "flex",
+              flexDirection:  "column",
+              alignItems:     "center",
+              justifyContent: "center",
+              padding:        "60px 20px",
+              color:          "#888",
+              gap:            12,
+            }}>
+              <div style={{ fontSize:32 }}>⏳</div>
+              <div style={{ fontWeight:600, fontSize:15 }}>Loading your data...</div>
+            </div>
+          );
+        }
         return (
           <Dashboard
             expenses={expenses}
