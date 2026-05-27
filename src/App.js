@@ -266,6 +266,7 @@ async function handleLogout() {
             }}>
               <div style={{ fontSize:32 }}>⏳</div>
               <div style={{ fontWeight:600, fontSize:15 }}>Loading your data...</div>
+              <div style={{ fontSize:12, color:"#bbb" }}>Fetching expenses and income...</div>
             </div>
           );
         }

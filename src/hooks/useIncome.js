@@ -23,7 +23,7 @@ export function useIncome() {
       const token = localStorage.getItem("access_token");
       if (!token) { setLoaded(true); return; }
 
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 300));
 
       const data = await incomeAPI.getAll();
       setIncomes(Array.isArray(data) ? data : []);

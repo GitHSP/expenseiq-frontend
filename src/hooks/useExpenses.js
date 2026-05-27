@@ -15,7 +15,7 @@ export function useExpenses() {
       const token = localStorage.getItem("access_token");
       if (!token) { setLoaded(true); return; }
 
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 300));
 
       const [expensesData, budgetsData] = await Promise.all([
         expensesAPI.getAll(),
