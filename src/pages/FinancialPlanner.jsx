@@ -515,7 +515,7 @@ export default function FinancialPlanner({ formatAmount, onAddExpense }) {
                   {[
                     { label:"Balance",    value:fmt(debt.current_balance),         color:C.red   },
                     { label:"Min Pay",    value:fmt(debt.minimum_payment),         color:C.text  },
-                    { label:"Monthly ⚡", value:fmt(debt.monthly_interest_amount), color:C.amber },
+                    { label:"Monthly %", value:fmt(debt.monthly_interest_amount), color:C.amber },
                     debt.credit_limit ? { label:"Limit", value:fmt(debt.credit_limit), color:C.muted } : null,
                   ].filter(Boolean).map(stat => (
                     <div key={stat.label} style={{ background:"#fafafa", borderRadius:8, padding:"10px 12px", border:"1px solid #f0f0f0" }}>
