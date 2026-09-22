@@ -25,16 +25,10 @@ export const MONTHS = [
 ];
 
 export const NAV_ITEMS = [
-  { id: "dashboard", label: "Dashboard", icon: "⊞"  },
-  { id: "expenses",  label: "Expenses",  icon: "📋" },
-  { id: "analytics", label: "Analytics", icon: "📊" },
-  { id: "budgets",   label: "Budgets",   icon: "🎯" },
-  { id: "payments", label: "Planner", icon: "📋" },
-  { id: "forecast", label: "Forecast", icon: "🔮" },
-  // { id: "payoff",    label: "Payoff",    icon: "🏁" },
-  { id: "profile",   label: "Profile",   icon: "👤" },
+  { id: "dashboard",  label: "Dashboard",  icon: "⊞"  },
+  { id: "expenses",   label: "Expenses",   icon: "📋" },
+  { id: "analytics",  label: "Analytics",  icon: "📊" },
+  { id: "payments",   label: "Planner",    icon: "📋" },
+  { id: "assistant",  label: "Assistant",  icon: "💬" },
+  { id: "profile",    label: "Profile",    icon: "👤" },
 ];
-
-export const DEFAULT_BUDGETS = Object.fromEntries(
-  CATEGORIES.map(c => [c.name, 500])
-);

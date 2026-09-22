@@ -1,7 +1,7 @@
 import { useMemo }    from "react";
 import { CATEGORIES } from "../constants/categories";
 
-export default function FinancialTips({ expenses, incomes, budgets, debts }) {
+export default function FinancialTips({ expenses, incomes, debts }) {
 
   const tips = useMemo(() => {
     const now          = new Date();
@@ -53,25 +53,7 @@ export default function FinancialTips({ expenses, incomes, budgets, debts }) {
       }
     }
 
-    // ── Tip 2: Over budget categories ──
-    const overBudgetCats = CATEGORIES.filter(cat => {
-      const spent  = thisMonthExp
-        .filter(e => e.category === cat.name)
-        .reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
-      const budget = parseFloat(budgets[cat.name]) || 0;
-      return budget > 0 && spent > budget;
-    });
-
-    if (overBudgetCats.length > 0) {
-      result.push({
-        type:  "warning",
-        icon:  "📊",
-        title: `${overBudgetCats.length} budget${overBudgetCats.length > 1 ? "s" : ""} exceeded this month`,
-        body:  `You've gone over budget in: ${overBudgetCats.map(c => c.name).join(", ")}. Consider adjusting your limits or cutting back next month.`,
-      });
-    }
-
-    // ── Tip 3: Top spending category ──
+    // ── Tip 2: Top spending category ──
     const catTotals = CATEGORIES
       .map(cat => ({
         ...cat,
@@ -95,74 +77,38 @@ export default function FinancialTips({ expenses, incomes, budgets, debts }) {
       }
     }
 
-    // ── Tip 4: Overdue debts ──
-    const overdueDebts = (debts || []).filter(d =>
-      !d.isPaidOff &&
-      d.nextPaymentDate &&
-      new Date(d.nextPaymentDate) < new Date()
-    );
+    // ── Tip 4: Debts due soon (within 7 days, by day-of-month) ──
+    const todayDay = now.getDate();
+    const dueSoonDebts = (debts || []).filter(d => {
+      if (!d.is_active || !d.due_day) return false;
+      const diff = d.due_day - todayDay;
+      return diff >= 0 && diff <= 7;
+    });
 
-    if (overdueDebts.length > 0) {
+    if (dueSoonDebts.length > 0) {
       result.push({
-        type:  "danger",
+        type:  "warning",
         icon:  "💳",
-        title: `${overdueDebts.length} overdue payment${overdueDebts.length > 1 ? "s" : ""}!`,
-        body:  `${overdueDebts.map(d => d.name).join(", ")} ${overdueDebts.length > 1 ? "are" : "is"} overdue. Late payments can damage your credit score.`,
+        title: `${dueSoonDebts.length} debt payment${dueSoonDebts.length > 1 ? "s" : ""} due within 7 days`,
+        body:  `${dueSoonDebts.map(d => d.name).join(", ")} ${dueSoonDebts.length > 1 ? "are" : "is"} due soon. Check the Planner checklist to make sure funds are ready.`,
       });
     }
 
     // ── Tip 5: High interest debt ──
     const highInterestDebt = (debts || [])
-      .filter(d => !d.isPaidOff && d.interestRate > 15 && d.balance > 0)
-      .sort((a, b) => b.interestRate - a.interestRate)[0];
+      .filter(d => d.is_active && parseFloat(d.annual_interest_rate) > 15 && parseFloat(d.current_balance) > 0)
+      .sort((a, b) => parseFloat(b.annual_interest_rate) - parseFloat(a.annual_interest_rate))[0];
 
     if (highInterestDebt) {
       result.push({
         type:  "info",
         icon:  "📈",
         title: "Focus extra payments on high-interest debt",
-        body:  `Your ${highInterestDebt.name} has a ${highInterestDebt.interestRate}% interest rate. Paying this off faster will save you the most money.`,
+        body:  `Your ${highInterestDebt.name} has a ${highInterestDebt.annual_interest_rate}% interest rate. Paying this off faster will save you the most money.`,
       });
     }
 
-    // ── Tip 6: No budgets set ──
-    const spentCatsWithNoBudget = CATEGORIES.filter(cat => {
-      const spent  = thisMonthExp
-        .filter(e => e.category === cat.name)
-        .reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
-      const budget = parseFloat(budgets[cat.name]) || 0;
-      return spent > 0 && budget === 0;
-    });
-
-    if (spentCatsWithNoBudget.length > 0) {
-      result.push({
-        type:  "info",
-        icon:  "🎯",
-        title: "Set budgets to stay on track",
-        body:  `You're spending on ${spentCatsWithNoBudget.map(c => c.name).join(", ")} but have no budget limits set. Go to Budgets to add limits.`,
-      });
-    }
-
-    // ── Tip 7: Daily spending pace ──
-    const dayOfMonth  = now.getDate();
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-    const projectedMonthlySpend = dayOfMonth > 0
-      ? (totalExpenses / dayOfMonth) * daysInMonth
-      : 0;
-
-    const totalBudget = Object.values(budgets)
-      .reduce((s, v) => s + (parseFloat(v) || 0), 0);
-
-    if (totalBudget > 0 && projectedMonthlySpend > totalBudget * 1.1) {
-      result.push({
-        type:  "warning",
-        icon:  "⏱️",
-        title: "You're on track to exceed your budget",
-        body:  `At your current spending pace you'll spend about ${((projectedMonthlySpend / totalBudget) * 100).toFixed(0)}% of your monthly budget. Consider slowing down.`,
-      });
-    }
-
-    // ── Tip 8: All good ──
+    // ── Tip 6: All good ──
     if (result.length === 0) {
       result.push({
         type:  "success",
@@ -175,7 +121,7 @@ export default function FinancialTips({ expenses, incomes, budgets, debts }) {
     // Return max 3 tips
     return result.slice(0, 3);
 
-  }, [expenses, incomes, budgets, debts]);
+  }, [expenses, incomes, debts]);
 
   // ── Colors per type ──
   const colors = {
@@ -193,7 +139,7 @@ export default function FinancialTips({ expenses, incomes, budgets, debts }) {
       {/* Header */}
       <div style={{
         fontSize:      11,
-        color:         "#888",
+        color:         "var(--muted)",
         fontWeight:    600,
         textTransform: "uppercase",
         letterSpacing: "0.6px",
@@ -234,7 +180,7 @@ export default function FinancialTips({ expenses, incomes, budgets, debts }) {
                 </div>
                 <div style={{
                   fontSize:   12,
-                  color:      "#555",
+                  color:      "var(--muted2)",
                   lineHeight: 1.6,
                 }}>
                   {tip.body}

@@ -1,7 +1,5 @@
 import { useState }                from "react";
-import { useFinancialPlanner }     from "../hooks/useFinancialPlanner";
 import ChecklistConfirmModal       from "../components/ChecklistConfirmModal";
-import PaycheckAllocation          from "./PaycheckAllocation";
 
 const C = {
   blue:    "#0070f3",
@@ -9,11 +7,11 @@ const C = {
   red:     "#e11d48",
   amber:   "#f59e0b",
   purple:  "#7c3aed",
-  text:    "#0d0d0d",
-  muted:   "#888",
-  border:  "#eaeaea",
-  card:    "#ffffff",
-  bg:      "#f6f8fa",
+  text:    "var(--text)",
+  muted:   "var(--muted)",
+  border:  "var(--border)",
+  card:    "var(--card)",
+  bg:      "var(--bg)",
 };
 
 const DEBT_TYPE_LABELS = {
@@ -36,11 +34,11 @@ const CATEGORY_LABELS = {
 
 const inputStyle = {
   width:        "100%",
-  background:   "#ffffff",
-  border:       "1px solid #eaeaea",
+  background:   "var(--card)",
+  border:       "1px solid var(--border)",
   borderRadius: "8px",
   padding:      "10px 12px",
-  color:        "#0d0d0d",
+  color:        "var(--text)",
   fontSize:     "13px",
   fontFamily:   "inherit",
   fontWeight:   500,
@@ -51,23 +49,22 @@ const inputStyle = {
 const labelStyle = {
   display:       "block",
   fontSize:      "11px",
-  color:         "#666",
+  color:         "var(--muted2)",
   fontWeight:    600,
   textTransform: "uppercase",
   letterSpacing: "0.6px",
   marginBottom:  "5px",
 };
 
-export default function FinancialPlanner({ formatAmount, onAddExpense }) {
-  const {
-    debts, emergencyFund, currentPlan, checklist, loaded,
-    rolledOver,
-    addDebt, updateDebt, deleteDebt,
-    updateEmergencyFund,
-    addChecklistItem, toggleChecklistItem, deleteChecklistItem,
-    rolloverToNextMonth, generateChecklist,
-  } = useFinancialPlanner();
-
+export default function FinancialPlanner({
+  debts, emergencyFund, currentPlan, checklist, loaded,
+  rolledOver,
+  addDebt, updateDebt, deleteDebt,
+  updateEmergencyFund,
+  addChecklistItem, toggleChecklistItem, deleteChecklistItem,
+  rolloverToNextMonth, generateChecklist,
+  formatAmount, onAddExpense,
+}) {
   const [activeTab,    setActiveTab]    = useState("debts");
   const [showDebtForm, setShowDebtForm] = useState(false);
   const [editingDebt,  setEditingDebt]  = useState(null);
@@ -317,7 +314,7 @@ export default function FinancialPlanner({ formatAmount, onAddExpense }) {
       {toast && (
         <div style={{
           position:"fixed", top:20, left:"50%", transform:"translateX(-50%)",
-          background:"#0d0d0d", color:"#fff", padding:"10px 20px",
+          background:"var(--text)", color:"var(--card)", padding:"10px 20px",
           borderRadius:8, fontSize:13, fontWeight:600, zIndex:999, fontFamily:"inherit",
         }}>
           {toast}
@@ -341,7 +338,7 @@ export default function FinancialPlanner({ formatAmount, onAddExpense }) {
             <div style={{ fontWeight:700, color:"#059669", fontSize:14, marginBottom:3 }}>
               New month detected — plan auto-generated!
             </div>
-            <div style={{ fontSize:12, color:"#888" }}>
+            <div style={{ fontSize:12, color:"var(--muted)" }}>
               Interest applied to all debts. Checklist reset for{" "}
               {currentPlan
                 ? new Date(currentPlan.year, currentPlan.month - 1)
@@ -364,7 +361,7 @@ export default function FinancialPlanner({ formatAmount, onAddExpense }) {
           { label:"Checklist",        value:`${completedItems}/${checklist.length}`, sub:"items completed this month",
             gradient:completedItems===checklist.length&&checklist.length>0?"linear-gradient(135deg, #059669, #047857)":"linear-gradient(135deg, #7c3aed, #6d28d9)" },
         ].map(card => (
-          <div key={card.label} style={{ background:card.gradient, borderRadius:12, padding:20, color:"#fff" }}>
+          <div key={card.label} style={{ background:card.gradient, borderRadius:12, padding:20, color:"var(--card)" }}>
             <div style={{ fontSize:10, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.8px", opacity:0.75, marginBottom:8 }}>{card.label}</div>
             <div style={{ fontSize:22, fontWeight:800, letterSpacing:"-0.8px", lineHeight:1.1, marginBottom:6 }}>{card.value}</div>
             <div style={{ fontSize:11, opacity:0.65, fontWeight:500 }}>{card.sub}</div>
@@ -383,7 +380,6 @@ export default function FinancialPlanner({ formatAmount, onAddExpense }) {
           { id:"debts",     label:"💳 Debts"      },
           { id:"checklist", label:"☑️ Checklist"  },
           { id:"fund",      label:"🛡️ Fund"       },
-          { id:"paychecks", label:"💰 Paychecks"  },
         ].map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
             background:   activeTab===tab.id ? C.blue : "transparent",
@@ -463,7 +459,7 @@ export default function FinancialPlanner({ formatAmount, onAddExpense }) {
                 </div>
                 <div className="form-group">
                   <label style={labelStyle}>Avalanche Priority (auto-set)</label>
-                  <input style={{ ...inputStyle, background:"#f6f8fa", color:C.muted }} type="number" placeholder="Auto-calculated from APR" value={debtForm.avalanche_order} readOnly />
+                  <input style={{ ...inputStyle, background:"var(--bg)", color:C.muted }} type="number" placeholder="Auto-calculated from APR" value={debtForm.avalanche_order} readOnly />
                 </div>
               </div>
               <div className="form-group">
@@ -483,18 +479,18 @@ export default function FinancialPlanner({ formatAmount, onAddExpense }) {
           {debts.length === 0 ? (
             <div className="empty-state">
               <div className="empty-icon">💳</div>
-              <div style={{ fontWeight:600, color:"#ccc", fontSize:15, marginBottom:6 }}>No debts added yet</div>
-              <div style={{ fontSize:13, color:"#ccc" }}>Click "+ Add Debt" to start tracking</div>
+              <div style={{ fontWeight:600, color:"var(--faint)", fontSize:15, marginBottom:6 }}>No debts added yet</div>
+              <div style={{ fontSize:13, color:"var(--faint)" }}>Click "+ Add Debt" to start tracking</div>
             </div>
           ) : debts.map((debt, i) => {
             const utilPct = debt.utilization_percent;
             const colors  = [C.red, C.amber, C.blue, "#7c3aed", C.green, "#0891b2"];
             const color   = colors[i % colors.length];
             return (
-              <div key={debt.id} className="card" style={{ marginBottom:14, border:debt.is_active?`1px solid ${C.border}`:"1px dashed #eaeaea", opacity:debt.is_active?1:0.6 }}>
+              <div key={debt.id} className="card" style={{ marginBottom:14, border:debt.is_active?`1px solid ${C.border}`:"1px dashed var(--border)", opacity:debt.is_active?1:0.6 }}>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:14 }}>
                   <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-                    <div style={{ width:32, height:32, borderRadius:"50%", background:color, color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:800, flexShrink:0 }}>
+                    <div style={{ width:32, height:32, borderRadius:"50%", background:color, color:"var(--card)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:800, flexShrink:0 }}>
                       {debt.avalanche_order}
                     </div>
                     <div>
@@ -518,7 +514,7 @@ export default function FinancialPlanner({ formatAmount, onAddExpense }) {
                     { label:"Monthly %", value:fmt(debt.monthly_interest_amount), color:C.amber },
                     debt.credit_limit ? { label:"Limit", value:fmt(debt.credit_limit), color:C.muted } : null,
                   ].filter(Boolean).map(stat => (
-                    <div key={stat.label} style={{ background:"#fafafa", borderRadius:8, padding:"10px 12px", border:"1px solid #f0f0f0" }}>
+                    <div key={stat.label} style={{ background:"var(--subtle)", borderRadius:8, padding:"10px 12px", border:"1px solid var(--subtle2)" }}>
                       <div style={{ fontSize:10, color:C.muted, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:3 }}>{stat.label}</div>
                       <div style={{ fontWeight:700, fontSize:14, color:stat.color, letterSpacing:"-0.3px" }}>{stat.value}</div>
                     </div>
@@ -531,7 +527,7 @@ export default function FinancialPlanner({ formatAmount, onAddExpense }) {
                       <span style={{ color:C.muted }}>Credit Utilization</span>
                       <span style={{ fontWeight:700, color:utilPct>80?C.red:utilPct>50?C.amber:C.green }}>{utilPct}%</span>
                     </div>
-                    <div style={{ background:"#f0f0f0", borderRadius:100, height:6, overflow:"hidden" }}>
+                    <div style={{ background:"var(--subtle2)", borderRadius:100, height:6, overflow:"hidden" }}>
                       <div style={{ height:"100%", borderRadius:100, background:utilPct>80?C.red:utilPct>50?C.amber:C.green, width:`${utilPct}%`, transition:"width 0.6s" }} />
                     </div>
                   </div>
@@ -551,20 +547,20 @@ export default function FinancialPlanner({ formatAmount, onAddExpense }) {
         <>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16, flexWrap:"wrap", gap:10 }}>
             <div>
-              <div style={{ fontSize:14, fontWeight:700, color:"#0d0d0d", letterSpacing:"-0.2px" }}>
+              <div style={{ fontSize:14, fontWeight:700, color:"var(--text)", letterSpacing:"-0.2px" }}>
                 {currentPlan
                   ? new Date(currentPlan.year, currentPlan.month - 1)
                       .toLocaleDateString("en-US", { month:"long", year:"numeric" })
                   : "Loading..."
                 }
               </div>
-              <div style={{ fontSize:12, color:"#888", marginTop:2 }}>
+              <div style={{ fontSize:12, color:"var(--muted)", marginTop:2 }}>
                 {completedItems}/{checklist.length} items complete
                 {checklist.length > 0 && completedItems === checklist.length && " 🎉"}
               </div>
             </div>
             <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-              <button onClick={handleRollover} style={{ background:"#f6f8fa", color:"#888", border:"1px solid #eaeaea", padding:"7px 12px", borderRadius:8, fontWeight:600, fontSize:11, cursor:"pointer", fontFamily:"inherit" }}>
+              <button onClick={handleRollover} style={{ background:"var(--bg)", color:"var(--muted)", border:"1px solid var(--border)", padding:"7px 12px", borderRadius:8, fontWeight:600, fontSize:11, cursor:"pointer", fontFamily:"inherit" }}>
                 🔄 Force Rollover
               </button>
               <button className="btn-primary" onClick={() => setShowItemForm(p => !p)} style={{ padding:"9px 18px", fontSize:13 }}>
@@ -600,9 +596,9 @@ export default function FinancialPlanner({ formatAmount, onAddExpense }) {
 
               <div
                 onClick={() => setItemForm(p => ({ ...p, is_auto_debit:!p.is_auto_debit }))}
-                style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 12px", background:itemForm.is_auto_debit?"#fffbeb":"#fafafa", border:`1.5px solid ${itemForm.is_auto_debit?C.amber:C.border}`, borderRadius:8, cursor:"pointer", marginBottom:12, userSelect:"none" }}
+                style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 12px", background:itemForm.is_auto_debit?"#fffbeb":"var(--subtle)", border:`1.5px solid ${itemForm.is_auto_debit?C.amber:C.border}`, borderRadius:8, cursor:"pointer", marginBottom:12, userSelect:"none" }}
               >
-                <div style={{ width:18, height:18, borderRadius:4, border:`2px solid ${itemForm.is_auto_debit?C.amber:"#ccc"}`, background:itemForm.is_auto_debit?C.amber:"#fff", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                <div style={{ width:18, height:18, borderRadius:4, border:`2px solid ${itemForm.is_auto_debit?C.amber:"var(--faint)"}`, background:itemForm.is_auto_debit?C.amber:"var(--card)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
                   {itemForm.is_auto_debit && <span style={{ color:"#fff", fontSize:11, fontWeight:800 }}>✓</span>}
                 </div>
                 <div>
@@ -624,8 +620,8 @@ export default function FinancialPlanner({ formatAmount, onAddExpense }) {
           {checklist.length === 0 ? (
             <div className="empty-state">
               <div className="empty-icon">☑️</div>
-              <div style={{ fontWeight:600, color:"#ccc", fontSize:15, marginBottom:6 }}>No checklist items yet</div>
-              <div style={{ fontSize:13, color:"#ccc" }}>
+              <div style={{ fontWeight:600, color:"var(--faint)", fontSize:15, marginBottom:6 }}>No checklist items yet</div>
+              <div style={{ fontSize:13, color:"var(--faint)" }}>
                 Go to Debts tab and click "⚡ Generate Checklist"
               </div>
             </div>
@@ -637,7 +633,7 @@ export default function FinancialPlanner({ formatAmount, onAddExpense }) {
                   <span style={{ color:C.muted }}>Progress</span>
                   <span style={{ color:completedItems===checklist.length?C.green:C.blue }}>{completedItems}/{checklist.length} complete</span>
                 </div>
-                <div style={{ background:"#f0f0f0", borderRadius:100, height:6, overflow:"hidden" }}>
+                <div style={{ background:"var(--subtle2)", borderRadius:100, height:6, overflow:"hidden" }}>
                   <div style={{ height:"100%", borderRadius:100, background:completedItems===checklist.length?C.green:C.blue, width:`${checklist.length>0?(completedItems/checklist.length)*100:0}%`, transition:"width 0.6s" }} />
                 </div>
               </div>
@@ -655,8 +651,8 @@ export default function FinancialPlanner({ formatAmount, onAddExpense }) {
                 const groups = [
                   { label:"🔴 Overdue",     items:overdue,   color:"#fff1f2", borderColor:"#fecdd3", textColor:"#e11d48" },
                   { label:"🔔 Due Today",   items:dueToday,  color:"#fffbeb", borderColor:"#fde68a", textColor:"#d97706" },
-                  { label:"📅 Upcoming",    items:upcoming,  color:"#ffffff", borderColor:C.border,  textColor:C.muted   },
-                  { label:"📋 No Due Date", items:noDate,    color:"#ffffff", borderColor:C.border,  textColor:C.muted   },
+                  { label:"📅 Upcoming",    items:upcoming,  color:"var(--card)", borderColor:C.border,  textColor:C.muted   },
+                  { label:"📋 No Due Date", items:noDate,    color:"var(--card)", borderColor:C.border,  textColor:C.muted   },
                   { label:"✅ Completed",   items:completed, color:"#f0fdf4", borderColor:"#bbf7d0", textColor:"#059669" },
                 ].filter(g => g.items.length > 0);
 
@@ -666,11 +662,11 @@ export default function FinancialPlanner({ formatAmount, onAddExpense }) {
                       {group.label} ({group.items.length})
                     </div>
                     {group.items.map((item, idx) => (
-                      <div key={item.id} style={{ display:"flex", alignItems:"center", gap:12, padding:"13px 18px", borderBottom:idx<group.items.length-1?`1px solid #f5f5f5`:"none", background:item.is_completed?"#f0fdf4":"#ffffff", transition:"background 0.15s" }}>
+                      <div key={item.id} style={{ display:"flex", alignItems:"center", gap:12, padding:"13px 18px", borderBottom:idx<group.items.length-1?`1px solid var(--subtle2)`:"none", background:item.is_completed?"#f0fdf4":"var(--card)", transition:"background 0.15s" }}>
                         {/* Checkbox */}
                         <div
                           onClick={() => handleToggle(item.id)}
-                          style={{ width:24, height:24, borderRadius:6, border:`2px solid ${item.is_completed?C.green:"#ccc"}`, background:item.is_completed?C.green:"#fff", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0, transition:"all 0.15s" }}
+                          style={{ width:24, height:24, borderRadius:6, border:`2px solid ${item.is_completed?C.green:"var(--faint)"}`, background:item.is_completed?C.green:"var(--card)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0, transition:"all 0.15s" }}
                         >
                           {item.is_completed && <span style={{ color:"#fff", fontSize:13, fontWeight:800 }}>✓</span>}
                         </div>
@@ -681,7 +677,7 @@ export default function FinancialPlanner({ formatAmount, onAddExpense }) {
                             {item.is_auto_debit && "⚠️ "}{item.label}
                           </div>
                           <div style={{ display:"flex", gap:8, marginTop:2, flexWrap:"wrap" }}>
-                            <span style={{ fontSize:10, fontWeight:600, color:C.muted, background:"#f6f8fa", padding:"1px 6px", borderRadius:4, border:`1px solid ${C.border}` }}>
+                            <span style={{ fontSize:10, fontWeight:600, color:C.muted, background:"var(--bg)", padding:"1px 6px", borderRadius:4, border:`1px solid ${C.border}` }}>
                               {CATEGORY_LABELS[item.category]}
                             </span>
                             {item.due_day && !item.is_completed && (
@@ -703,7 +699,7 @@ export default function FinancialPlanner({ formatAmount, onAddExpense }) {
                         )}
 
                         {/* Delete */}
-                        <button onClick={() => handleDeleteItem(item.id)} style={{ background:"transparent", border:"none", color:"#ccc", cursor:"pointer", fontSize:14, padding:"2px 6px", borderRadius:4, flexShrink:0 }}>
+                        <button onClick={() => handleDeleteItem(item.id)} style={{ background:"transparent", border:"none", color:"var(--faint)", cursor:"pointer", fontSize:14, padding:"2px 6px", borderRadius:4, flexShrink:0 }}>
                           ✕
                         </button>
                       </div>
@@ -748,7 +744,7 @@ export default function FinancialPlanner({ formatAmount, onAddExpense }) {
                   { label:"Target",          value:fmt(emergencyFund.target_amount),       color:C.text  },
                   { label:"Monthly Contrib", value:fmt(emergencyFund.monthly_contribution), color:C.blue  },
                 ].map(s => (
-                  <div key={s.label} style={{ background:"#fafafa", borderRadius:10, padding:"14px 12px", border:"1px solid #f0f0f0", textAlign:"center" }}>
+                  <div key={s.label} style={{ background:"var(--subtle)", borderRadius:10, padding:"14px 12px", border:"1px solid var(--subtle2)", textAlign:"center" }}>
                     <div style={{ fontSize:10, color:C.muted, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:6 }}>{s.label}</div>
                     <div style={{ fontWeight:800, fontSize:16, color:s.color, letterSpacing:"-0.5px", wordBreak:"break-word" }}>{s.value}</div>
                   </div>
@@ -760,7 +756,7 @@ export default function FinancialPlanner({ formatAmount, onAddExpense }) {
                   <span style={{ color:C.muted }}>{fmt(emergencyFund.current_balance)} of {fmt(emergencyFund.target_amount)}</span>
                   <span style={{ color:emergencyFund.is_funded?C.green:C.amber }}>{emergencyFund.progress_percent}%</span>
                 </div>
-                <div style={{ background:"#f0f0f0", borderRadius:100, height:12, overflow:"hidden" }}>
+                <div style={{ background:"var(--subtle2)", borderRadius:100, height:12, overflow:"hidden" }}>
                   <div style={{ height:"100%", borderRadius:100, background:emergencyFund.is_funded?C.green:`linear-gradient(90deg, ${C.amber}, ${C.green})`, width:`${emergencyFund.progress_percent}%`, transition:"width 0.6s" }} />
                 </div>
                 {!emergencyFund.is_funded && (
@@ -780,7 +776,7 @@ export default function FinancialPlanner({ formatAmount, onAddExpense }) {
               )}
 
               {editingFund && (
-                <div style={{ background:"#f6f8fa", borderRadius:10, padding:14, border:"1px solid #eaeaea", marginTop:8 }}>
+                <div style={{ background:"var(--bg)", borderRadius:10, padding:14, border:"1px solid var(--border)", marginTop:8 }}>
                   <div style={{ fontWeight:700, fontSize:13, marginBottom:10 }}>Update Balance</div>
                   <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
                     <input style={{ ...inputStyle, flex:1, minWidth:120 }} type="number" inputMode="decimal" placeholder="New balance..." value={fundBalance} onChange={e => setFundBalance(e.target.value)} />
@@ -793,17 +789,10 @@ export default function FinancialPlanner({ formatAmount, onAddExpense }) {
           ) : (
             <div className="empty-state">
               <div className="empty-icon">🛡️</div>
-              <div style={{ fontWeight:600, color:"#ccc", fontSize:15 }}>Loading emergency fund...</div>
+              <div style={{ fontWeight:600, color:"var(--faint)", fontSize:15 }}>Loading emergency fund...</div>
             </div>
           )}
         </>
-      )}
-
-      {/* ════════════════════════════════════
-          TAB 4 — PAYCHECK ALLOCATION
-      ════════════════════════════════════ */}
-      {activeTab === "paychecks" && (
-        <PaycheckAllocation formatAmount={formatAmount} />
       )}
 
       {/* ── Confirm Modal ── */}

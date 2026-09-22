@@ -12,11 +12,11 @@ const EMPTY_FORM = {
 
 const inputStyle = {
   width:        "100%",
-  background:   "#ffffff",
-  border:       "1px solid #eaeaea",
+  background:   "var(--card)",
+  border:       "1px solid var(--border)",
   borderRadius: "8px",
   padding:      "10px 12px",
-  color:        "#0d0d0d",
+  color:        "var(--text)",
   fontSize:     "13.5px",
   fontFamily:   "inherit",
   fontWeight:   500,
@@ -28,7 +28,7 @@ const inputStyle = {
 const labelStyle = {
   display:       "block",
   fontSize:      "11px",
-  color:         "#666",
+  color:         "var(--muted2)",
   fontWeight:    600,
   textTransform: "uppercase",
   letterSpacing: "0.6px",
@@ -115,8 +115,8 @@ export default function AddExpenseModal({ editingExpense, onSave, onClose }) {
               width:        42,
               height:       42,
               borderRadius: 8,
-              background:   selectedCat ? `${selectedCat.color}15` : "#f6f8fa",
-              border:       `1.5px solid ${selectedCat ? selectedCat.color : "#eaeaea"}`,
+              background:   selectedCat ? `${selectedCat.color}15` : "var(--bg)",
+              border:       `1.5px solid ${selectedCat ? selectedCat.color : "var(--border)"}`,
               display:      "flex",
               alignItems:   "center",
               justifyContent:"center",
@@ -133,7 +133,7 @@ export default function AddExpenseModal({ editingExpense, onSave, onClose }) {
                 ...inputStyle,
                 cursor:      "pointer",
                 fontWeight:  600,
-                color:       selectedCat?.color || "#0d0d0d",
+                color:       selectedCat?.color || "var(--text)",
               }}
               value={form.category}
               onChange={e => update("category", e.target.value)}

@@ -7,10 +7,10 @@ import { CATEGORIES, MONTHS } from "../constants/categories";
 import { isSameMonth }         from "../utils/helpers";
 
 const TOOLTIP_STYLE = {
-  background:   "#ffffff",
-  border:       "1px solid #eaeaea",
+  background:   "var(--card)",
+  border:       "1px solid var(--border)",
   borderRadius: 8,
-  color:        "#0d0d0d",
+  color:        "var(--text)",
   fontSize:     12,
   fontFamily:   "'Inter', sans-serif",
   boxShadow:    "0 4px 12px rgba(0,0,0,0.08)",
@@ -18,16 +18,16 @@ const TOOLTIP_STYLE = {
 
 const thStyle = {
   padding:"11px 14px", textAlign:"left", fontSize:11, fontWeight:700,
-  textTransform:"uppercase", letterSpacing:"0.6px", color:"#888",
-  borderBottom:"1px solid #eaeaea", background:"#fafafa", whiteSpace:"nowrap",
+  textTransform:"uppercase", letterSpacing:"0.6px", color:"var(--muted)",
+  borderBottom:"1px solid var(--border)", background:"var(--subtle)", whiteSpace:"nowrap",
 };
 
 const tdStyle = {
-  padding:"11px 14px", fontSize:13, color:"#0d0d0d",
-  borderBottom:"1px solid #f5f5f5", verticalAlign:"middle",
+  padding:"11px 14px", fontSize:13, color:"var(--text)",
+  borderBottom:"1px solid var(--subtle2)", verticalAlign:"middle",
 };
 
-export default function Analytics({ expenses, budgets, formatAmount }) {
+export default function Analytics({ expenses, formatAmount }) {
   const now          = new Date();
   const currentMonth = now.getMonth();
   const currentYear  = now.getFullYear();
@@ -47,8 +47,7 @@ export default function Analytics({ expenses, budgets, formatAmount }) {
     const spent  = thisMonthExp
       .filter(e => e.category === cat.name)
       .reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
-    const budget = parseFloat(budgets[cat.name]) || 0;
-    return { ...cat, spent, budget, pct: budget > 0 ? Math.min((spent/budget)*100,100) : 0 };
+    return { ...cat, spent };
   }).filter(c => c.spent > 0);
 
   const pieData = catSpend.map(c => ({
@@ -119,7 +118,7 @@ export default function Analytics({ expenses, budgets, formatAmount }) {
                 label={({ percent }) => percent > 0.05 ? `${(percent*100).toFixed(0)}%` : ""}
               >
                 {pieData.map((e, i) => (
-                  <Cell key={i} fill={e.color} opacity={selectedCat && selectedCat !== e.name ? 0.3 : 1} stroke={selectedCat === e.name ? "#0d0d0d" : "none"} strokeWidth={selectedCat === e.name ? 2 : 0} />
+                  <Cell key={i} fill={e.color} opacity={selectedCat && selectedCat !== e.name ? 0.3 : 1} stroke={selectedCat === e.name ? "var(--text)" : "none"} strokeWidth={selectedCat === e.name ? 2 : 0} />
                 ))}
               </Pie>
               <Tooltip formatter={v => fmt(v)} contentStyle={TOOLTIP_STYLE} />
@@ -140,9 +139,9 @@ export default function Analytics({ expenses, budgets, formatAmount }) {
           )}
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={monthlyData} onClick={d => d?.activePayload && handleBarClick(d.activePayload[0]?.payload)} style={{ cursor:"pointer" }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-              <XAxis dataKey="name" tick={{ fill:"#aaa", fontSize:11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill:"#aaa", fontSize:10 }} axisLine={false} tickLine={false} width={42} tickFormatter={v => `$${v}`} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+              <XAxis dataKey="name" tick={{ fill:"var(--faint2)", fontSize:11 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill:"var(--faint2)", fontSize:10 }} axisLine={false} tickLine={false} width={42} tickFormatter={v => `$${v}`} />
               <Tooltip formatter={v => [fmt(v), "Expenses"]} contentStyle={TOOLTIP_STYLE} />
               <Bar dataKey="amount" radius={[5,5,0,0]}>
                 {monthlyData.map((entry, i) => (
@@ -156,16 +155,16 @@ export default function Analytics({ expenses, budgets, formatAmount }) {
 
       {/* ── Detail table ── */}
       {(selectedCat || selectedMonth !== null) && (
-        <div style={{ background:"#ffffff", border:"1px solid #eaeaea", borderRadius:12, overflow:"hidden", marginBottom:20, boxShadow:"0 4px 16px rgba(0,0,0,0.06)" }}>
-          <div style={{ padding:"16px 20px", borderBottom:"1px solid #f0f0f0", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+        <div style={{ background:"var(--card)", border:"1px solid var(--border)", borderRadius:12, overflow:"hidden", marginBottom:20, boxShadow:"0 4px 16px rgba(0,0,0,0.06)" }}>
+          <div style={{ padding:"16px 20px", borderBottom:"1px solid var(--subtle2)", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
             <div>
-              <div style={{ fontWeight:800, fontSize:15, color:"#0d0d0d", letterSpacing:"-0.3px" }}>
+              <div style={{ fontWeight:800, fontSize:15, color:"var(--text)", letterSpacing:"-0.3px" }}>
                 {selectedCat
                   ? `${CATEGORIES.find(c => c.name === selectedCat)?.icon} ${selectedCat} — This Month`
                   : `📅 ${MONTHS[selectedMonth]} ${currentYear}`
                 }
               </div>
-              <div style={{ fontSize:12, color:"#888", marginTop:2 }}>
+              <div style={{ fontSize:12, color:"var(--muted)", marginTop:2 }}>
                 {selectedCat
                   ? `${catExpenses.length} transactions · ${fmt(catExpenses.reduce((s,e) => s+(parseFloat(e.amount)||0),0))}`
                   : `${monthExpenses.length} transactions · ${fmt(totalMonthExp)}`
@@ -189,32 +188,32 @@ export default function Analytics({ expenses, budgets, formatAmount }) {
                 {(selectedCat ? catExpenses : monthExpenses).map((exp, idx) => {
                   const cat = CATEGORIES.find(c => c.name === exp.category);
                   return (
-                    <tr key={exp.id} style={{ background: idx%2===0 ? "#ffffff" : "#fafafa" }}
+                    <tr key={exp.id} style={{ background: idx%2===0 ? "var(--card)" : "var(--subtle)" }}
                       onMouseEnter={e => e.currentTarget.style.background="#f0f7ff"}
-                      onMouseLeave={e => e.currentTarget.style.background=idx%2===0?"#ffffff":"#fafafa"}
+                      onMouseLeave={e => e.currentTarget.style.background=idx%2===0?"var(--card)":"var(--subtle)"}
                     >
-                      <td style={{ ...tdStyle, color:"#888", fontSize:12 }}>{exp.date}</td>
+                      <td style={{ ...tdStyle, color:"var(--muted)", fontSize:12 }}>{exp.date}</td>
                       <td style={{ ...tdStyle, fontWeight:600 }}>{exp.title}</td>
                       <td style={tdStyle}>
-                        <div style={{ display:"inline-flex", alignItems:"center", gap:6, background:cat?`${cat.color}12`:"#f6f8fa", border:`1px solid ${cat?cat.color+"30":"#eaeaea"}`, borderRadius:6, padding:"3px 10px", fontSize:11, fontWeight:600, color:cat?.color||"#888" }}>
+                        <div style={{ display:"inline-flex", alignItems:"center", gap:6, background:cat?`${cat.color}12`:"var(--bg)", border:`1px solid ${cat?cat.color+"30":"var(--border)"}`, borderRadius:6, padding:"3px 10px", fontSize:11, fontWeight:600, color:cat?.color||"var(--muted)" }}>
                           {cat?.icon||"📦"} {exp.category}
                         </div>
                       </td>
                       <td style={{ ...tdStyle, textAlign:"right", fontWeight:700, color:"#e11d48" }}>-{fmt(exp.amount)}</td>
-                      <td style={{ ...tdStyle, color:"#aaa", fontSize:12 }}>{exp.notes||"—"}</td>
+                      <td style={{ ...tdStyle, color:"var(--faint2)", fontSize:12 }}>{exp.notes||"—"}</td>
                     </tr>
                   );
                 })}
               </tbody>
               <tfoot>
-                <tr style={{ background:"#f6f8fa" }}>
-                  <td colSpan={3} style={{ ...tdStyle, fontWeight:700, borderTop:"1px solid #eaeaea", borderBottom:"none" }}>
+                <tr style={{ background:"var(--bg)" }}>
+                  <td colSpan={3} style={{ ...tdStyle, fontWeight:700, borderTop:"1px solid var(--border)", borderBottom:"none" }}>
                     {(selectedCat ? catExpenses : monthExpenses).length} transactions
                   </td>
-                  <td style={{ ...tdStyle, textAlign:"right", fontWeight:800, fontSize:15, color:"#e11d48", borderTop:"1px solid #eaeaea", borderBottom:"none" }}>
+                  <td style={{ ...tdStyle, textAlign:"right", fontWeight:800, fontSize:15, color:"#e11d48", borderTop:"1px solid var(--border)", borderBottom:"none" }}>
                     -{fmt(selectedCat ? catExpenses.reduce((s,e)=>s+(parseFloat(e.amount)||0),0) : totalMonthExp)}
                   </td>
-                  <td style={{ borderTop:"1px solid #eaeaea", borderBottom:"none" }} />
+                  <td style={{ borderTop:"1px solid var(--border)", borderBottom:"none" }} />
                 </tr>
               </tfoot>
             </table>
@@ -225,22 +224,23 @@ export default function Analytics({ expenses, budgets, formatAmount }) {
       {/* ── Category bars ── */}
       <div className="card">
         <div className="card-title" style={{ marginBottom:16 }}>Top Spending Categories</div>
-        {catSpend.sort((a,b) => b.spent-a.spent).map(cat => (
-          <div key={cat.name} style={{ marginBottom:16, cursor:"pointer", padding:8, borderRadius:8, background:selectedCat===cat.name?"#f0f7ff":"transparent", border:selectedCat===cat.name?"1px solid #bfdbfe":"1px solid transparent" }}
-            onClick={() => { setSelectedCat(prev => prev===cat.name?null:cat.name); setSelectedMonth(null); }}
-          >
-            <div style={{ display:"flex", justifyContent:"space-between", fontSize:13, marginBottom:6 }}>
-              <span style={{ fontWeight:600 }}>{cat.icon} {cat.name}</span>
-              <div style={{ display:"flex", gap:12, alignItems:"center" }}>
-                {cat.budget > 0 && <span style={{ fontSize:11, color:"#aaa" }}>Budget: {fmt(cat.budget)}</span>}
-                <span style={{ fontWeight:700, color: cat.spent>cat.budget&&cat.budget>0 ? "#e11d48" : "#0d0d0d" }}>{fmt(cat.spent)}</span>
+        {(() => {
+          const sorted  = [...catSpend].sort((a,b) => b.spent-a.spent);
+          const maxSpent= sorted.length > 0 ? sorted[0].spent : 0;
+          return sorted.map(cat => (
+            <div key={cat.name} style={{ marginBottom:16, cursor:"pointer", padding:8, borderRadius:8, background:selectedCat===cat.name?"#f0f7ff":"transparent", border:selectedCat===cat.name?"1px solid #bfdbfe":"1px solid transparent" }}
+              onClick={() => { setSelectedCat(prev => prev===cat.name?null:cat.name); setSelectedMonth(null); }}
+            >
+              <div style={{ display:"flex", justifyContent:"space-between", fontSize:13, marginBottom:6 }}>
+                <span style={{ fontWeight:600 }}>{cat.icon} {cat.name}</span>
+                <span style={{ fontWeight:700, color:"var(--text)" }}>{fmt(cat.spent)}</span>
+              </div>
+              <div style={{ background:"var(--subtle2)", borderRadius:100, height:6, overflow:"hidden" }}>
+                <div style={{ height:"100%", borderRadius:100, background:cat.color, width:`${maxSpent>0?(cat.spent/maxSpent)*100:0}%`, transition:"width .6s" }} />
               </div>
             </div>
-            <div style={{ background:"#f0f0f0", borderRadius:100, height:6, overflow:"hidden" }}>
-              <div style={{ height:"100%", borderRadius:100, background: cat.spent>cat.budget&&cat.budget>0 ? "#e11d48" : cat.color, width:`${cat.pct||100}%`, transition:"width .6s" }} />
-            </div>
-          </div>
-        ))}
+          ));
+        })()}
       </div>
 
       {/* ── Summary stats ── */}
@@ -249,12 +249,12 @@ export default function Analytics({ expenses, budgets, formatAmount }) {
         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(160px,1fr))", gap:12 }}>
           {[
             { label:"Total Spent",        value:fmt(thisMonthExp.reduce((s,e)=>s+(parseFloat(e.amount)||0),0)), color:"#e11d48" },
-            { label:"Avg per Transaction",value:thisMonthExp.length>0 ? fmt(thisMonthExp.reduce((s,e)=>s+(parseFloat(e.amount)||0),0)/thisMonthExp.length) : fmt(0), color:"#888" },
+            { label:"Avg per Transaction",value:thisMonthExp.length>0 ? fmt(thisMonthExp.reduce((s,e)=>s+(parseFloat(e.amount)||0),0)/thisMonthExp.length) : fmt(0), color:"var(--muted)" },
             { label:"Largest Expense",    value:thisMonthExp.length>0 ? fmt(Math.max(...thisMonthExp.map(e=>parseFloat(e.amount)||0))) : fmt(0), color:"#e11d48" },
             { label:"Transactions",       value:thisMonthExp.length, color:"#0070f3" },
           ].map(stat => (
-            <div key={stat.label} style={{ background:"#fafafa", borderRadius:10, padding:14, border:"1px solid #f0f0f0" }}>
-              <div style={{ fontSize:10, color:"#aaa", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:6, fontWeight:600 }}>{stat.label}</div>
+            <div key={stat.label} style={{ background:"var(--subtle)", borderRadius:10, padding:14, border:"1px solid var(--subtle2)" }}>
+              <div style={{ fontSize:10, color:"var(--faint2)", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:6, fontWeight:600 }}>{stat.label}</div>
               <div style={{ fontWeight:800, fontSize:18, color:stat.color, letterSpacing:"-0.5px" }}>{stat.value}</div>
             </div>
           ))}

@@ -86,7 +86,7 @@ export default function Login({ onLogin, onGoToRegister, onGoToForgot }) {
 const styles = {
   page: {
     minHeight:      "100vh",
-    background:     "#f6f8fa",
+    background:     "var(--bg)",
     display:        "flex",
     alignItems:     "center",
     justifyContent: "center",
@@ -94,8 +94,8 @@ const styles = {
     padding:        "20px",
   },
   card: {
-    background:   "#ffffff",
-    border:       "1px solid #eaeaea",
+    background:   "var(--card)",
+    border:       "1px solid var(--border)",
     borderRadius: "16px",
     padding:      "40px",
     width:        "100%",
@@ -110,14 +110,14 @@ const styles = {
   title: {
     fontSize:      "22px",
     fontWeight:    800,
-    color:         "#0d0d0d",
+    color:         "var(--text)",
     textAlign:     "center",
     marginBottom:  "4px",
     letterSpacing: "-0.5px",
   },
   subtitle: {
     fontSize:     "13px",
-    color:        "#888",
+    color:        "var(--muted)",
     textAlign:    "center",
     marginBottom: "28px",
     fontWeight:   400,
@@ -136,7 +136,7 @@ const styles = {
   label: {
     display:       "block",
     fontSize:      "11px",
-    color:         "#666",
+    color:         "var(--muted2)",
     fontWeight:    600,
     textTransform: "uppercase",
     letterSpacing: "0.6px",
@@ -144,11 +144,11 @@ const styles = {
   },
   input: {
     width:        "100%",
-    background:   "#ffffff",
-    border:       "1px solid #eaeaea",
+    background:   "var(--card)",
+    border:       "1px solid var(--border)",
     borderRadius: "8px",
     padding:      "10px 12px",
-    color:        "#0d0d0d",
+    color:        "var(--text)",
     fontSize:     "13.5px",
     fontFamily:   "inherit",
     outline:      "none",
@@ -174,8 +174,8 @@ const styles = {
   btnOutline: {
     width:         "100%",
     background:    "transparent",
-    color:         "#0d0d0d",
-    border:        "1px solid #eaeaea",
+    color:         "var(--text)",
+    border:        "1px solid var(--border)",
     padding:       "11px",
     borderRadius:  "8px",
     fontWeight:    600,
@@ -190,7 +190,7 @@ const styles = {
   },
   dividerText: {
     fontSize:   "13px",
-    color:      "#aaa",
+    color:      "var(--faint2)",
     fontWeight: 400,
   },
   link: {

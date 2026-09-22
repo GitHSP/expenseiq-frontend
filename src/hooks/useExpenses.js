@@ -1,11 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
-import { expensesAPI, budgetsAPI }          from "../utils/api";
-
-const DEFAULT_BUDGETS = {};
+import { expensesAPI }                      from "../utils/api";
 
 export function useExpenses() {
   const [expenses, setExpenses] = useState([]);
-  const [budgets,  setBudgets]  = useState(DEFAULT_BUDGETS);
   const [loaded,   setLoaded]   = useState(false);
   const [error,    setError]    = useState(null);
 
@@ -17,21 +14,8 @@ export function useExpenses() {
 
       await new Promise(resolve => setTimeout(resolve, 300));
 
-      const [expensesData, budgetsData] = await Promise.all([
-        expensesAPI.getAll(),
-        budgetsAPI.getAll(),
-      ]);
-
+      const expensesData = await expensesAPI.getAll();
       setExpenses(Array.isArray(expensesData) ? expensesData : []);
-
-      if (Array.isArray(budgetsData) && budgetsData.length > 0) {
-        const budgetsObj = Object.fromEntries(
-          budgetsData.map(b => [b.category, parseFloat(b.amount) || 0])
-        );
-        setBudgets(budgetsObj);
-      } else {
-        setBudgets(DEFAULT_BUDGETS);
-      }
 
     } catch (err) {
       setError(err.message);
@@ -91,22 +75,9 @@ export function useExpenses() {
     }
   }
 
-  async function saveBudgets(newBudgets) {
-    try {
-      await Promise.all(
-        Object.entries(newBudgets).map(([category, amount]) =>
-          budgetsAPI.update(category, parseFloat(amount) || 0)
-        )
-      );
-      setBudgets(newBudgets);
-    } catch (err) {
-      throw new Error(err.message);
-    }
-  }
-
   return {
-    expenses, budgets, loaded, error,
+    expenses, loaded, error,
     addExpense, updateExpense, deleteExpense,
-    saveBudgets, reload: loadData,
+    reload: loadData,
   };
 }

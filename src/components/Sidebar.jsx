@@ -81,14 +81,14 @@ export default function Sidebar({
         {!collapsed && user && (
           <div style={{
             padding:      "10px 12px",
-            background:   "#f6f8fa",
+            background:   "var(--bg)",
             borderRadius: "8px",
-            border:       "1px solid #eaeaea",
+            border:       "1px solid var(--border)",
           }}>
-            <div style={{ fontSize:10, color:"#aaa", marginBottom:2, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px" }}>
+            <div style={{ fontSize:10, color:"var(--faint2)", marginBottom:2, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px" }}>
               Signed in as
             </div>
-            <div style={{ fontSize:13, fontWeight:600, color:"#0d0d0d", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+            <div style={{ fontSize:13, fontWeight:600, color:"var(--text)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
               {user.email}
             </div>
           </div>

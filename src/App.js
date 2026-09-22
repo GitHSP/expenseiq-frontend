@@ -3,12 +3,12 @@ import { useState, useEffect } from "react";
 
 
 // Hooks
-import { useExpenses }  from "./hooks/useExpenses";
-import { useToast }     from "./hooks/useToast";
-import { useAuth }      from "./hooks/useAuth";
-import { useIncome }    from "./hooks/useIncome";
-import { useDebts }     from "./hooks/useDebts";
-import { useCurrency }  from "./hooks/useCurrency";
+import { useExpenses }         from "./hooks/useExpenses";
+import { useToast }            from "./hooks/useToast";
+import { useAuth }             from "./hooks/useAuth";
+import { useIncome }           from "./hooks/useIncome";
+import { useFinancialPlanner } from "./hooks/useFinancialPlanner";
+import { useCurrency }         from "./hooks/useCurrency";
 
 // Auth pages
 import Login          from "./pages/Login";
@@ -27,15 +27,13 @@ import AddIncomeModal  from "./components/AddIncomeModal";
 import Dashboard         from "./pages/Dashboard";
 import Expenses          from "./pages/Expenses";
 import Analytics         from "./pages/Analytics";
-import Budgets           from "./pages/Budgets";
-import DebtPayoffTracker from "./pages/DebtPayoffTracker";
 import Profile           from "./pages/Profile";
-import Forecast from "./pages/Forecast";
 
 // Utils
 import { exportToCSV } from "./utils/helpers";
 
 import FinancialPlanner   from "./pages/FinancialPlanner";
+import Assistant          from "./pages/Assistant";
 
 export default function App() {
 
@@ -69,8 +67,8 @@ useEffect(() => {
 
   // ── Data hooks ────────────────────────────
   const {
-    expenses, budgets, loaded,
-    addExpense, updateExpense, deleteExpense, saveBudgets,
+    expenses, loaded,
+    addExpense, updateExpense, deleteExpense,
   } = useExpenses();
 
   const {
@@ -79,9 +77,13 @@ useEffect(() => {
   } = useIncome();
 
   const {
-    debts, loaded: debtLoaded,
-    isDueSoon, isOverdue,
-  } = useDebts();
+    debts, emergencyFund, currentPlan, checklist,
+    loaded: plannerLoaded, rolledOver,
+    addDebt, updateDebt, deleteDebt,
+    updateEmergencyFund,
+    addChecklistItem, toggleChecklistItem, deleteChecklistItem,
+    rolloverToNextMonth, generateChecklist,
+  } = useFinancialPlanner();
 
   // ── Currency ──────────────────────────────
   const {
@@ -95,11 +97,12 @@ useEffect(() => {
   const { toast, showToast } = useToast();
 
   // ── Notification badges ───────────────────
-  const overdueCount = debts.filter(
-    d => !d.isPaidOff && isOverdue(d.nextPaymentDate)
+  const todayDay = new Date().getDate();
+  const overdueCount = checklist.filter(
+    i => !i.is_completed && i.due_day && i.due_day < todayDay
   ).length;
-  const dueSoonCount = debts.filter(
-    d => !d.isPaidOff && isDueSoon(d.nextPaymentDate)
+  const dueSoonCount = checklist.filter(
+    i => !i.is_completed && i.due_day && i.due_day >= todayDay && i.due_day - todayDay <= 7
   ).length;
   const badges = {
     payments: overdueCount + dueSoonCount,
@@ -134,42 +137,42 @@ useEffect(() => {
   }
 
   // ── Skeleton loading ──────────────────────
-  if (loading || !loaded || !incomeLoaded || !debtLoaded) {
+  if (loading || !loaded || !incomeLoaded || !plannerLoaded) {
     return (
       <div style={{
         display:    "flex",
         minHeight:  "100vh",
-        background: "#f6f8fa",
+        background: "var(--bg)",
         fontFamily: "'Inter', sans-serif",
       }}>
         {/* Fake sidebar */}
         <div style={{
           width:       248,
-          background:  "#ffffff",
-          borderRight: "1px solid #eaeaea",
+          background:  "var(--card)",
+          borderRight: "1px solid var(--border)",
           padding:     "20px 16px",
           flexShrink:  0,
         }}>
           <div style={{ display:"flex", gap:8, marginBottom:28, alignItems:"center" }}>
-            <div style={{ width:10, height:10, borderRadius:"50%", background:"#eaeaea" }} />
-            <div style={{ width:80, height:14, borderRadius:6, background:"#eaeaea" }} />
+            <div style={{ width:10, height:10, borderRadius:"50%", background:"var(--border)" }} />
+            <div style={{ width:80, height:14, borderRadius:6, background:"var(--border)" }} />
           </div>
           {[1,2,3,4,5,6].map(i => (
-            <div key={i} style={{ height:36, borderRadius:8, background:"#f6f8fa", marginBottom:6 }} />
+            <div key={i} style={{ height:36, borderRadius:8, background:"var(--bg)", marginBottom:6 }} />
           ))}
         </div>
         {/* Fake content */}
         <div style={{ flex:1, padding:"32px" }}>
-          <div style={{ width:160, height:28, borderRadius:8, background:"#eaeaea", marginBottom:8 }} />
-          <div style={{ width:120, height:14, borderRadius:6, background:"#f0f0f0", marginBottom:28 }} />
+          <div style={{ width:160, height:28, borderRadius:8, background:"var(--border)", marginBottom:8 }} />
+          <div style={{ width:120, height:14, borderRadius:6, background:"var(--subtle2)", marginBottom:28 }} />
           <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:16, marginBottom:24 }}>
             {[1,2,3,4].map(i => (
-              <div key={i} style={{ height:110, borderRadius:12, background:"linear-gradient(135deg,#e0e0e0,#ececec)" }} />
+              <div key={i} style={{ height:110, borderRadius:12, background:"linear-gradient(135deg,var(--border),var(--subtle2))" }} />
             ))}
           </div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
             {[1,2].map(i => (
-              <div key={i} style={{ height:280, borderRadius:12, background:"#ffffff", border:"1px solid #eaeaea" }} />
+              <div key={i} style={{ height:280, borderRadius:12, background:"var(--card)", border:"1px solid var(--border)" }} />
             ))}
           </div>
         </div>
@@ -203,11 +206,6 @@ useEffect(() => {
   async function handleDelete(id) {
     try { await deleteExpense(id); showToast("Expense deleted", "error"); }
     catch (err) { showToast(err.message || "Failed to delete", "error"); }
-  }
-
-  async function handleSaveBudgets(newBudgets) {
-    try { await saveBudgets(newBudgets); showToast("Budgets saved!"); }
-    catch (err) { showToast(err.message || "Failed to save", "error"); }
   }
 
   // ─────────────────────────────────────────
@@ -261,19 +259,18 @@ async function handleLogout() {
               alignItems:     "center",
               justifyContent: "center",
               padding:        "60px 20px",
-              color:          "#888",
+              color:          "var(--muted)",
               gap:            12,
             }}>
               <div style={{ fontSize:32 }}>⏳</div>
               <div style={{ fontWeight:600, fontSize:15 }}>Loading your data...</div>
-              <div style={{ fontSize:12, color:"#bbb" }}>Fetching expenses and income...</div>
+              <div style={{ fontSize:12, color:"var(--faint)" }}>Fetching expenses and income...</div>
             </div>
           );
         }
         return (
           <Dashboard
             expenses={expenses}
-            budgets={budgets}
             onEdit={openEditModal}
             onDelete={handleDelete}
             onViewAll={() => setView("expenses")}
@@ -305,22 +302,27 @@ async function handleLogout() {
         return (
           <Analytics
             expenses={expenses}
-            budgets={budgets}
-            formatAmount={formatAmount}
-          />
-        );
-      case "budgets":
-        return (
-          <Budgets
-            expenses={expenses}
-            budgets={budgets}
-            onSaveBudgets={handleSaveBudgets}
             formatAmount={formatAmount}
           />
         );
       case "payments":
         return (
           <FinancialPlanner
+            debts={debts}
+            emergencyFund={emergencyFund}
+            currentPlan={currentPlan}
+            checklist={checklist}
+            loaded={plannerLoaded}
+            rolledOver={rolledOver}
+            addDebt={addDebt}
+            updateDebt={updateDebt}
+            deleteDebt={deleteDebt}
+            updateEmergencyFund={updateEmergencyFund}
+            addChecklistItem={addChecklistItem}
+            toggleChecklistItem={toggleChecklistItem}
+            deleteChecklistItem={deleteChecklistItem}
+            rolloverToNextMonth={rolloverToNextMonth}
+            generateChecklist={generateChecklist}
             formatAmount={formatAmount}
             onAddExpense={async (formData) => {
               try {
@@ -332,13 +334,8 @@ async function handleLogout() {
             }}
           />
         );
-      case "payoff":
-        return (
-          <DebtPayoffTracker
-            debts={debts}
-            formatAmount={formatAmount}
-          />
-        );
+      case "assistant":
+        return <Assistant />;
       case "profile":
         return (
           <Profile
@@ -346,16 +343,6 @@ async function handleLogout() {
             onLogout={handleLogout}
           />
         );
-
-        case "forecast":
-          return (
-            <Forecast
-              expenses={expenses}
-              incomes={incomes}
-              budgets={budgets}
-              formatAmount={formatAmount}
-            />
-          );
 
       default:
         return null;

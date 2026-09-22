@@ -4,15 +4,15 @@ export default function CurrencySelector({ currency, setCurrency, collapsed }) {
   return (
     <div style={{
       padding:      collapsed ? "8px" : "10px 12px",
-      background:   "#f5f6fa",
+      background:   "var(--subtle2)",
       borderRadius: "12px",
       marginBottom: "8px",
-      border:       "1px solid #e8eaf0",
+      border:       "1px solid var(--border)",
     }}>
       {!collapsed && (
         <div style={{
           fontSize:      10,
-          color:         "#888",
+          color:         "var(--muted)",
           fontWeight:    600,
           textTransform: "uppercase",
           letterSpacing: 0.5,
@@ -31,7 +31,7 @@ export default function CurrencySelector({ currency, setCurrency, collapsed }) {
           outline:     "none",
           fontSize:    collapsed ? 16 : 13,
           fontWeight:  700,
-          color:       "#1a1a2e",
+          color:       "var(--text)",
           cursor:      "pointer",
           padding:     0,
         }}

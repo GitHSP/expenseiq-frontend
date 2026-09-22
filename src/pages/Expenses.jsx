@@ -47,7 +47,7 @@ export default function Expenses({ expenses, onEdit, onDelete, formatAmount }) {
   }
 
   function SortIcon({ col }) {
-    if (sortBy !== col) return <span style={{ color:"#ddd", marginLeft:4 }}>↕</span>;
+    if (sortBy !== col) return <span style={{ color:"var(--faint)", marginLeft:4 }}>↕</span>;
     return <span style={{ color:"#0070f3", marginLeft:4 }}>{sortDir === "asc" ? "↑" : "↓"}</span>;
   }
 
@@ -58,10 +58,10 @@ export default function Expenses({ expenses, onEdit, onDelete, formatAmount }) {
     fontWeight:    700,
     textTransform: "uppercase",
     letterSpacing: "0.6px",
-    color:         "#888",
+    color:         "var(--muted)",
     whiteSpace:    "nowrap",
-    borderBottom:  "1px solid #eaeaea",
-    background:    "#fafafa",
+    borderBottom:  "1px solid var(--border)",
+    background:    "var(--subtle)",
     cursor:        "pointer",
     userSelect:    "none",
   };
@@ -69,8 +69,8 @@ export default function Expenses({ expenses, onEdit, onDelete, formatAmount }) {
   const tdStyle = {
     padding:      "12px 14px",
     fontSize:     13,
-    color:        "#0d0d0d",
-    borderBottom: "1px solid #f5f5f5",
+    color:        "var(--text)",
+    borderBottom: "1px solid var(--subtle2)",
     verticalAlign:"middle",
     whiteSpace:   "nowrap",
   };
@@ -86,14 +86,14 @@ export default function Expenses({ expenses, onEdit, onDelete, formatAmount }) {
 
       {/* ── Filters ── */}
       <div style={{
-        background:"#ffffff", border:"1px solid #eaeaea", borderRadius:12,
+        background:"var(--card)", border:"1px solid var(--border)", borderRadius:12,
         padding:"14px 16px", marginBottom:16,
         display:"flex", gap:10, flexWrap:"wrap", alignItems:"center",
       }}>
         <div style={{ position:"relative", flex:1, minWidth:180 }}>
-          <span style={{ position:"absolute", left:10, top:"50%", transform:"translateY(-50%)", fontSize:14, color:"#aaa" }}>🔍</span>
+          <span style={{ position:"absolute", left:10, top:"50%", transform:"translateY(-50%)", fontSize:14, color:"var(--faint2)" }}>🔍</span>
           <input
-            style={{ width:"100%", background:"#f6f8fa", border:"1px solid #eaeaea", borderRadius:8, padding:"9px 12px 9px 32px", color:"#0d0d0d", fontSize:13, fontFamily:"inherit", outline:"none", boxSizing:"border-box" }}
+            style={{ width:"100%", background:"var(--bg)", border:"1px solid var(--border)", borderRadius:8, padding:"9px 12px 9px 32px", color:"var(--text)", fontSize:13, fontFamily:"inherit", outline:"none", boxSizing:"border-box" }}
             placeholder="Search expenses..."
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -115,12 +115,12 @@ export default function Expenses({ expenses, onEdit, onDelete, formatAmount }) {
       </div>
 
       {/* ── Table ── */}
-      <div style={{ background:"#ffffff", border:"1px solid #eaeaea", borderRadius:12, overflow:"hidden", boxShadow:"0 1px 3px rgba(0,0,0,0.04)" }}>
+      <div style={{ background:"var(--card)", border:"1px solid var(--border)", borderRadius:12, overflow:"hidden", boxShadow:"0 1px 3px rgba(0,0,0,0.04)" }}>
         {filtered.length === 0 ? (
           <div className="empty-state">
             <div className="empty-icon">💸</div>
-            <div style={{ fontWeight:600, color:"#ccc", marginBottom:4, fontSize:15 }}>No expenses found</div>
-            <div style={{ fontSize:13, color:"#ccc" }}>Try adjusting your filters</div>
+            <div style={{ fontWeight:600, color:"var(--faint)", marginBottom:4, fontSize:15 }}>No expenses found</div>
+            <div style={{ fontSize:13, color:"var(--faint)" }}>Try adjusting your filters</div>
           </div>
         ) : (
           <div style={{ overflowX:"auto" }}>
@@ -141,17 +141,17 @@ export default function Expenses({ expenses, onEdit, onDelete, formatAmount }) {
                   return (
                     <tr
                       key={exp.id}
-                      style={{ background: idx % 2 === 0 ? "#ffffff" : "#fafafa" }}
+                      style={{ background: idx % 2 === 0 ? "var(--card)" : "var(--subtle)" }}
                       onMouseEnter={e => e.currentTarget.style.background = "#f0f7ff"}
-                      onMouseLeave={e => e.currentTarget.style.background = idx % 2 === 0 ? "#ffffff" : "#fafafa"}
+                      onMouseLeave={e => e.currentTarget.style.background = idx % 2 === 0 ? "var(--card)" : "var(--subtle)"}
                     >
-                      <td style={{ ...tdStyle, color:"#888", fontSize:12, fontWeight:500 }}>{exp.date}</td>
+                      <td style={{ ...tdStyle, color:"var(--muted)", fontSize:12, fontWeight:500 }}>{exp.date}</td>
                       <td style={{ ...tdStyle, maxWidth:200 }}>
                         <div style={{ fontWeight:600, overflow:"hidden", textOverflow:"ellipsis" }}>{exp.title}</div>
-                        {exp.notes && <div style={{ fontSize:11, color:"#aaa", marginTop:2 }}>{exp.notes}</div>}
+                        {exp.notes && <div style={{ fontSize:11, color:"var(--faint2)", marginTop:2 }}>{exp.notes}</div>}
                       </td>
                       <td style={tdStyle}>
-                        <div style={{ display:"inline-flex", alignItems:"center", gap:6, background: cat ? `${cat.color}12` : "#f6f8fa", border:`1px solid ${cat ? cat.color+"30" : "#eaeaea"}`, borderRadius:6, padding:"4px 10px", fontSize:11, fontWeight:600, color:cat?.color || "#888" }}>
+                        <div style={{ display:"inline-flex", alignItems:"center", gap:6, background: cat ? `${cat.color}12` : "var(--bg)", border:`1px solid ${cat ? cat.color+"30" : "var(--border)"}`, borderRadius:6, padding:"4px 10px", fontSize:11, fontWeight:600, color:cat?.color || "var(--muted)" }}>
                           {cat?.icon || "📦"} {exp.category}
                         </div>
                       </td>
@@ -166,13 +166,13 @@ export default function Expenses({ expenses, onEdit, onDelete, formatAmount }) {
                             ? exp.tags.filter(Boolean).map((tag, i) => (
                                 <span key={i} style={{ background:"#f0f7ff", color:"#0070f3", padding:"2px 8px", borderRadius:4, fontSize:10, fontWeight:600 }}>{tag}</span>
                               ))
-                            : <span style={{ color:"#ddd", fontSize:11 }}>—</span>
+                            : <span style={{ color:"var(--faint)", fontSize:11 }}>—</span>
                           }
                         </div>
                       </td>
                       <td style={{ ...tdStyle, textAlign:"center" }}>
                         <div style={{ display:"flex", gap:6, justifyContent:"center" }}>
-                          <button onClick={() => onEdit(exp)} style={{ background:"#f6f8fa", color:"#555", border:"1px solid #eaeaea", padding:"5px 10px", borderRadius:6, fontSize:11, fontWeight:600, cursor:"pointer", fontFamily:"inherit" }}>✏️ Edit</button>
+                          <button onClick={() => onEdit(exp)} style={{ background:"var(--bg)", color:"var(--muted2)", border:"1px solid var(--border)", padding:"5px 10px", borderRadius:6, fontSize:11, fontWeight:600, cursor:"pointer", fontFamily:"inherit" }}>✏️ Edit</button>
                           <button onClick={() => onDelete(exp.id)} style={{ background:"#fff1f2", color:"#e11d48", border:"1px solid #fecdd3", padding:"5px 10px", borderRadius:6, fontSize:11, fontWeight:600, cursor:"pointer", fontFamily:"inherit" }}>🗑 Delete</button>
                         </div>
                       </td>
@@ -181,14 +181,14 @@ export default function Expenses({ expenses, onEdit, onDelete, formatAmount }) {
                 })}
               </tbody>
               <tfoot>
-                <tr style={{ background:"#f6f8fa" }}>
-                  <td colSpan={3} style={{ ...tdStyle, fontWeight:700, borderTop:"1px solid #eaeaea", borderBottom:"none" }}>
+                <tr style={{ background:"var(--bg)" }}>
+                  <td colSpan={3} style={{ ...tdStyle, fontWeight:700, borderTop:"1px solid var(--border)", borderBottom:"none" }}>
                     {filtered.length} transaction{filtered.length !== 1 ? "s" : ""}
                   </td>
-                  <td style={{ ...tdStyle, textAlign:"right", fontWeight:800, color:"#e11d48", fontSize:15, letterSpacing:"-0.5px", borderTop:"1px solid #eaeaea", borderBottom:"none" }}>
+                  <td style={{ ...tdStyle, textAlign:"right", fontWeight:800, color:"#e11d48", fontSize:15, letterSpacing:"-0.5px", borderTop:"1px solid var(--border)", borderBottom:"none" }}>
                     -{fmt(totalFiltered)}
                   </td>
-                  <td colSpan={2} style={{ borderTop:"1px solid #eaeaea", borderBottom:"none" }} />
+                  <td colSpan={2} style={{ borderTop:"1px solid var(--border)", borderBottom:"none" }} />
                 </tr>
               </tfoot>
             </table>

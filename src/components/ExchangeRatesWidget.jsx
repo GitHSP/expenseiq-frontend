@@ -12,25 +12,25 @@ export default function ExchangeRatesWidget({
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
         <div>
           <div className="card-title">💱 Live Exchange Rates</div>
-          <div style={{ fontSize:11, color:"#888", marginTop:2 }}>
+          <div style={{ fontSize:11, color:"var(--muted)", marginTop:2 }}>
             Base: 🇨🇦 CAD — Canadian Dollar
           </div>
         </div>
         <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-          <div style={{ fontSize:11, color:"#888" }}>
+          <div style={{ fontSize:11, color:"var(--muted)" }}>
             Updated: {getLastUpdatedText()}
           </div>
           <button
             onClick={refresh}
             disabled={loading}
             style={{
-              background:   "#f5f6fa",
-              border:       "1px solid #e8eaf0",
+              background:   "var(--subtle2)",
+              border:       "1px solid var(--border)",
               borderRadius: "8px",
               padding:      "6px 10px",
               fontSize:     12,
               cursor:       loading ? "not-allowed" : "pointer",
-              color:        "#555",
+              color:        "var(--muted2)",
               fontWeight:   600,
             }}
           >
@@ -60,26 +60,26 @@ export default function ExchangeRatesWidget({
               style={{
                 background:   currency === curr.code
                   ? "linear-gradient(135deg,#f0eeff,#e8e0ff)"
-                  : "#fafbfc",
+                  : "var(--subtle)",
                 borderRadius: "12px",
                 padding:      "12px 14px",
                 border:       currency === curr.code
                   ? "1.5px solid #A29BFE"
-                  : "1px solid #e8eaf0",
+                  : "1px solid var(--border)",
                 transition:   "all 0.2s",
               }}
             >
               <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:6 }}>
                 <span style={{ fontSize:18 }}>{curr.flag}</span>
                 <div>
-                  <div style={{ fontWeight:700, fontSize:12, color:"#1a1a2e" }}>{curr.code}</div>
-                  <div style={{ fontSize:10, color:"#888" }}>{curr.name}</div>
+                  <div style={{ fontWeight:700, fontSize:12, color:"var(--text)" }}>{curr.code}</div>
+                  <div style={{ fontSize:10, color:"var(--muted)" }}>{curr.name}</div>
                 </div>
               </div>
-              <div style={{ fontWeight:800, fontSize:16, color: currency === curr.code ? "#6C5CE7" : "#1a1a2e" }}>
+              <div style={{ fontWeight:800, fontSize:16, color: currency === curr.code ? "#6C5CE7" : "var(--text)" }}>
                 {rate ? rate.toFixed(4) : "—"}
               </div>
-              <div style={{ fontSize:10, color:"#888", marginTop:2 }}>
+              <div style={{ fontSize:10, color:"var(--muted)", marginTop:2 }}>
                 1 CAD = {rate ? rate.toFixed(4) : "—"} {curr.code}
               </div>
             </div>
@@ -103,7 +103,7 @@ export default function ExchangeRatesWidget({
             Currently viewing in{" "}
             {SUPPORTED_CURRENCIES.find(c => c.code === currency)?.flag} {currency}
           </div>
-          <div style={{ fontSize:12, color:"#888" }}>
+          <div style={{ fontSize:12, color:"var(--muted)" }}>
             1 CAD = {getRate(currency)?.toFixed(4)} {currency}
           </div>
         </div>

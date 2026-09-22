@@ -1,39 +1,38 @@
-import { useState } from "react";
+import { useState }    from "react";
 import {
   PieChart, Pie, Cell, BarChart, Bar,
-  XAxis, YAxis, Tooltip, ResponsiveContainer, Legend
+  XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
 import ExchangeRatesWidget from "../components/ExchangeRatesWidget";
+import FinancialTips       from "../components/FinancialTips";
 import { CATEGORIES, MONTHS } from "../constants/categories";
 import { INCOME_CATEGORIES }  from "../hooks/useIncome";
-import FinancialTips from "../components/FinancialTips";
-import { isSameMonth } from "../utils/helpers";
+import { isSameMonth }        from "../utils/helpers";
 
 const TOOLTIP_STYLE = {
-  background:   "#ffffff",
-  border:       "1px solid #eaeaea",
+  background:   "var(--card)",
+  border:       "1px solid var(--border)",
   borderRadius: 8,
-  color:        "#0d0d0d",
+  color:        "var(--text)",
   fontSize:     12,
   fontFamily:   "'Inter', sans-serif",
   boxShadow:    "0 4px 12px rgba(0,0,0,0.08)",
 };
 
-// ── Reusable row styles ──
 const rowStyle = {
   display:      "flex",
   alignItems:   "center",
   gap:          12,
   padding:      "12px 14px",
-  background:   "#fafafa",
+  background:   "var(--subtle)",
   borderRadius: 10,
-  border:       "1px solid #f0f0f0",
+  border:       "1px solid var(--subtle2)",
   marginBottom: 8,
   transition:   "all 0.12s",
 };
 
 export default function Dashboard({
-  expenses, budgets, onEdit, onDelete, onViewAll,
+  expenses, onEdit, onDelete, onViewAll,
   incomes, onEditIncome, onDeleteIncome, onAddIncome,
   currency, rates, getRate, formatAmount,
   getLastUpdatedText, ratesLoading, ratesError, refreshRates,
@@ -44,10 +43,9 @@ export default function Dashboard({
   const currentYear  = now.getFullYear();
   const dayOfMonth   = now.getDate();
 
-  // ── Active card state ──
   const [activeCard, setActiveCard] = useState(null);
 
-  // ── Filter this month ──
+  // ── Filter this month using safe date parsing ──
   const thisMonthExp = expenses.filter(e =>
     isSameMonth(e.date, currentMonth, currentYear)
   );
@@ -55,6 +53,7 @@ export default function Dashboard({
   const thisMonthInc = incomes.filter(i =>
     isSameMonth(i.date, currentMonth, currentYear)
   );
+
   // ── Totals ──
   const totalExpenses = thisMonthExp.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
   const totalIncome   = thisMonthInc.reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
@@ -62,21 +61,7 @@ export default function Dashboard({
   const savingsRate   = totalIncome > 0 ? ((netBalance / totalIncome) * 100).toFixed(1) : 0;
   const dailyAvg      = dayOfMonth > 0 ? (totalExpenses / dayOfMonth).toFixed(2) : 0;
 
-  // ── Over budget categories ──
-  const overBudgetCats = CATEGORIES.filter(cat => {
-    const spent  = thisMonthExp
-      .filter(e => e.category === cat.name)
-      .reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
-    return spent > (parseFloat(budgets[cat.name]) || 0) && (parseFloat(budgets[cat.name]) || 0) > 0;
-  }).map(cat => {
-    const spent  = thisMonthExp
-      .filter(e => e.category === cat.name)
-      .reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
-    const budget = parseFloat(budgets[cat.name]) || 0;
-    return { ...cat, spent, budget, over: spent - budget };
-  });
-
-  // ── Pie chart ──
+  // ── Charts ──
   const expensePieData = CATEGORIES.map(cat => ({
     name:  cat.name,
     value: thisMonthExp
@@ -85,13 +70,12 @@ export default function Dashboard({
     color: cat.color,
   })).filter(c => c.value > 0);
 
-  // ── Bar chart ──
   const incomeVsExpenseData = MONTHS.map((m, i) => {
     const monthExp = expenses
-      .filter(e => new Date(e.date).getMonth() === i && new Date(e.date).getFullYear() === currentYear)
+      .filter(e => isSameMonth(e.date, i, currentYear))
       .reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
     const monthInc = incomes
-      .filter(inc => new Date(inc.date).getMonth() === i && new Date(inc.date).getFullYear() === currentYear)
+      .filter(inc => isSameMonth(inc.date, i, currentYear))
       .reduce((s, inc) => s + (parseFloat(inc.amount) || 0), 0);
     return {
       name:    m.slice(0, 3),
@@ -104,12 +88,10 @@ export default function Dashboard({
     ? formatAmount(parseFloat(v) || 0)
     : `$${(parseFloat(v) || 0).toFixed(2)}`;
 
-  // ── Toggle active card ──
   function handleCardClick(cardId) {
     setActiveCard(prev => prev === cardId ? null : cardId);
   }
 
-  // ── Stat cards config ──
   const statCards = [
     {
       id:       "expenses",
@@ -134,13 +116,6 @@ export default function Dashboard({
         ? "linear-gradient(135deg, #0070f3, #0050b3)"
         : "linear-gradient(135deg, #e11d48, #be123c)",
     },
-    {
-      id:       "overbudget",
-      label:    "Over Budget",
-      value:    overBudgetCats.length,
-      sub:      "categories this month",
-      gradient: "linear-gradient(135deg, #f59e0b, #d97706)",
-    },
   ];
 
   return (
@@ -148,19 +123,17 @@ export default function Dashboard({
       {/* ── Page header ── */}
       <div style={{ marginBottom:28 }}>
         <div className="page-title">Dashboard</div>
-        <div className="page-sub">
-          {MONTHS[currentMonth]} {currentYear}
-        </div>
+        <div className="page-sub">{MONTHS[currentMonth]} {currentYear}</div>
       </div>
 
+      {/* ── Financial Tips ── */}
       <FinancialTips
         expenses={expenses}
         incomes={incomes}
-        budgets={budgets}
         debts={debts || []}
       />
 
-      {/* ── Clickable Stat cards ── */}
+      {/* ── Clickable stat cards ── */}
       <div className="stat-grid" style={{ marginBottom:16 }}>
         {statCards.map(card => (
           <div
@@ -169,7 +142,7 @@ export default function Dashboard({
             style={{
               background:   card.gradient,
               borderRadius: 12,
-              padding:      "20px",
+              padding:      20,
               color:        "#fff",
               cursor:       "pointer",
               transition:   "all 0.2s",
@@ -190,7 +163,7 @@ export default function Dashboard({
             <div style={{ fontSize:11, opacity:0.65, fontWeight:500, marginBottom:8 }}>
               {card.sub}
             </div>
-            <div style={{ fontSize:10, opacity:0.6, fontWeight:600, letterSpacing:"0.3px" }}>
+            <div style={{ fontSize:10, opacity:0.6, fontWeight:600 }}>
               {activeCard === card.id ? "▲ Click to collapse" : "▼ Click to expand"}
             </div>
           </div>
@@ -200,24 +173,23 @@ export default function Dashboard({
       {/* ── Active card detail panel ── */}
       {activeCard && (
         <div style={{
-          background:   "#ffffff",
+          background:   "var(--card)",
           borderRadius: 12,
-          border:       "1px solid #eaeaea",
+          border:       "1px solid var(--border)",
           marginBottom: 20,
           overflow:     "hidden",
           boxShadow:    "0 4px 16px rgba(0,0,0,0.06)",
-          animation:    "fadeIn 0.2s ease",
         }}>
 
           {/* ── EXPENSES PANEL ── */}
           {activeCard === "expenses" && (
             <>
-              <div style={{ padding:"18px 20px", borderBottom:"1px solid #f0f0f0", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+              <div style={{ padding:"18px 20px", borderBottom:"1px solid var(--subtle2)", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                 <div>
-                  <div style={{ fontWeight:800, fontSize:16, color:"#0d0d0d", letterSpacing:"-0.4px" }}>
+                  <div style={{ fontWeight:800, fontSize:16, color:"var(--text)", letterSpacing:"-0.4px" }}>
                     This Month's Expenses
                   </div>
-                  <div style={{ fontSize:12, color:"#888", marginTop:2 }}>
+                  <div style={{ fontSize:12, color:"var(--muted)", marginTop:2 }}>
                     {thisMonthExp.length} transactions · Total {fmt(totalExpenses)}
                   </div>
                 </div>
@@ -225,69 +197,53 @@ export default function Dashboard({
               </div>
 
               {/* Category breakdown */}
-              <div style={{ padding:"16px 20px", borderBottom:"1px solid #f0f0f0" }}>
-                <div style={{ fontSize:11, color:"#888", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:12 }}>
+              <div style={{ padding:"16px 20px", borderBottom:"1px solid var(--subtle2)" }}>
+                <div style={{ fontSize:11, color:"var(--muted)", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:12 }}>
                   By Category
                 </div>
-                <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-                  {CATEGORIES.map(cat => {
-                    const spent = thisMonthExp
-                      .filter(e => e.category === cat.name)
-                      .reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
-                    if (spent === 0) return null;
-                    const pct = totalExpenses > 0 ? (spent / totalExpenses) * 100 : 0;
-                    return (
-                      <div key={cat.name}>
-                        <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, marginBottom:4 }}>
-                          <span style={{ fontWeight:600, color:"#0d0d0d" }}>
-                            {cat.icon} {cat.name}
-                          </span>
-                          <div style={{ display:"flex", gap:12, alignItems:"center" }}>
-                            <span style={{ color:"#888", fontSize:11 }}>{pct.toFixed(0)}%</span>
-                            <span style={{ fontWeight:700, color:"#e11d48" }}>{fmt(spent)}</span>
-                          </div>
-                        </div>
-                        <div style={{ background:"#f0f0f0", borderRadius:100, height:5, overflow:"hidden" }}>
-                          <div style={{ height:"100%", borderRadius:100, background:cat.color, width:`${pct}%`, transition:"width 0.6s" }} />
+                {CATEGORIES.map(cat => {
+                  const spent = thisMonthExp
+                    .filter(e => e.category === cat.name)
+                    .reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+                  if (spent === 0) return null;
+                  const pct = totalExpenses > 0 ? (spent / totalExpenses) * 100 : 0;
+                  return (
+                    <div key={cat.name} style={{ marginBottom:10 }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, marginBottom:4 }}>
+                        <span style={{ fontWeight:600 }}>{cat.icon} {cat.name}</span>
+                        <div style={{ display:"flex", gap:12 }}>
+                          <span style={{ color:"var(--muted)", fontSize:11 }}>{pct.toFixed(0)}%</span>
+                          <span style={{ fontWeight:700, color:"#e11d48" }}>{fmt(spent)}</span>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
+                      <div style={{ background:"var(--subtle2)", borderRadius:100, height:5, overflow:"hidden" }}>
+                        <div style={{ height:"100%", borderRadius:100, background:cat.color, width:`${pct}%` }} />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
 
-              {/* Transactions list */}
+              {/* Transactions */}
               <div style={{ padding:"16px 20px" }}>
-                <div style={{ fontSize:11, color:"#888", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:12 }}>
+                <div style={{ fontSize:11, color:"var(--muted)", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:12 }}>
                   All Transactions
                 </div>
                 {thisMonthExp.length === 0 ? (
-                  <div style={{ textAlign:"center", color:"#ccc", padding:"20px 0", fontSize:13 }}>
-                    No expenses this month
-                  </div>
-                ) : (
-                  thisMonthExp.map(exp => {
-                    const cat = CATEGORIES.find(c => c.name === exp.category);
-                    return (
-                      <div key={exp.id} style={rowStyle}>
-                        <span style={{ fontSize:20, width:32, textAlign:"center", flexShrink:0 }}>
-                          {cat?.icon || "📦"}
-                        </span>
-                        <div style={{ flex:1, minWidth:0 }}>
-                          <div style={{ fontWeight:600, fontSize:13, color:"#0d0d0d", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
-                            {exp.title}
-                          </div>
-                          <div style={{ fontSize:11, color:"#aaa", marginTop:1 }}>
-                            {exp.category} · {exp.date}
-                          </div>
-                        </div>
-                        <div style={{ fontWeight:700, fontSize:14, color:"#e11d48", flexShrink:0 }}>
-                          -{fmt(exp.amount)}
-                        </div>
+                  <div style={{ textAlign:"center", color:"var(--faint)", padding:"20px 0", fontSize:13 }}>No expenses this month</div>
+                ) : thisMonthExp.map(exp => {
+                  const cat = CATEGORIES.find(c => c.name === exp.category);
+                  return (
+                    <div key={exp.id} style={rowStyle}>
+                      <span style={{ fontSize:20, width:32, textAlign:"center", flexShrink:0 }}>{cat?.icon || "📦"}</span>
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div style={{ fontWeight:600, fontSize:13, color:"var(--text)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{exp.title}</div>
+                        <div style={{ fontSize:11, color:"var(--faint2)", marginTop:1 }}>{exp.category} · {exp.date}</div>
                       </div>
-                    );
-                  })
-                )}
+                      <div style={{ fontWeight:700, fontSize:14, color:"#e11d48" }}>-{fmt(exp.amount)}</div>
+                    </div>
+                  );
+                })}
               </div>
             </>
           )}
@@ -295,29 +251,19 @@ export default function Dashboard({
           {/* ── INCOME PANEL ── */}
           {activeCard === "income" && (
             <>
-              <div style={{ padding:"18px 20px", borderBottom:"1px solid #f0f0f0", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+              <div style={{ padding:"18px 20px", borderBottom:"1px solid var(--subtle2)", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                 <div>
-                  <div style={{ fontWeight:800, fontSize:16, color:"#0d0d0d", letterSpacing:"-0.4px" }}>
-                    This Month's Income
-                  </div>
-                  <div style={{ fontSize:12, color:"#888", marginTop:2 }}>
-                    {thisMonthInc.length} entries · Total {fmt(totalIncome)}
-                  </div>
+                  <div style={{ fontWeight:800, fontSize:16, color:"var(--text)", letterSpacing:"-0.4px" }}>This Month's Income</div>
+                  <div style={{ fontSize:12, color:"var(--muted)", marginTop:2 }}>{thisMonthInc.length} entries · Total {fmt(totalIncome)}</div>
                 </div>
-                <button
-                  className="btn-primary"
-                  style={{ padding:"7px 14px", fontSize:12 }}
-                  onClick={onAddIncome}
-                >
+                <button className="btn-primary" style={{ padding:"7px 14px", fontSize:12 }} onClick={onAddIncome}>
                   + Add Income
                 </button>
               </div>
 
-              {/* Income by category */}
-              <div style={{ padding:"16px 20px", borderBottom:"1px solid #f0f0f0" }}>
-                <div style={{ fontSize:11, color:"#888", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:12 }}>
-                  By Source
-                </div>
+              {/* By source */}
+              <div style={{ padding:"16px 20px", borderBottom:"1px solid var(--subtle2)" }}>
+                <div style={{ fontSize:11, color:"var(--muted)", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:12 }}>By Source</div>
                 <div style={{ display:"flex", flexWrap:"wrap", gap:10 }}>
                   {INCOME_CATEGORIES.map(cat => {
                     const total = thisMonthInc
@@ -325,61 +271,37 @@ export default function Dashboard({
                       .reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
                     if (total === 0) return null;
                     return (
-                      <div key={cat.name} style={{
-                        display:"flex", alignItems:"center", gap:8,
-                        background:"#f6f8fa", borderRadius:8,
-                        padding:"8px 14px", border:"1px solid #eaeaea",
-                      }}>
+                      <div key={cat.name} style={{ display:"flex", alignItems:"center", gap:8, background:"var(--bg)", borderRadius:8, padding:"8px 14px", border:"1px solid var(--border)" }}>
                         <span style={{ fontSize:16 }}>{cat.icon}</span>
                         <div>
-                          <div style={{ fontSize:10, color:"#aaa", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px" }}>
-                            {cat.name}
-                          </div>
-                          <div style={{ fontWeight:700, fontSize:13, color:"#059669", letterSpacing:"-0.2px" }}>
-                            {fmt(total)}
-                          </div>
+                          <div style={{ fontSize:10, color:"var(--faint2)", fontWeight:600, textTransform:"uppercase" }}>{cat.name}</div>
+                          <div style={{ fontWeight:700, fontSize:13, color:"#059669" }}>{fmt(total)}</div>
                         </div>
                       </div>
                     );
                   })}
-                  {thisMonthInc.length === 0 && (
-                    <div style={{ color:"#ccc", fontSize:13 }}>No income this month</div>
-                  )}
+                  {thisMonthInc.length === 0 && <div style={{ color:"var(--faint)", fontSize:13 }}>No income this month</div>}
                 </div>
               </div>
 
-              {/* Income transactions */}
+              {/* Transactions */}
               <div style={{ padding:"16px 20px" }}>
-                <div style={{ fontSize:11, color:"#888", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:12 }}>
-                  All Transactions
-                </div>
+                <div style={{ fontSize:11, color:"var(--muted)", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:12 }}>All Transactions</div>
                 {thisMonthInc.length === 0 ? (
-                  <div style={{ textAlign:"center", color:"#ccc", padding:"20px 0", fontSize:13 }}>
-                    No income this month
-                  </div>
-                ) : (
-                  thisMonthInc.map(inc => {
-                    const cat = INCOME_CATEGORIES.find(c => c.name === inc.category);
-                    return (
-                      <div key={inc.id} style={rowStyle}>
-                        <span style={{ fontSize:20, width:32, textAlign:"center", flexShrink:0 }}>
-                          {cat?.icon || "💰"}
-                        </span>
-                        <div style={{ flex:1, minWidth:0 }}>
-                          <div style={{ fontWeight:600, fontSize:13, color:"#0d0d0d", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
-                            {inc.title}
-                          </div>
-                          <div style={{ fontSize:11, color:"#aaa", marginTop:1 }}>
-                            {inc.category} · {inc.date}
-                          </div>
-                        </div>
-                        <div style={{ fontWeight:700, fontSize:14, color:"#059669", flexShrink:0 }}>
-                          +{fmt(inc.amount)}
-                        </div>
+                  <div style={{ textAlign:"center", color:"var(--faint)", padding:"20px 0", fontSize:13 }}>No income this month</div>
+                ) : thisMonthInc.map(inc => {
+                  const cat = INCOME_CATEGORIES.find(c => c.name === inc.category);
+                  return (
+                    <div key={inc.id} style={rowStyle}>
+                      <span style={{ fontSize:20, width:32, textAlign:"center", flexShrink:0 }}>{cat?.icon || "💰"}</span>
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div style={{ fontWeight:600, fontSize:13, color:"var(--text)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{inc.title}</div>
+                        <div style={{ fontSize:11, color:"var(--faint2)", marginTop:1 }}>{inc.category} · {inc.date}</div>
                       </div>
-                    );
-                  })
-                )}
+                      <div style={{ fontWeight:700, fontSize:14, color:"#059669" }}>+{fmt(inc.amount)}</div>
+                    </div>
+                  );
+                })}
               </div>
             </>
           )}
@@ -387,220 +309,78 @@ export default function Dashboard({
           {/* ── NET BALANCE PANEL ── */}
           {activeCard === "balance" && (
             <>
-              <div style={{ padding:"18px 20px", borderBottom:"1px solid #f0f0f0" }}>
-                <div style={{ fontWeight:800, fontSize:16, color:"#0d0d0d", letterSpacing:"-0.4px" }}>
-                  Income vs Expenses Breakdown
-                </div>
-                <div style={{ fontSize:12, color:"#888", marginTop:2 }}>
-                  {MONTHS[currentMonth]} {currentYear}
-                </div>
+              <div style={{ padding:"18px 20px", borderBottom:"1px solid var(--subtle2)" }}>
+                <div style={{ fontWeight:800, fontSize:16, color:"var(--text)", letterSpacing:"-0.4px" }}>Income vs Expenses</div>
+                <div style={{ fontSize:12, color:"var(--muted)", marginTop:2 }}>{MONTHS[currentMonth]} {currentYear}</div>
               </div>
 
-              {/* Summary numbers */}
-              <div style={{ padding:"16px 20px", borderBottom:"1px solid #f0f0f0" }}>
-                <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12 }}>
+              <div style={{ padding:"16px 20px", borderBottom:"1px solid var(--subtle2)" }}>
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12, marginBottom:16 }}>
                   {[
                     { label:"Total Income",   value:fmt(totalIncome),   color:"#059669" },
                     { label:"Total Expenses", value:fmt(totalExpenses), color:"#e11d48" },
                     { label:"Net Balance",    value:fmt(Math.abs(netBalance)), color: netBalance >= 0 ? "#0070f3" : "#e11d48" },
                   ].map(s => (
-                    <div key={s.label} style={{ background:"#fafafa", borderRadius:10, padding:"14px", border:"1px solid #f0f0f0", textAlign:"center" }}>
-                      <div style={{ fontSize:10, color:"#aaa", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:6 }}>
-                        {s.label}
-                      </div>
-                      <div style={{ fontWeight:800, fontSize:18, color:s.color, letterSpacing:"-0.5px" }}>
-                        {s.value}
-                      </div>
+                    <div key={s.label} style={{ background:"var(--subtle)", borderRadius:10, padding:"14px", border:"1px solid var(--subtle2)", textAlign:"center" }}>
+                      <div style={{ fontSize:10, color:"var(--faint2)", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:6 }}>{s.label}</div>
+                      <div style={{ fontWeight:800, fontSize:18, color:s.color, letterSpacing:"-0.5px" }}>{s.value}</div>
                     </div>
                   ))}
                 </div>
 
                 {/* Savings rate bar */}
-                <div style={{ marginTop:16 }}>
-                  <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, marginBottom:6, fontWeight:600 }}>
-                    <span style={{ color:"#888" }}>Savings Rate</span>
-                    <span style={{ color: parseFloat(savingsRate) >= 0 ? "#059669" : "#e11d48" }}>
-                      {savingsRate}%
-                    </span>
-                  </div>
-                  <div style={{ background:"#f0f0f0", borderRadius:100, height:8, overflow:"hidden" }}>
-                    <div style={{
-                      height:       "100%",
-                      borderRadius: 100,
-                      background:   parseFloat(savingsRate) >= 20
-                        ? "#059669"
-                        : parseFloat(savingsRate) >= 0
-                        ? "#f59e0b"
-                        : "#e11d48",
-                      width:`${Math.min(Math.max(parseFloat(savingsRate), 0), 100)}%`,
-                      transition:"width 0.6s",
-                    }} />
-                  </div>
-                  <div style={{ fontSize:11, color:"#aaa", marginTop:5 }}>
-                    {parseFloat(savingsRate) >= 20
-                      ? "🎉 Great savings rate!"
-                      : parseFloat(savingsRate) >= 0
-                      ? "💡 Try to save at least 20% of income"
-                      : "⚠️ Spending more than earning this month"
-                    }
-                  </div>
+                <div style={{ marginBottom:6, display:"flex", justifyContent:"space-between", fontSize:12, fontWeight:600 }}>
+                  <span style={{ color:"var(--muted)" }}>Savings Rate</span>
+                  <span style={{ color: parseFloat(savingsRate) >= 0 ? "#059669" : "#e11d48" }}>{savingsRate}%</span>
+                </div>
+                <div style={{ background:"var(--subtle2)", borderRadius:100, height:8, overflow:"hidden", marginBottom:6 }}>
+                  <div style={{
+                    height:"100%", borderRadius:100,
+                    background: parseFloat(savingsRate) >= 20 ? "#059669" : parseFloat(savingsRate) >= 0 ? "#f59e0b" : "#e11d48",
+                    width:`${Math.min(Math.max(parseFloat(savingsRate), 0), 100)}%`,
+                  }} />
+                </div>
+                <div style={{ fontSize:11, color:"var(--faint2)" }}>
+                  {parseFloat(savingsRate) >= 20 ? "🎉 Great savings rate!" : parseFloat(savingsRate) >= 0 ? "💡 Try to save at least 20%" : "⚠️ Spending more than earning"}
                 </div>
               </div>
 
-              {/* Combined transactions feed */}
+              {/* Combined transactions */}
               <div style={{ padding:"16px 20px" }}>
-                <div style={{ fontSize:11, color:"#888", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:12 }}>
-                  All Transactions This Month
-                </div>
+                <div style={{ fontSize:11, color:"var(--muted)", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:12 }}>All Transactions</div>
                 {[
                   ...thisMonthExp.map(e => ({ ...e, kind:"expense" })),
                   ...thisMonthInc.map(i => ({ ...i, kind:"income"  })),
-                ]
-                  .sort((a, b) => new Date(b.date) - new Date(a.date))
-                  .map(tx => {
-                    const isExp = tx.kind === "expense";
-                    const cat   = isExp
-                      ? CATEGORIES.find(c => c.name === tx.category)
-                      : INCOME_CATEGORIES.find(c => c.name === tx.category);
-                    return (
-                      <div key={`${tx.kind}-${tx.id}`} style={rowStyle}>
-                        <span style={{ fontSize:20, width:32, textAlign:"center", flexShrink:0 }}>
-                          {cat?.icon || (isExp ? "📦" : "💰")}
-                        </span>
-                        <div style={{ flex:1, minWidth:0 }}>
-                          <div style={{ fontWeight:600, fontSize:13, color:"#0d0d0d", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
-                            {tx.title}
-                          </div>
-                          <div style={{ fontSize:11, color:"#aaa", marginTop:1 }}>
-                            {tx.category} · {tx.date}
-                          </div>
-                        </div>
-                        <div style={{ fontWeight:700, fontSize:14, color: isExp ? "#e11d48" : "#059669", flexShrink:0 }}>
-                          {isExp ? "-" : "+"}{fmt(tx.amount)}
-                        </div>
+                ].sort((a, b) => new Date(b.date) - new Date(a.date))
+                 .map(tx => {
+                  const isExp = tx.kind === "expense";
+                  const cat   = isExp
+                    ? CATEGORIES.find(c => c.name === tx.category)
+                    : INCOME_CATEGORIES.find(c => c.name === tx.category);
+                  return (
+                    <div key={`${tx.kind}-${tx.id}`} style={rowStyle}>
+                      <span style={{ fontSize:20, width:32, textAlign:"center", flexShrink:0 }}>{cat?.icon || (isExp ? "📦" : "💰")}</span>
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div style={{ fontWeight:600, fontSize:13, color:"var(--text)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{tx.title}</div>
+                        <div style={{ fontSize:11, color:"var(--faint2)", marginTop:1 }}>{tx.category} · {tx.date}</div>
                       </div>
-                    );
-                  })
-                }
+                      <div style={{ fontWeight:700, fontSize:14, color: isExp ? "#e11d48" : "#059669" }}>
+                        {isExp ? "-" : "+"}{fmt(tx.amount)}
+                      </div>
+                    </div>
+                  );
+                })}
                 {thisMonthExp.length === 0 && thisMonthInc.length === 0 && (
-                  <div style={{ textAlign:"center", color:"#ccc", padding:"20px 0", fontSize:13 }}>
-                    No transactions this month
-                  </div>
+                  <div style={{ textAlign:"center", color:"var(--faint)", padding:"20px 0", fontSize:13 }}>No transactions this month</div>
                 )}
               </div>
             </>
           )}
 
-          {/* ── OVER BUDGET PANEL ── */}
-          {activeCard === "overbudget" && (
-            <>
-              <div style={{ padding:"18px 20px", borderBottom:"1px solid #f0f0f0" }}>
-                <div style={{ fontWeight:800, fontSize:16, color:"#0d0d0d", letterSpacing:"-0.4px" }}>
-                  Over Budget Categories
-                </div>
-                <div style={{ fontSize:12, color:"#888", marginTop:2 }}>
-                  {overBudgetCats.length} categories exceeded this month
-                </div>
-              </div>
-
-              <div style={{ padding:"16px 20px", borderBottom:"1px solid #f0f0f0" }}>
-                {overBudgetCats.length === 0 ? (
-                  <div style={{ textAlign:"center", padding:"24px 0" }}>
-                    <div style={{ fontSize:32, marginBottom:8 }}>🎉</div>
-                    <div style={{ fontWeight:700, color:"#059669", fontSize:15 }}>
-                      All within budget!
-                    </div>
-                    <div style={{ fontSize:13, color:"#aaa", marginTop:4 }}>
-                      Great job staying on track this month
-                    </div>
-                  </div>
-                ) : (
-                  overBudgetCats.map(cat => {
-                    const pct = Math.min((cat.spent / cat.budget) * 100, 200);
-                    return (
-                      <div key={cat.name} style={{ marginBottom:16 }}>
-                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
-                          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                            <div style={{
-                              width:28, height:28, borderRadius:6,
-                              background:`${cat.color}15`,
-                              border:`1px solid ${cat.color}30`,
-                              display:"flex", alignItems:"center",
-                              justifyContent:"center", fontSize:16,
-                            }}>
-                              {cat.icon}
-                            </div>
-                            <div>
-                              <div style={{ fontWeight:700, fontSize:13, color:"#0d0d0d" }}>{cat.name}</div>
-                              <div style={{ fontSize:11, color:"#e11d48", fontWeight:600 }}>
-                                {fmt(cat.over)} over budget
-                              </div>
-                            </div>
-                          </div>
-                          <div style={{ textAlign:"right" }}>
-                            <div style={{ fontWeight:700, fontSize:13, color:"#e11d48" }}>{fmt(cat.spent)}</div>
-                            <div style={{ fontSize:11, color:"#aaa" }}>of {fmt(cat.budget)}</div>
-                          </div>
-                        </div>
-                        <div style={{ background:"#f0f0f0", borderRadius:100, height:6, overflow:"hidden" }}>
-                          <div style={{
-                            height:"100%", borderRadius:100,
-                            background:"#e11d48",
-                            width:`${Math.min(pct, 100)}%`,
-                            transition:"width 0.6s",
-                          }} />
-                        </div>
-                        <div style={{ fontSize:10, color:"#e11d48", marginTop:4, fontWeight:600 }}>
-                          {pct.toFixed(0)}% of budget used
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-
-              {/* Transactions for over-budget categories */}
-              <div style={{ padding:"16px 20px" }}>
-                <div style={{ fontSize:11, color:"#888", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:12 }}>
-                  Transactions in Over-Budget Categories
-                </div>
-                {thisMonthExp
-                  .filter(e => overBudgetCats.find(c => c.name === e.category))
-                  .sort((a, b) => new Date(b.date) - new Date(a.date))
-                  .map(exp => {
-                    const cat = CATEGORIES.find(c => c.name === exp.category);
-                    return (
-                      <div key={exp.id} style={{ ...rowStyle, borderLeft:`3px solid #e11d48` }}>
-                        <span style={{ fontSize:20, width:32, textAlign:"center", flexShrink:0 }}>
-                          {cat?.icon || "📦"}
-                        </span>
-                        <div style={{ flex:1, minWidth:0 }}>
-                          <div style={{ fontWeight:600, fontSize:13, color:"#0d0d0d", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
-                            {exp.title}
-                          </div>
-                          <div style={{ fontSize:11, color:"#aaa", marginTop:1 }}>
-                            {exp.category} · {exp.date}
-                          </div>
-                        </div>
-                        <div style={{ fontWeight:700, fontSize:14, color:"#e11d48", flexShrink:0 }}>
-                          -{fmt(exp.amount)}
-                        </div>
-                      </div>
-                    );
-                  })
-                }
-                {overBudgetCats.length > 0 && thisMonthExp.filter(e => overBudgetCats.find(c => c.name === e.category)).length === 0 && (
-                  <div style={{ textAlign:"center", color:"#ccc", padding:"20px 0", fontSize:13 }}>
-                    No transactions found
-                  </div>
-                )}
-              </div>
-            </>
-          )}
         </div>
       )}
 
-      {/* ── Exchange rates widget ── */}
+      {/* ── Exchange rates ── */}
       {refreshRates && (
         <ExchangeRatesWidget
           rates={rates}
@@ -616,13 +396,11 @@ export default function Dashboard({
       {/* ── Charts ── */}
       <div className="charts-grid">
         <div className="card">
-          <div className="card-title" style={{ marginBottom:16 }}>
-            Income vs Expenses {currentYear}
-          </div>
+          <div className="card-title" style={{ marginBottom:16 }}>Income vs Expenses {currentYear}</div>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={incomeVsExpenseData} barGap={4}>
-              <XAxis dataKey="name" tick={{ fill:"#aaa", fontSize:11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill:"#aaa", fontSize:10 }} axisLine={false} tickLine={false} width={40} />
+              <XAxis dataKey="name" tick={{ fill:"var(--faint2)", fontSize:11 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill:"var(--faint2)", fontSize:10 }} axisLine={false} tickLine={false} width={40} />
               <Tooltip formatter={v => fmt(v)} contentStyle={TOOLTIP_STYLE} />
               <Legend wrapperStyle={{ fontSize:11 }} />
               <Bar dataKey="Income"  fill="#059669" radius={[5,5,0,0]} />
@@ -632,13 +410,11 @@ export default function Dashboard({
         </div>
 
         <div className="card">
-          <div className="card-title" style={{ marginBottom:16 }}>
-            Spending by Category
-          </div>
+          <div className="card-title" style={{ marginBottom:16 }}>Spending by Category</div>
           {expensePieData.length === 0 ? (
             <div className="empty-state">
               <div className="empty-icon">📊</div>
-              <div style={{ fontSize:13, color:"#aaa" }}>No expenses this month</div>
+              <div style={{ fontSize:13, color:"var(--faint2)" }}>No expenses this month</div>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={220}>
@@ -665,27 +441,21 @@ export default function Dashboard({
         {incomes.length === 0 ? (
           <div className="empty-state">
             <div className="empty-icon">💰</div>
-            <div style={{ fontWeight:600, color:"#ccc", marginBottom:4 }}>No income yet</div>
+            <div style={{ fontWeight:600, color:"var(--faint)", marginBottom:4 }}>No income yet</div>
           </div>
-        ) : (
-          incomes.slice(0, 3).map(income => {
-            const cat = INCOME_CATEGORIES.find(c => c.name === income.category);
-            return (
-              <div key={income.id} style={rowStyle}>
-                <span style={{ fontSize:20, width:32, textAlign:"center", flexShrink:0 }}>{cat?.icon || "💰"}</span>
-                <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontWeight:600, fontSize:13, color:"#0d0d0d", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
-                    {income.title}
-                  </div>
-                  <div style={{ fontSize:11, color:"#aaa", marginTop:1 }}>{income.category} · {income.date}</div>
-                </div>
-                <div style={{ fontWeight:700, fontSize:14, color:"#059669", flexShrink:0 }}>
-                  +{fmt(income.amount)}
-                </div>
+        ) : incomes.slice(0, 3).map(income => {
+          const cat = INCOME_CATEGORIES.find(c => c.name === income.category);
+          return (
+            <div key={income.id} style={rowStyle}>
+              <span style={{ fontSize:20, width:32, textAlign:"center", flexShrink:0 }}>{cat?.icon || "💰"}</span>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ fontWeight:600, fontSize:13, color:"var(--text)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{income.title}</div>
+                <div style={{ fontSize:11, color:"var(--faint2)", marginTop:1 }}>{income.category} · {income.date}</div>
               </div>
-            );
-          })
-        )}
+              <div style={{ fontWeight:700, fontSize:14, color:"#059669" }}>+{fmt(income.amount)}</div>
+            </div>
+          );
+        })}
       </div>
 
       {/* ── Recent Expenses ── */}
@@ -697,27 +467,21 @@ export default function Dashboard({
         {expenses.length === 0 ? (
           <div className="empty-state">
             <div className="empty-icon">💸</div>
-            <div style={{ fontWeight:600, color:"#ccc", marginBottom:4 }}>No expenses yet</div>
+            <div style={{ fontWeight:600, color:"var(--faint)", marginBottom:4 }}>No expenses yet</div>
           </div>
-        ) : (
-          expenses.slice(0, 5).map(exp => {
-            const cat = CATEGORIES.find(c => c.name === exp.category);
-            return (
-              <div key={exp.id} style={rowStyle}>
-                <span style={{ fontSize:20, width:32, textAlign:"center", flexShrink:0 }}>{cat?.icon || "📦"}</span>
-                <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontWeight:600, fontSize:13, color:"#0d0d0d", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
-                    {exp.title}
-                  </div>
-                  <div style={{ fontSize:11, color:"#aaa", marginTop:1 }}>{exp.category} · {exp.date}</div>
-                </div>
-                <div style={{ fontWeight:700, fontSize:14, color:"#e11d48", flexShrink:0 }}>
-                  -{fmt(exp.amount)}
-                </div>
+        ) : expenses.slice(0, 5).map(exp => {
+          const cat = CATEGORIES.find(c => c.name === exp.category);
+          return (
+            <div key={exp.id} style={rowStyle}>
+              <span style={{ fontSize:20, width:32, textAlign:"center", flexShrink:0 }}>{cat?.icon || "📦"}</span>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ fontWeight:600, fontSize:13, color:"var(--text)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{exp.title}</div>
+                <div style={{ fontSize:11, color:"var(--faint2)", marginTop:1 }}>{exp.category} · {exp.date}</div>
               </div>
-            );
-          })
-        )}
+              <div style={{ fontWeight:700, fontSize:14, color:"#e11d48" }}>-{fmt(exp.amount)}</div>
+            </div>
+          );
+        })}
       </div>
     </>
   );

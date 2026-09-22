@@ -41,13 +41,13 @@ export default function ChecklistConfirmModal({
           <div style={{
             fontSize:      18,
             fontWeight:    800,
-            color:         "#0d0d0d",
+            color:         "var(--text)",
             letterSpacing: "-0.4px",
             marginBottom:  4,
           }}>
             ✅ Mark as Complete?
           </div>
-          <div style={{ fontSize:13, color:"#888" }}>
+          <div style={{ fontSize:13, color:"var(--muted)" }}>
             {item.label}
           </div>
         </div>
@@ -55,19 +55,19 @@ export default function ChecklistConfirmModal({
         {/* Amount */}
         {amount > 0 && (
           <div style={{
-            background:    "#f6f8fa",
+            background:    "var(--bg)",
             borderRadius:  10,
             padding:       "14px 16px",
             marginBottom:  16,
             display:       "flex",
             justifyContent:"space-between",
             alignItems:    "center",
-            border:        "1px solid #eaeaea",
+            border:        "1px solid var(--border)",
           }}>
-            <span style={{ fontSize:13, color:"#888", fontWeight:500 }}>
+            <span style={{ fontSize:13, color:"var(--muted)", fontWeight:500 }}>
               Amount
             </span>
-            <span style={{ fontSize:18, fontWeight:800, color:"#0d0d0d", letterSpacing:"-0.5px" }}>
+            <span style={{ fontSize:18, fontWeight:800, color:"var(--text)", letterSpacing:"-0.5px" }}>
               ${amount.toFixed(2)}
             </span>
           </div>
@@ -120,8 +120,8 @@ export default function ChecklistConfirmModal({
                 alignItems:   "center",
                 gap:          10,
                 padding:      "12px 14px",
-                background:   addAsExpense ? "#f0f7ff" : "#fafafa",
-                border:       `1.5px solid ${addAsExpense ? "#0070f3" : "#eaeaea"}`,
+                background:   addAsExpense ? "#f0f7ff" : "var(--subtle)",
+                border:       `1.5px solid ${addAsExpense ? "#0070f3" : "var(--border)"}`,
                 borderRadius: 8,
                 cursor:       "pointer",
                 transition:   "all 0.15s",
@@ -134,8 +134,8 @@ export default function ChecklistConfirmModal({
                 width:         20,
                 height:        20,
                 borderRadius:  5,
-                border:        `2px solid ${addAsExpense ? "#0070f3" : "#ccc"}`,
-                background:    addAsExpense ? "#0070f3" : "#fff",
+                border:        `2px solid ${addAsExpense ? "#0070f3" : "var(--faint)"}`,
+                background:    addAsExpense ? "#0070f3" : "var(--card)",
                 display:       "flex",
                 alignItems:    "center",
                 justifyContent:"center",
@@ -150,11 +150,11 @@ export default function ChecklistConfirmModal({
                 <div style={{
                   fontWeight: 600,
                   fontSize:   13,
-                  color:      addAsExpense ? "#0070f3" : "#0d0d0d",
+                  color:      addAsExpense ? "#0070f3" : "var(--text)",
                 }}>
                   Also add as an expense
                 </div>
-                <div style={{ fontSize:11, color:"#888", marginTop:1 }}>
+                <div style={{ fontSize:11, color:"var(--muted)", marginTop:1 }}>
                   Records this payment in your expenses
                 </div>
               </div>
@@ -165,7 +165,7 @@ export default function ChecklistConfirmModal({
               <div>
                 <label style={{
                   fontSize:      11,
-                  color:         "#666",
+                  color:         "var(--muted2)",
                   fontWeight:    600,
                   textTransform: "uppercase",
                   letterSpacing: "0.6px",
@@ -179,11 +179,11 @@ export default function ChecklistConfirmModal({
                   onChange={e => setExpenseCategory(e.target.value)}
                   style={{
                     width:        "100%",
-                    background:   "#ffffff",
-                    border:       "1px solid #eaeaea",
+                    background:   "var(--card)",
+                    border:       "1px solid var(--border)",
                     borderRadius: 8,
                     padding:      "10px 12px",
-                    color:        "#0d0d0d",
+                    color:        "var(--text)",
                     fontSize:     13,
                     fontFamily:   "inherit",
                     fontWeight:   500,

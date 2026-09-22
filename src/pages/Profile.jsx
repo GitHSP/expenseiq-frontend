@@ -14,11 +14,11 @@ export default function Profile({ user, onLogout }) {
 
   const inputStyle = {
     width:        "100%",
-    background:   "#ffffff",
-    border:       "1px solid #eaeaea",
+    background:   "var(--card)",
+    border:       "1px solid var(--border)",
     borderRadius: "8px",
     padding:      "10px 12px",
-    color:        "#0d0d0d",
+    color:        "var(--text)",
     fontSize:     "13.5px",
     fontFamily:   "inherit",
     fontWeight:   500,
@@ -29,7 +29,7 @@ export default function Profile({ user, onLogout }) {
   const labelStyle = {
     display:       "block",
     fontSize:      "11px",
-    color:         "#666",
+    color:         "var(--muted2)",
     fontWeight:    600,
     textTransform: "uppercase",
     letterSpacing: "0.6px",
@@ -84,10 +84,10 @@ export default function Profile({ user, onLogout }) {
           {user?.username?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U"}
         </div>
         <div>
-          <div style={{ fontWeight:800, fontSize:18, color:"#0d0d0d", letterSpacing:"-0.4px" }}>
+          <div style={{ fontWeight:800, fontSize:18, color:"var(--text)", letterSpacing:"-0.4px" }}>
             {user?.username || "User"}
           </div>
-          <div style={{ fontSize:13, color:"#888", marginTop:2 }}>
+          <div style={{ fontSize:13, color:"var(--muted)", marginTop:2 }}>
             {user?.email}
           </div>
         </div>
@@ -98,8 +98,8 @@ export default function Profile({ user, onLogout }) {
         display:      "flex",
         gap:          4,
         marginBottom: 20,
-        background:   "#ffffff",
-        border:       "1px solid #eaeaea",
+        background:   "var(--card)",
+        border:       "1px solid var(--border)",
         borderRadius: 10,
         padding:      4,
         width:        "fit-content",
@@ -114,7 +114,7 @@ export default function Profile({ user, onLogout }) {
             onClick={() => { setTab(t.id); setError(""); setSuccess(""); }}
             style={{
               background:  tab === t.id ? "#0070f3" : "transparent",
-              color:       tab === t.id ? "#fff"    : "#888",
+              color:       tab === t.id ? "#fff"    : "var(--muted)",
               border:      "none",
               padding:     "8px 18px",
               borderRadius:7,
@@ -168,11 +168,11 @@ export default function Profile({ user, onLogout }) {
           <div className="form-group">
             <label style={labelStyle}>Email</label>
             <input
-              style={{ ...inputStyle, background:"#f6f8fa", color:"#888" }}
+              style={{ ...inputStyle, background:"var(--bg)", color:"var(--muted)" }}
               value={email}
               disabled
             />
-            <div style={{ fontSize:11, color:"#aaa", marginTop:4 }}>
+            <div style={{ fontSize:11, color:"var(--faint2)", marginTop:4 }}>
               Email cannot be changed
             </div>
           </div>
@@ -237,7 +237,7 @@ export default function Profile({ user, onLogout }) {
           <div className="card-title" style={{ marginBottom:6, color:"#e11d48" }}>
             ⚠️ Danger Zone
           </div>
-          <div style={{ fontSize:13, color:"#888", marginBottom:20 }}>
+          <div style={{ fontSize:13, color:"var(--muted)", marginBottom:20 }}>
             These actions are permanent and cannot be undone.
           </div>
           <div style={{
@@ -251,8 +251,8 @@ export default function Profile({ user, onLogout }) {
             marginBottom: 10,
           }}>
             <div>
-              <div style={{ fontWeight:700, fontSize:13, color:"#0d0d0d" }}>Sign out of all devices</div>
-              <div style={{ fontSize:12, color:"#888", marginTop:2 }}>Logs you out everywhere</div>
+              <div style={{ fontWeight:700, fontSize:13, color:"var(--text)" }}>Sign out of all devices</div>
+              <div style={{ fontSize:12, color:"var(--muted)", marginTop:2 }}>Logs you out everywhere</div>
             </div>
             <button
               onClick={onLogout}

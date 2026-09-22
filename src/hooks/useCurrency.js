@@ -15,8 +15,8 @@ export const SUPPORTED_CURRENCIES = [
   { code: "AED", name: "UAE Dirham",       symbol: "د.إ", flag: "🇦🇪" },
 ];
 
-// ── Replace with your actual API key ──
-const API_KEY  = "5c2786f80cba92182d20bf72";
+// ── Exchange rate API key (set REACT_APP_EXCHANGE_API_KEY in your .env) ──
+const API_KEY  = process.env.REACT_APP_EXCHANGE_API_KEY || "";
 const BASE_URL = `https://v6.exchangerate-api.com/v6/${API_KEY}`;
 
 export function useCurrency() {
