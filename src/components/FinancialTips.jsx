@@ -1,5 +1,6 @@
 import { useMemo }    from "react";
 import { CATEGORIES } from "../constants/categories";
+import Icon, { IconLabel } from "./Icon";
 
 export default function FinancialTips({ expenses, incomes, debts }) {
 
@@ -32,21 +33,21 @@ export default function FinancialTips({ expenses, incomes, debts }) {
       if (savingsRate < 0) {
         result.push({
           type:  "danger",
-          icon:  "🚨",
+          icon:  "siren",
           title: "Spending more than you earn!",
           body:  `You've spent ${Math.abs(savingsRate).toFixed(0)}% more than your income this month. Review your biggest expense categories immediately.`,
         });
       } else if (savingsRate < 10) {
         result.push({
           type:  "warning",
-          icon:  "⚠️",
+          icon:  "warning",
           title: "Low savings rate this month",
           body:  `You're saving only ${savingsRate.toFixed(0)}% of your income. Financial experts recommend saving at least 20% of your income.`,
         });
       } else if (savingsRate >= 20) {
         result.push({
           type:  "success",
-          icon:  "🎉",
+          icon:  "party",
           title: "Excellent savings rate!",
           body:  `You're saving ${savingsRate.toFixed(0)}% of your income this month. You're building great financial habits!`,
         });
@@ -88,7 +89,7 @@ export default function FinancialTips({ expenses, incomes, debts }) {
     if (dueSoonDebts.length > 0) {
       result.push({
         type:  "warning",
-        icon:  "💳",
+        icon:  "credit-card",
         title: `${dueSoonDebts.length} debt payment${dueSoonDebts.length > 1 ? "s" : ""} due within 7 days`,
         body:  `${dueSoonDebts.map(d => d.name).join(", ")} ${dueSoonDebts.length > 1 ? "are" : "is"} due soon. Check the Planner checklist to make sure funds are ready.`,
       });
@@ -102,7 +103,7 @@ export default function FinancialTips({ expenses, incomes, debts }) {
     if (highInterestDebt) {
       result.push({
         type:  "info",
-        icon:  "📈",
+        icon:  "trending-up",
         title: "Focus extra payments on high-interest debt",
         body:  `Your ${highInterestDebt.name} has a ${highInterestDebt.annual_interest_rate}% interest rate. Paying this off faster will save you the most money.`,
       });
@@ -112,7 +113,7 @@ export default function FinancialTips({ expenses, incomes, debts }) {
     if (result.length === 0) {
       result.push({
         type:  "success",
-        icon:  "✨",
+        icon:  "sparkles",
         title: "Your finances look great!",
         body:  "No issues detected this month. Keep tracking your expenses and maintaining your good financial habits.",
       });
@@ -145,7 +146,7 @@ export default function FinancialTips({ expenses, incomes, debts }) {
         letterSpacing: "0.6px",
         marginBottom:  10,
       }}>
-        💡 Financial Tips
+        <IconLabel name="lightbulb" size={13}>Financial Tips</IconLabel>
       </div>
 
       {/* Tips list */}
@@ -165,8 +166,8 @@ export default function FinancialTips({ expenses, incomes, debts }) {
                 alignItems:   "flex-start",
               }}
             >
-              <span style={{ fontSize:20, flexShrink:0, lineHeight:1.4 }}>
-                {tip.icon}
+              <span style={{ color:c.title, display:"inline-flex", paddingTop:1 }}>
+                <Icon name={tip.icon} size={18} />
               </span>
               <div>
                 <div style={{

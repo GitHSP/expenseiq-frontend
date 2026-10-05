@@ -153,7 +153,7 @@ body {
   color: #0070f3;
   font-weight: 600;
 }
-.sidebar-item .nav-icon { font-size: 16px; flex-shrink: 0; }
+.sidebar-item .nav-icon { font-size: 16px; flex-shrink: 0; display: inline-flex; }
 
 .sidebar-actions {
   padding: 12px 10px;
@@ -494,7 +494,7 @@ select.input option { background: var(--card); color: var(--text); }
   padding: 56px 20px;
   color: var(--faint);
 }
-.empty-icon { font-size: 40px; margin-bottom: 12px; }
+.empty-icon { font-size: 40px; margin-bottom: 12px; display: flex; justify-content: center; color: var(--faint2); }
 
 /* ─────────────────────────────────────────────
    MODAL
@@ -579,6 +579,9 @@ select.input option { background: var(--card); color: var(--text); }
     box-shadow: 0 1px 8px rgba(0,0,0,0.05);
   }
   .topbar-logo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     font-size: 16px;
     font-weight: 800;
     color: var(--text);
@@ -589,6 +592,9 @@ select.input option { background: var(--card); color: var(--text); }
   }
   .topbar-actions { display: flex; gap: 8px; align-items: center; }
   .topbar-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     background: #0070f3;
     color: #fff;
     border: none;
@@ -600,6 +606,9 @@ select.input option { background: var(--card); color: var(--text); }
     cursor: pointer;
   }
   .topbar-csv {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     background: var(--bg);
     color: var(--muted2);
     border: 1px solid var(--border);
@@ -637,7 +646,7 @@ select.input option { background: var(--card); color: var(--text); }
     font-family: inherit;
   }
   .bottom-nav-item.active { color: #0070f3; }
-  .bnav-icon  { font-size: 19px; line-height: 1; }
+  .bnav-icon  { font-size: 19px; line-height: 1; display: inline-flex; }
   .bnav-label { font-size: 10px; font-weight: 600; color: inherit; letter-spacing: 0.2px; }
 
   .main         { padding: 16px; }
@@ -694,3 +703,65 @@ select.input option { background: var(--card); color: var(--text); }
   .exp-right .btn-ghost,
   .exp-right .btn-danger      { display: inline-block !important; }
 }
+/* ─────────────────────────────────────────────
+   ASSISTANT WIDGET (floating button + panel)
+   Sits above the bottom nav (200) and below modals (300) and toasts.
+   ───────────────────────────────────────────── */
+.assistant-fab {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: #0070f3;
+  color: #fff;
+  font-size: 24px;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(0,112,243,0.35);
+  z-index: 250;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.assistant-fab:hover { transform: scale(1.06); box-shadow: 0 8px 24px rgba(0,112,243,0.45); }
+.assistant-fab.open  { font-size: 20px; }
+
+.assistant-panel {
+  position: fixed;
+  right: 24px;
+  bottom: 92px;
+  width: 400px;
+  height: min(620px, calc(100vh - 120px));
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+  z-index: 250;
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(12px);
+  transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s;
+}
+.assistant-panel.open { opacity: 1; visibility: visible; transform: translateY(0); }
+
+@media (max-width: 768px) {
+  /* Clear the bottom nav (~64px) */
+  .assistant-fab { right: 16px; bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
+  /* Full-screen sheet on phones; hide the FAB while it's open (panel has its own ✕) */
+  .assistant-panel {
+    inset: 0;
+    width: auto;
+    height: auto;
+    border-radius: 0;
+    border: none;
+  }
+  .assistant-fab.open { display: none; }
+}
+
+/* Spinner for loading icons */
+@keyframes icon-spin { to { transform: rotate(360deg); } }
+.spin { animation: icon-spin 1s linear infinite; }

@@ -21,7 +21,7 @@ async function decryptRecord(dek, record) {
     console.error("Failed to decrypt a stored message:", err);
     return {
       id: record.id, clientId: record.clientId, createdAt: record.createdAt,
-      role: "assistant", content: "⚠️ Couldn't decrypt this message on this device.", isError: true,
+      role: "assistant", content: "Couldn't decrypt this message on this device.", isError: true,
     };
   }
 }
@@ -130,7 +130,7 @@ export function useAssistant() {
     } catch (err) {
       const message = err.message || "Something went wrong talking to the assistant.";
       setError(message);
-      await saveMessage({ role: "assistant", content: `⚠️ ${message}`, isError: true });
+      await saveMessage({ role: "assistant", content: message, isError: true });
       return null;
     } finally {
       setSending(false);

@@ -6,13 +6,13 @@
 import { useState, useEffect, useCallback } from "react";
 
 export const SUPPORTED_CURRENCIES = [
-  { code: "CAD", name: "Canadian Dollar",  symbol: "CA$", flag: "🇨🇦" },
-  { code: "USD", name: "US Dollar",        symbol: "$",   flag: "🇺🇸" },
-  { code: "GBP", name: "British Pound",    symbol: "£",   flag: "🇬🇧" },
-  { code: "EUR", name: "Euro",             symbol: "€",   flag: "🇪🇺" },
-  { code: "AUD", name: "Australian Dollar",symbol: "A$",  flag: "🇦🇺" },
-  { code: "INR", name: "Indian Rupee",     symbol: "₹",   flag: "🇮🇳" },
-  { code: "AED", name: "UAE Dirham",       symbol: "د.إ", flag: "🇦🇪" },
+  { code: "CAD", name: "Canadian Dollar",  symbol: "CA$", country: "ca" },
+  { code: "USD", name: "US Dollar",        symbol: "$",   country: "us" },
+  { code: "GBP", name: "British Pound",    symbol: "£",   country: "gb" },
+  { code: "EUR", name: "Euro",             symbol: "€",   country: "eu" },
+  { code: "AUD", name: "Australian Dollar",symbol: "A$",  country: "au" },
+  { code: "INR", name: "Indian Rupee",     symbol: "₹",   country: "in" },
+  { code: "AED", name: "UAE Dirham",       symbol: "د.إ", country: "ae" },
 ];
 
 // ── Exchange rate API key (set REACT_APP_EXCHANGE_API_KEY in your .env) ──

@@ -1,6 +1,7 @@
 import { useState }         from "react";
 import { NAV_ITEMS }        from "../constants/categories";
 import CurrencySelector     from "./CurrencySelector";
+import Icon                 from "./Icon";
 
 export default function Sidebar({
   view, setView, onAddExpense, onExportCSV,
@@ -20,7 +21,7 @@ export default function Sidebar({
           className="sidebar-collapse-btn"
           onClick={() => setCollapsed(p => !p)}
         >
-          {collapsed ? "›" : "‹"}
+          <Icon name={collapsed ? "chevron-right" : "chevron-left"} size={14} />
         </button>
       </div>
 
@@ -32,7 +33,7 @@ export default function Sidebar({
             className={`sidebar-item${view === item.id ? " active" : ""}`}
             onClick={() => setView(item.id)}
           >
-            <span className="nav-icon">{item.icon}</span>
+            <span className="nav-icon"><Icon name={item.icon} size={18} /></span>
             {!collapsed && (
               <span style={{ flex:1 }}>{item.label}</span>
             )}
@@ -71,7 +72,7 @@ export default function Sidebar({
           className="sidebar-btn secondary"
           onClick={onToggleDark}
         >
-          <span>{darkMode ? "☀️" : "🌙"}</span>
+          <Icon name={darkMode ? "sun" : "moon"} size={16} />
           {!collapsed && (
             <span>{darkMode ? "Light Mode" : "Dark Mode"}</span>
           )}
@@ -95,15 +96,15 @@ export default function Sidebar({
         )}
 
         <button className="sidebar-btn primary" onClick={onAddExpense}>
-          <span>＋</span>
+          <Icon name="plus" size={16} />
           {!collapsed && <span>Add Expense</span>}
         </button>
         <button className="sidebar-btn secondary" onClick={onExportCSV}>
-          <span>⬇</span>
+          <Icon name="download" size={16} />
           {!collapsed && <span>Export CSV</span>}
         </button>
         <button className="sidebar-btn secondary" onClick={onLogout}>
-          <span>🚪</span>
+          <Icon name="logout" size={16} />
           {!collapsed && <span>Logout</span>}
         </button>
 

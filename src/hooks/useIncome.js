@@ -2,14 +2,14 @@ import { useState, useEffect, useCallback } from "react";
 import { incomeAPI } from "../utils/api";
 
 export const INCOME_CATEGORIES = [
-  { name: "Salary",     icon: "💼", color: "#059669" },
-  { name: "Freelance",  icon: "💻", color: "#0070f3" },
-  { name: "Investment", icon: "📈", color: "#7c3aed" },
-  { name: "Business",   icon: "🏢", color: "#d97706" },
-  { name: "Rental",     icon: "🏠", color: "#db2777" },
-  { name: "Gift",       icon: "🎁", color: "#e11d48" },
-  { name: "Refund",     icon: "↩️", color: "#0891b2" },
-  { name: "Other",      icon: "💡", color: "#6b7280" },
+  { name: "Salary",     icon: "briefcase"  , color: "#059669" },
+  { name: "Freelance",  icon: "laptop"     , color: "#0070f3" },
+  { name: "Investment", icon: "trending-up", color: "#7c3aed" },
+  { name: "Business",   icon: "building"   , color: "#d97706" },
+  { name: "Rental",     icon: "house"      , color: "#db2777" },
+  { name: "Gift",       icon: "gift"       , color: "#e11d48" },
+  { name: "Refund",     icon: "undo"       , color: "#0891b2" },
+  { name: "Other",      icon: "lightbulb"  , color: "#6b7280" },
 ];
 
 export function useIncome(userId) {

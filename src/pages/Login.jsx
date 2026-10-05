@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Icon from "../components/Icon";
 
 export default function Login({ onLogin, onGoToRegister, onGoToForgot }) {
   const [email,    setEmail]    = useState("");
@@ -23,7 +24,7 @@ export default function Login({ onLogin, onGoToRegister, onGoToForgot }) {
     <div style={styles.page}>
       <div style={styles.card}>
 
-        <div style={styles.logo}>💰</div>
+        <div style={styles.logo}><Icon name="wallet" size={26} /></div>
         <div style={styles.title}>ExpenseIQ</div>
         <div style={styles.subtitle}>Sign in to your account</div>
 
@@ -103,9 +104,16 @@ const styles = {
     boxShadow:    "0 8px 40px rgba(0,0,0,0.08)",
   },
   logo: {
-    fontSize:     "36px",
-    textAlign:    "center",
-    marginBottom: "8px",
+    width:          "52px",
+    height:         "52px",
+    margin:         "0 auto 12px",
+    borderRadius:   "14px",
+    background:     "#0070f3",
+    color:          "#fff",
+    display:        "flex",
+    alignItems:     "center",
+    justifyContent: "center",
+    boxShadow:      "0 6px 16px rgba(0,112,243,0.3)",
   },
   title: {
     fontSize:      "22px",

@@ -4,6 +4,7 @@
 
 import { useState, useEffect } from "react";
 import { INCOME_CATEGORIES }  from "../hooks/useIncome";
+import { IconLabel } from "./Icon";
 
 const EMPTY_FORM = {
   title:    "",
@@ -42,7 +43,9 @@ export default function AddIncomeModal({ editingIncome, onSave, onClose }) {
         <div className="modal-handle" />
 
         <div className="modal-title">
-          {editingIncome ? "✏️ Edit Income" : "➕ Add Income"}
+          <IconLabel name={editingIncome ? "pencil" : "plus"} size={18} gap={8}>
+            {editingIncome ? "Edit Income" : "Add Income"}
+          </IconLabel>
         </div>
 
         {/* Title */}
@@ -97,7 +100,7 @@ export default function AddIncomeModal({ editingIncome, onSave, onClose }) {
                 value={c.name}
                 style={{ background:"#161616", color:"#e8e8e8" }}
                 >
-                {c.icon} {c.name}
+                {c.name}
                 </option>
             ))}
             </select>

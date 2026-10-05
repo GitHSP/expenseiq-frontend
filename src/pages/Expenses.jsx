@@ -1,6 +1,7 @@
 import { useState }   from "react";
 import { CATEGORIES } from "../constants/categories";
 import { isSameMonth } from "../utils/helpers";
+import Icon from "../components/Icon";
 
 const MONTHS = [
   "January","February","March","April","May","June",
@@ -47,8 +48,8 @@ export default function Expenses({ expenses, onEdit, onDelete, formatAmount }) {
   }
 
   function SortIcon({ col }) {
-    if (sortBy !== col) return <span style={{ color:"var(--faint)", marginLeft:4 }}>↕</span>;
-    return <span style={{ color:"#0070f3", marginLeft:4 }}>{sortDir === "asc" ? "↑" : "↓"}</span>;
+    if (sortBy !== col) return <Icon name="sort" size={12} style={{ color:"var(--faint)", marginLeft:4 }} />;
+    return <Icon name={sortDir === "asc" ? "arrow-up" : "arrow-down"} size={12} style={{ color:"#0070f3", marginLeft:4 }} />;
   }
 
   const thStyle = {
@@ -91,7 +92,7 @@ export default function Expenses({ expenses, onEdit, onDelete, formatAmount }) {
         display:"flex", gap:10, flexWrap:"wrap", alignItems:"center",
       }}>
         <div style={{ position:"relative", flex:1, minWidth:180 }}>
-          <span style={{ position:"absolute", left:10, top:"50%", transform:"translateY(-50%)", fontSize:14, color:"var(--faint2)" }}>🔍</span>
+          <Icon name="search" size={15} style={{ position:"absolute", left:10, top:"50%", transform:"translateY(-50%)", color:"var(--faint2)" }} />
           <input
             style={{ width:"100%", background:"var(--bg)", border:"1px solid var(--border)", borderRadius:8, padding:"9px 12px 9px 32px", color:"var(--text)", fontSize:13, fontFamily:"inherit", outline:"none", boxSizing:"border-box" }}
             placeholder="Search expenses..."
@@ -101,15 +102,15 @@ export default function Expenses({ expenses, onEdit, onDelete, formatAmount }) {
         </div>
         <select className="filter-select" style={{ flex:1, minWidth:150 }} value={filterCat} onChange={e => setFilterCat(e.target.value)}>
           <option value="All">All Categories</option>
-          {CATEGORIES.map(c => <option key={c.name} value={c.name}>{c.icon} {c.name}</option>)}
+          {CATEGORIES.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
         </select>
         <select className="filter-select" style={{ flex:1, minWidth:140 }} value={filterMonth} onChange={e => setFilterMonth(e.target.value)}>
           <option value="All">All Months</option>
           {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
         </select>
         {(filterCat !== "All" || filterMonth !== "All" || search !== "") && (
-          <button className="btn-secondary" style={{ padding:"9px 14px", fontSize:12 }} onClick={() => { setFilterCat("All"); setFilterMonth("All"); setSearch(""); }}>
-            ✕ Clear
+          <button className="btn-secondary" style={{ padding:"9px 14px", fontSize:12, display:"inline-flex", alignItems:"center", gap:4 }} onClick={() => { setFilterCat("All"); setFilterMonth("All"); setSearch(""); }}>
+            <Icon name="x" size={13} /> Clear
           </button>
         )}
       </div>
@@ -118,7 +119,7 @@ export default function Expenses({ expenses, onEdit, onDelete, formatAmount }) {
       <div style={{ background:"var(--card)", border:"1px solid var(--border)", borderRadius:12, overflow:"hidden", boxShadow:"0 1px 3px rgba(0,0,0,0.04)" }}>
         {filtered.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-icon">💸</div>
+            <div className="empty-icon"><Icon name="receipt" size={40} strokeWidth={1.5} /></div>
             <div style={{ fontWeight:600, color:"var(--faint)", marginBottom:4, fontSize:15 }}>No expenses found</div>
             <div style={{ fontSize:13, color:"var(--faint)" }}>Try adjusting your filters</div>
           </div>
@@ -152,7 +153,7 @@ export default function Expenses({ expenses, onEdit, onDelete, formatAmount }) {
                       </td>
                       <td style={tdStyle}>
                         <div style={{ display:"inline-flex", alignItems:"center", gap:6, background: cat ? `${cat.color}12` : "var(--bg)", border:`1px solid ${cat ? cat.color+"30" : "var(--border)"}`, borderRadius:6, padding:"4px 10px", fontSize:11, fontWeight:600, color:cat?.color || "var(--muted)" }}>
-                          {cat?.icon || "📦"} {exp.category}
+                          <Icon name={cat?.icon || "package"} size={12} /> {exp.category}
                         </div>
                       </td>
                       <td style={{ ...tdStyle, textAlign:"right" }}>
@@ -172,8 +173,8 @@ export default function Expenses({ expenses, onEdit, onDelete, formatAmount }) {
                       </td>
                       <td style={{ ...tdStyle, textAlign:"center" }}>
                         <div style={{ display:"flex", gap:6, justifyContent:"center" }}>
-                          <button onClick={() => onEdit(exp)} style={{ background:"var(--bg)", color:"var(--muted2)", border:"1px solid var(--border)", padding:"5px 10px", borderRadius:6, fontSize:11, fontWeight:600, cursor:"pointer", fontFamily:"inherit" }}>✏️ Edit</button>
-                          <button onClick={() => onDelete(exp.id)} style={{ background:"#fff1f2", color:"#e11d48", border:"1px solid #fecdd3", padding:"5px 10px", borderRadius:6, fontSize:11, fontWeight:600, cursor:"pointer", fontFamily:"inherit" }}>🗑 Delete</button>
+                          <button onClick={() => onEdit(exp)} style={{ background:"var(--bg)", color:"var(--muted2)", border:"1px solid var(--border)", padding:"5px 10px", borderRadius:6, fontSize:11, fontWeight:600, cursor:"pointer", fontFamily:"inherit", display:"inline-flex", alignItems:"center", gap:4 }}><Icon name="pencil" size={12} /> Edit</button>
+                          <button onClick={() => onDelete(exp.id)} style={{ background:"#fff1f2", color:"#e11d48", border:"1px solid #fecdd3", padding:"5px 10px", borderRadius:6, fontSize:11, fontWeight:600, cursor:"pointer", fontFamily:"inherit", display:"inline-flex", alignItems:"center", gap:4 }}><Icon name="trash" size={12} /> Delete</button>
                         </div>
                       </td>
                     </tr>

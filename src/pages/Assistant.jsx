@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useAssistant } from "../hooks/useAssistant";
+import Icon, { stripEmoji } from "../components/Icon";
 
 const SUGGESTIONS = [
   "I spent $12 on lunch today",
@@ -23,9 +24,12 @@ function ActionChips({ actions }) {
             border:       "1px solid rgba(5,150,105,0.25)",
             borderRadius: 8,
             padding:      "6px 10px",
+            display:      "flex",
+            alignItems:   "center",
+            gap:          6,
           }}
         >
-          ✅ {a.message}
+          <Icon name="check-circle" size={13} /> {a.message}
         </div>
       ))}
     </div>
@@ -53,7 +57,10 @@ function MessageBubble({ message }) {
         whiteSpace:   "pre-wrap",
         wordBreak:    "break-word",
       }}>
-        {message.content}
+        {message.isError && (
+          <Icon name="warning" size={14} color="#d97706" style={{ marginRight: 6, verticalAlign: "-2px" }} />
+        )}
+        {message.isError ? stripEmoji(message.content) : message.content}
         {!isUser && <ActionChips actions={message.actions} />}
       </div>
     </div>
@@ -94,7 +101,7 @@ function SyncPanel({ syncEnabled, syncBusy, syncError, enableSync, disableSync }
         title="Stop syncing this device (doesn't delete history already synced)"
         style={syncBtnStyle}
       >
-        🔗 Synced
+        <Icon name="link" size={13} /> Synced
       </button>
     );
   }
@@ -102,7 +109,7 @@ function SyncPanel({ syncEnabled, syncBusy, syncError, enableSync, disableSync }
   if (!open) {
     return (
       <button onClick={() => setOpen(true)} style={syncBtnStyle}>
-        🔒 Not synced
+        <Icon name="lock" size={13} /> Not synced
       </button>
     );
   }
@@ -146,6 +153,7 @@ function SyncPanel({ syncEnabled, syncBusy, syncError, enableSync, disableSync }
 }
 
 const syncBtnStyle = {
+  display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5,
   fontSize: 12, fontWeight: 600, color: "var(--muted)",
   background: "var(--card)", border: "1px solid var(--border)",
   borderRadius: 8, padding: "8px 12px", cursor: "pointer",
@@ -156,7 +164,8 @@ const syncInputStyle = {
   border: "1px solid var(--border)", borderRadius: 8, padding: "8px 10px",
 };
 
-export default function Assistant({ onActionsTaken }) {
+// Rendered inside the floating AssistantWidget panel, which sets its size.
+export default function Assistant({ onActionsTaken, onClose }) {
   const {
     messages, loaded, sending, error, sendMessage, resetConversation,
     syncEnabled, syncBusy, syncError, enableSync, disableSync,
@@ -189,25 +198,28 @@ export default function Assistant({ onActionsTaken }) {
     <div style={{
       display:       "flex",
       flexDirection: "column",
-      height:        "calc(100vh - 140px)",
-      maxHeight:     760,
+      height:        "100%",
+      padding:       16,
+      boxSizing:     "border-box",
     }}>
       {/* ── Header ── */}
       <div style={{
         display:        "flex",
-        alignItems:     "center",
+        alignItems:     "flex-start",
         justifyContent: "space-between",
-        marginBottom:   16,
+        flexWrap:       "wrap",
+        gap:            8,
+        marginBottom:   12,
       }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: "var(--text)" }}>
+          <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "var(--text)" }}>
             Assistant
           </h2>
-          <p style={{ margin: "4px 0 0", fontSize: 13, color: "var(--muted)" }}>
-            Tell it what happened — it'll log expenses, update debts, and manage your checklist.
+          <p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--muted)" }}>
+            Log expenses, update debts, manage your checklist.
           </p>
         </div>
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 8, flexWrap: "wrap" }}>
           <SyncPanel
             syncEnabled={syncEnabled}
             syncBusy={syncBusy}
@@ -218,6 +230,11 @@ export default function Assistant({ onActionsTaken }) {
           {messages.length > 0 && (
             <button onClick={resetConversation} style={syncBtnStyle}>
               New chat
+            </button>
+          )}
+          {onClose && (
+            <button onClick={onClose} aria-label="Close assistant" style={syncBtnStyle}>
+              <Icon name="x" size={14} />
             </button>
           )}
         </div>
@@ -243,7 +260,7 @@ export default function Assistant({ onActionsTaken }) {
         ) : messages.length === 0 ? (
           <div style={{ padding: "24px 8px" }}>
             <div style={{ color: "var(--muted)", fontSize: 14, marginBottom: 14, textAlign: "center" }}>
-              👋 Hi! I'm your personal assistant. Try something like:
+              <Icon name="wave" size={15} style={{ marginRight: 6, verticalAlign: "-2px" }} />Hi! I'm your personal assistant. Try something like:
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8, maxWidth: 420, margin: "0 auto" }}>
               {SUGGESTIONS.map((s) => (

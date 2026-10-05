@@ -1,5 +1,6 @@
 import { useState }                from "react";
 import ChecklistConfirmModal       from "../components/ChecklistConfirmModal";
+import Icon, { IconLabel, stripEmoji } from "../components/Icon";
 
 const C = {
   blue:    "#0070f3",
@@ -22,14 +23,25 @@ const DEBT_TYPE_LABELS = {
 };
 
 const CATEGORY_LABELS = {
-  savings:       "💰 Savings",
-  debt_min:      "💳 Debt Minimum",
-  debt_extra:    "🎯 Extra Payment",
-  fixed_expense: "🏠 Fixed Expense",
-  temp_payment:  "⏱ Temp Payment",
-  auto_debit:    "⚠️ Auto Debit",
-  transfer:      "↔️ Transfer",
-  income:        "💵 Income",
+  savings:       "Savings",
+  debt_min:      "Debt Minimum",
+  debt_extra:    "Extra Payment",
+  fixed_expense: "Fixed Expense",
+  temp_payment:  "Temp Payment",
+  auto_debit:    "Auto Debit",
+  transfer:      "Transfer",
+  income:        "Income",
+};
+
+const CATEGORY_ICONS = {
+  savings:       "piggy-bank",
+  debt_min:      "credit-card",
+  debt_extra:    "target",
+  fixed_expense: "house",
+  temp_payment:  "timer",
+  auto_debit:    "warning",
+  transfer:      "exchange",
+  income:        "banknote",
 };
 
 const inputStyle = {
@@ -142,10 +154,10 @@ export default function FinancialPlanner({
       };
       if (editingDebt) {
         await updateDebt(editingDebt.id, payload);
-        showMsg("Debt updated! ✅");
+        showMsg("Debt updated!");
       } else {
         await addDebt(payload);
-        showMsg("Debt added! ✅");
+        showMsg("Debt added!");
       }
       setShowDebtForm(false);
     } catch (err) {
@@ -173,11 +185,11 @@ export default function FinancialPlanner({
       "• Create minimum payment items for each debt\n" +
       "• Add an extra payment item for your #1 priority debt\n" +
       "• Add emergency savings item\n\n" +
-      "⚠️ Existing debt payment items will be replaced!"
+      "Existing debt payment items will be replaced!"
     )) return;
     try {
       const result = await generateChecklist();
-      showMsg(`✅ ${result.message}`);
+      showMsg(result.message);
       setActiveTab("checklist");
     } catch (err) {
       showMsg(err.message || "Failed to generate checklist");
@@ -193,7 +205,7 @@ export default function FinancialPlanner({
     if (item.is_completed) {
       try {
         await toggleChecklistItem(id);
-        showMsg("Unmarked ↩️");
+        showMsg("Unmarked");
       } catch (err) {
         showMsg(err.message || "Failed to update");
       }
@@ -213,20 +225,20 @@ export default function FinancialPlanner({
 
       if (addAsExpense && item.amount && onAddExpense) {
         await onAddExpense({
-          title:    item.label.replace(/[⚠️🎯✅☐🏦💳🎓📱🌏✈️⏳💰🏠⏱↔️💵]/g, "").trim(),
+          title:    stripEmoji(item.label),
           amount:   parseFloat(item.amount),
           category: expenseCategory,
           date:     new Date().toISOString().split("T")[0],
           tags:     "planner,checklist",
           notes:    `From monthly checklist — ${item.category}`,
         });
-        showMsg("✅ Marked complete + added as expense!");
+        showMsg("Marked complete + added as expense!");
       } else if (result?.debt_updated) {
-        showMsg(`✅ Balance updated! New: $${parseFloat(result.debt_updated.current_balance).toFixed(2)}`);
+        showMsg(`Balance updated! New: $${parseFloat(result.debt_updated.current_balance).toFixed(2)}`);
       } else if (result?.fund_updated) {
-        showMsg(`✅ Emergency fund: $${parseFloat(result.fund_updated.current_balance).toFixed(2)}`);
+        showMsg(`Emergency fund: $${parseFloat(result.fund_updated.current_balance).toFixed(2)}`);
       } else {
-        showMsg("✅ Marked complete!");
+        showMsg("Marked complete!");
       }
     } catch (err) {
       showMsg(err.message || "Failed to update");
@@ -244,7 +256,7 @@ export default function FinancialPlanner({
       });
       setItemForm({ label:"", amount:"", category:"debt_min", due_day:"", is_auto_debit:false, sort_order:0 });
       setShowItemForm(false);
-      showMsg("Item added! ✅");
+      showMsg("Item added!");
     } catch (err) {
       showMsg(err.message || "Failed to add item");
     } finally {
@@ -265,7 +277,7 @@ export default function FinancialPlanner({
     try {
       await updateEmergencyFund({ current_balance: parseFloat(fundBalance) || 0 });
       setEditingFund(false);
-      showMsg("Emergency fund updated! ✅");
+      showMsg("Emergency fund updated!");
     } catch (err) {
       showMsg(err.message || "Failed to update");
     }
@@ -277,19 +289,19 @@ export default function FinancialPlanner({
     const daysLeft = lastDay - now.getDate();
 
     if (!window.confirm(
-      `⚠️ Force Rollover Warning\n\n` +
+      `Force Rollover Warning\n\n` +
       `You still have ${daysLeft} days left in this month.\n\n` +
       `This will:\n` +
       `• Apply this month's interest to ALL debts early\n` +
       `• Create next month's plan\n` +
-      `• Reset all checklist items to ☐\n\n` +
-      `❌ Do NOT click OK unless you're sure!\n` +
-      `✅ Auto rollover happens on the 1st automatically.`
+      `• Reset all checklist items to unchecked\n\n` +
+      `Do NOT click OK unless you're sure!\n` +
+      `Auto rollover happens on the 1st automatically.`
     )) return;
 
     try {
       const result = await rolloverToNextMonth();
-      showMsg(`✅ ${result.message}`);
+      showMsg(result.message);
     } catch (err) {
       showMsg(err.message || "Failed to rollover");
     }
@@ -316,7 +328,9 @@ export default function FinancialPlanner({
           position:"fixed", top:20, left:"50%", transform:"translateX(-50%)",
           background:"var(--text)", color:"var(--card)", padding:"10px 20px",
           borderRadius:8, fontSize:13, fontWeight:600, zIndex:999, fontFamily:"inherit",
+          display:"flex", alignItems:"center", gap:8,
         }}>
+          <Icon name="check-circle" size={15} />
           {toast}
         </div>
       )}
@@ -333,7 +347,7 @@ export default function FinancialPlanner({
           background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:12,
           padding:"14px 18px", marginBottom:20, display:"flex", alignItems:"center", gap:12,
         }}>
-          <span style={{ fontSize:24 }}>🎉</span>
+          <Icon name="party" size={24} color="#059669" />
           <div>
             <div style={{ fontWeight:700, color:"#059669", fontSize:14, marginBottom:3 }}>
               New month detected — plan auto-generated!
@@ -377,9 +391,9 @@ export default function FinancialPlanner({
         overflowX:"auto", WebkitOverflowScrolling:"touch",
       }}>
         {[
-          { id:"debts",     label:"💳 Debts"      },
-          { id:"checklist", label:"☑️ Checklist"  },
-          { id:"fund",      label:"🛡️ Fund"       },
+          { id:"debts",     label:"Debts",     icon:"credit-card" },
+          { id:"checklist", label:"Checklist", icon:"list-checks" },
+          { id:"fund",      label:"Fund",      icon:"shield"      },
         ].map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
             background:   activeTab===tab.id ? C.blue : "transparent",
@@ -387,7 +401,9 @@ export default function FinancialPlanner({
             border:       "none", padding:"8px 18px", borderRadius:7,
             fontWeight:   600, fontSize:13, fontFamily:"inherit",
             cursor:       "pointer", transition:"all 0.15s", whiteSpace:"nowrap",
+            display:"inline-flex", alignItems:"center", gap:6,
           }}>
+            <Icon name={tab.icon} size={14} />
             {tab.label}
           </button>
         ))}
@@ -406,9 +422,9 @@ export default function FinancialPlanner({
               {debts.length > 0 && (
                 <button
                   onClick={handleGenerateChecklist}
-                  style={{ background:"#f0fdf4", color:C.green, border:"1px solid #bbf7d0", padding:"9px 16px", borderRadius:8, fontWeight:600, fontSize:13, cursor:"pointer", fontFamily:"inherit", whiteSpace:"nowrap" }}
+                  style={{ background:"#f0fdf4", color:C.green, border:"1px solid #bbf7d0", padding:"9px 16px", borderRadius:8, fontWeight:600, fontSize:13, cursor:"pointer", fontFamily:"inherit", whiteSpace:"nowrap", display:"inline-flex", alignItems:"center", gap:6 }}
                 >
-                  ⚡ Generate Checklist
+                  <Icon name="zap" size={14} /> Generate Checklist
                 </button>
               )}
               <button className="btn-primary" onClick={openAddDebt} style={{ padding:"9px 20px", fontSize:13 }}>
@@ -478,7 +494,7 @@ export default function FinancialPlanner({
           {/* Debt cards */}
           {debts.length === 0 ? (
             <div className="empty-state">
-              <div className="empty-icon">💳</div>
+              <div className="empty-icon"><Icon name="credit-card" size={40} strokeWidth={1.5} /></div>
               <div style={{ fontWeight:600, color:"var(--faint)", fontSize:15, marginBottom:6 }}>No debts added yet</div>
               <div style={{ fontSize:13, color:"var(--faint)" }}>Click "+ Add Debt" to start tracking</div>
             </div>
@@ -502,8 +518,8 @@ export default function FinancialPlanner({
                     </div>
                   </div>
                   <div style={{ display:"flex", gap:6 }}>
-                    <button onClick={() => openEditDebt(debt)} className="btn-secondary" style={{ padding:"6px 12px", fontSize:11 }}>✏️ Edit</button>
-                    <button onClick={() => handleDeleteDebt(debt.id)} className="btn-danger" style={{ padding:"6px 12px", fontSize:11 }}>🗑</button>
+                    <button onClick={() => openEditDebt(debt)} className="btn-secondary" style={{ padding:"6px 12px", fontSize:11, display:"inline-flex", alignItems:"center", gap:4 }}><Icon name="pencil" size={12} /> Edit</button>
+                    <button onClick={() => handleDeleteDebt(debt.id)} className="btn-danger" style={{ padding:"6px 10px", fontSize:11, display:"inline-flex", alignItems:"center", }} aria-label="Delete debt"><Icon name="trash" size={13} /></button>
                   </div>
                 </div>
 
@@ -554,14 +570,14 @@ export default function FinancialPlanner({
                   : "Loading..."
                 }
               </div>
-              <div style={{ fontSize:12, color:"var(--muted)", marginTop:2 }}>
+              <div style={{ fontSize:12, color:"var(--muted)", marginTop:2, display:"flex", alignItems:"center", gap:5 }}>
                 {completedItems}/{checklist.length} items complete
-                {checklist.length > 0 && completedItems === checklist.length && " 🎉"}
+                {checklist.length > 0 && completedItems === checklist.length && <Icon name="party" size={13} color="#059669" />}
               </div>
             </div>
             <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-              <button onClick={handleRollover} style={{ background:"var(--bg)", color:"var(--muted)", border:"1px solid var(--border)", padding:"7px 12px", borderRadius:8, fontWeight:600, fontSize:11, cursor:"pointer", fontFamily:"inherit" }}>
-                🔄 Force Rollover
+              <button onClick={handleRollover} style={{ background:"var(--bg)", color:"var(--muted)", border:"1px solid var(--border)", padding:"7px 12px", borderRadius:8, fontWeight:600, fontSize:11, cursor:"pointer", fontFamily:"inherit", display:"inline-flex", alignItems:"center", gap:5 }}>
+                <Icon name="refresh" size={12} /> Force Rollover
               </button>
               <button className="btn-primary" onClick={() => setShowItemForm(p => !p)} style={{ padding:"9px 18px", fontSize:13 }}>
                 + Add Item
@@ -599,10 +615,10 @@ export default function FinancialPlanner({
                 style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 12px", background:itemForm.is_auto_debit?"#fffbeb":"var(--subtle)", border:`1.5px solid ${itemForm.is_auto_debit?C.amber:C.border}`, borderRadius:8, cursor:"pointer", marginBottom:12, userSelect:"none" }}
               >
                 <div style={{ width:18, height:18, borderRadius:4, border:`2px solid ${itemForm.is_auto_debit?C.amber:"var(--faint)"}`, background:itemForm.is_auto_debit?C.amber:"var(--card)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-                  {itemForm.is_auto_debit && <span style={{ color:"#fff", fontSize:11, fontWeight:800 }}>✓</span>}
+                  {itemForm.is_auto_debit && <Icon name="check" size={12} strokeWidth={3} color="#fff" />}
                 </div>
                 <div>
-                  <div style={{ fontWeight:600, fontSize:13, color:itemForm.is_auto_debit?C.amber:C.text }}>⚠️ Auto Debit</div>
+                  <div style={{ fontWeight:600, fontSize:13, color:itemForm.is_auto_debit?C.amber:C.text, display:"inline-flex", alignItems:"center", gap:5 }}><Icon name="warning" size={13} /> Auto Debit</div>
                   <div style={{ fontSize:11, color:C.muted }}>Mark as automatic payment</div>
                 </div>
               </div>
@@ -619,10 +635,10 @@ export default function FinancialPlanner({
           {/* Checklist items */}
           {checklist.length === 0 ? (
             <div className="empty-state">
-              <div className="empty-icon">☑️</div>
+              <div className="empty-icon"><Icon name="list-checks" size={40} strokeWidth={1.5} /></div>
               <div style={{ fontWeight:600, color:"var(--faint)", fontSize:15, marginBottom:6 }}>No checklist items yet</div>
               <div style={{ fontSize:13, color:"var(--faint)" }}>
-                Go to Debts tab and click "⚡ Generate Checklist"
+                Go to Debts tab and click "Generate Checklist"
               </div>
             </div>
           ) : (
@@ -649,16 +665,17 @@ export default function FinancialPlanner({
                 const completed= sorted.filter(i => i.is_completed);
 
                 const groups = [
-                  { label:"🔴 Overdue",     items:overdue,   color:"#fff1f2", borderColor:"#fecdd3", textColor:"#e11d48" },
-                  { label:"🔔 Due Today",   items:dueToday,  color:"#fffbeb", borderColor:"#fde68a", textColor:"#d97706" },
-                  { label:"📅 Upcoming",    items:upcoming,  color:"var(--card)", borderColor:C.border,  textColor:C.muted   },
-                  { label:"📋 No Due Date", items:noDate,    color:"var(--card)", borderColor:C.border,  textColor:C.muted   },
-                  { label:"✅ Completed",   items:completed, color:"#f0fdf4", borderColor:"#bbf7d0", textColor:"#059669" },
+                  { label:"Overdue",     icon:"alert",        items:overdue,   color:"#fff1f2", borderColor:"#fecdd3", textColor:"#e11d48" },
+                  { label:"Due Today",   icon:"bell",         items:dueToday,  color:"#fffbeb", borderColor:"#fde68a", textColor:"#d97706" },
+                  { label:"Upcoming",    icon:"calendar",     items:upcoming,  color:"var(--card)", borderColor:C.border,  textColor:C.muted   },
+                  { label:"No Due Date", icon:"clipboard",    items:noDate,    color:"var(--card)", borderColor:C.border,  textColor:C.muted   },
+                  { label:"Completed",   icon:"check-circle", items:completed, color:"#f0fdf4", borderColor:"#bbf7d0", textColor:"#059669" },
                 ].filter(g => g.items.length > 0);
 
                 return groups.map(group => (
                   <div key={group.label}>
-                    <div style={{ padding:"8px 18px", background:group.color, fontSize:11, fontWeight:700, color:group.textColor, textTransform:"uppercase", letterSpacing:"0.5px", borderBottom:`1px solid ${group.borderColor}`, borderTop:`1px solid ${group.borderColor}` }}>
+                    <div style={{ padding:"8px 18px", background:group.color, fontSize:11, fontWeight:700, color:group.textColor, textTransform:"uppercase", letterSpacing:"0.5px", borderBottom:`1px solid ${group.borderColor}`, borderTop:`1px solid ${group.borderColor}`, display:"flex", alignItems:"center", gap:6 }}>
+                      <Icon name={group.icon} size={12} />
                       {group.label} ({group.items.length})
                     </div>
                     {group.items.map((item, idx) => (
@@ -668,16 +685,18 @@ export default function FinancialPlanner({
                           onClick={() => handleToggle(item.id)}
                           style={{ width:24, height:24, borderRadius:6, border:`2px solid ${item.is_completed?C.green:"var(--faint)"}`, background:item.is_completed?C.green:"var(--card)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0, transition:"all 0.15s" }}
                         >
-                          {item.is_completed && <span style={{ color:"#fff", fontSize:13, fontWeight:800 }}>✓</span>}
+                          {item.is_completed && <Icon name="check" size={14} strokeWidth={3} color="#fff" />}
                         </div>
 
                         {/* Label */}
                         <div style={{ flex:1, minWidth:0 }}>
-                          <div style={{ fontWeight:600, fontSize:13, color:item.is_completed?C.muted:C.text, textDecoration:item.is_completed?"line-through":"none", letterSpacing:"-0.1px" }}>
-                            {item.is_auto_debit && "⚠️ "}{item.label}
+                          <div style={{ fontWeight:600, fontSize:13, color:item.is_completed?C.muted:C.text, textDecoration:item.is_completed?"line-through":"none", letterSpacing:"-0.1px", display:"flex", alignItems:"center", gap:5 }}>
+                            {item.is_auto_debit && <Icon name="warning" size={13} color={C.amber} />}
+                            {stripEmoji(item.label)}
                           </div>
                           <div style={{ display:"flex", gap:8, marginTop:2, flexWrap:"wrap" }}>
-                            <span style={{ fontSize:10, fontWeight:600, color:C.muted, background:"var(--bg)", padding:"1px 6px", borderRadius:4, border:`1px solid ${C.border}` }}>
+                            <span style={{ fontSize:10, fontWeight:600, color:C.muted, background:"var(--bg)", padding:"1px 6px", borderRadius:4, border:`1px solid ${C.border}`, display:"inline-flex", alignItems:"center", gap:4 }}>
+                              <Icon name={CATEGORY_ICONS[item.category]} size={10} />
                               {CATEGORY_LABELS[item.category]}
                             </span>
                             {item.due_day && !item.is_completed && (
@@ -699,8 +718,8 @@ export default function FinancialPlanner({
                         )}
 
                         {/* Delete */}
-                        <button onClick={() => handleDeleteItem(item.id)} style={{ background:"transparent", border:"none", color:"var(--faint)", cursor:"pointer", fontSize:14, padding:"2px 6px", borderRadius:4, flexShrink:0 }}>
-                          ✕
+                        <button onClick={() => handleDeleteItem(item.id)} style={{ background:"transparent", border:"none", color:"var(--faint)", cursor:"pointer", fontSize:14, padding:"2px 6px", borderRadius:4, flexShrink:0, display:"inline-flex" }} aria-label="Delete item">
+                          <Icon name="x" size={15} />
                         </button>
                       </div>
                     ))}
@@ -720,14 +739,14 @@ export default function FinancialPlanner({
           {emergencyFund ? (
             <div className="card">
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20, flexWrap:"wrap", gap:10 }}>
-                <div className="card-title">🛡️ Emergency Fund</div>
-                <button className="btn-primary" style={{ padding:"7px 16px", fontSize:12 }} onClick={() => { setFundBalance(emergencyFund.current_balance); setEditingFund(true); }}>
-                  ✏️ Update Balance
+                <div className="card-title"><IconLabel name="shield" size={16}>Emergency Fund</IconLabel></div>
+                <button className="btn-primary" style={{ padding:"7px 16px", fontSize:12, display:"inline-flex", alignItems:"center", gap:5 }} onClick={() => { setFundBalance(emergencyFund.current_balance); setEditingFund(true); }}>
+                  <Icon name="pencil" size={12} /> Update Balance
                 </button>
               </div>
 
               <div style={{ background:emergencyFund.is_funded?"#f0fdf4":"#fffbeb", border:`1px solid ${emergencyFund.is_funded?"#bbf7d0":"#fde68a"}`, borderRadius:10, padding:"14px 16px", marginBottom:20, display:"flex", gap:12, alignItems:"flex-start" }}>
-                <span style={{ fontSize:28, flexShrink:0 }}>{emergencyFund.is_funded?"🎉":"🎯"}</span>
+                <Icon name={emergencyFund.is_funded ? "party" : "target"} size={26} color={emergencyFund.is_funded ? C.green : C.amber} />
                 <div style={{ minWidth:0 }}>
                   <div style={{ fontWeight:700, fontSize:14, color:emergencyFund.is_funded?C.green:C.amber, marginBottom:3, wordBreak:"break-word" }}>
                     {emergencyFund.is_funded ? "Emergency fund fully funded!" : `${fmt(parseFloat(emergencyFund.target_amount)-parseFloat(emergencyFund.current_balance))} to go`}
@@ -768,7 +787,7 @@ export default function FinancialPlanner({
 
               {!emergencyFund.is_funded && parseFloat(emergencyFund.monthly_contribution) > 0 && (
                 <div style={{ background:"#f0f7ff", border:"1px solid #bfdbfe", borderRadius:8, padding:"10px 14px", marginBottom:16, fontSize:12, color:C.blue, fontWeight:500 }}>
-                  💡 At {fmt(emergencyFund.monthly_contribution)}/month you'll reach your goal in{" "}
+                  <Icon name="lightbulb" size={13} style={{ marginRight:6, verticalAlign:"-2px" }} />At {fmt(emergencyFund.monthly_contribution)}/month you'll reach your goal in{" "}
                   <strong>
                     {Math.ceil((parseFloat(emergencyFund.target_amount)-parseFloat(emergencyFund.current_balance))/parseFloat(emergencyFund.monthly_contribution))} months
                   </strong>
@@ -788,7 +807,7 @@ export default function FinancialPlanner({
             </div>
           ) : (
             <div className="empty-state">
-              <div className="empty-icon">🛡️</div>
+              <div className="empty-icon"><Icon name="shield" size={40} strokeWidth={1.5} /></div>
               <div style={{ fontWeight:600, color:"var(--faint)", fontSize:15 }}>Loading emergency fund...</div>
             </div>
           )}

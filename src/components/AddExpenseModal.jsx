@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { CATEGORIES }          from "../constants/categories";
+import Icon, { IconLabel } from "./Icon";
 
 const EMPTY_FORM = {
   title:    "",
@@ -67,7 +68,9 @@ export default function AddExpenseModal({ editingExpense, onSave, onClose }) {
       <div className="modal-box">
         <div className="modal-handle" />
         <div className="modal-title">
-          {editingExpense ? "✏️ Edit Expense" : "➕ Add Expense"}
+          <IconLabel name={editingExpense ? "pencil" : "plus"} size={18} gap={8}>
+            {editingExpense ? "Edit Expense" : "Add Expense"}
+          </IconLabel>
         </div>
 
         {/* Title */}
@@ -120,11 +123,11 @@ export default function AddExpenseModal({ editingExpense, onSave, onClose }) {
               display:      "flex",
               alignItems:   "center",
               justifyContent:"center",
-              fontSize:     20,
+              color:        selectedCat?.color || "var(--muted)",
               flexShrink:   0,
               transition:   "all 0.2s",
             }}>
-              {selectedCat?.icon || "📦"}
+              <Icon name={selectedCat?.icon || "package"} size={20} />
             </div>
 
             {/* Dropdown */}
@@ -140,7 +143,7 @@ export default function AddExpenseModal({ editingExpense, onSave, onClose }) {
             >
               {CATEGORIES.map(c => (
                 <option key={c.name} value={c.name}>
-                  {c.icon} {c.name}
+                  {c.name}
                 </option>
               ))}
             </select>

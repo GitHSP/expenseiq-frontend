@@ -38,7 +38,7 @@ export default function CurrencySelector({ currency, setCurrency, collapsed }) {
       >
         {SUPPORTED_CURRENCIES.map(c => (
           <option key={c.code} value={c.code}>
-            {collapsed ? c.flag : `${c.flag} ${c.code} — ${c.name}`}
+            {collapsed ? c.code : `${c.code} — ${c.name}`}
           </option>
         ))}
       </select>

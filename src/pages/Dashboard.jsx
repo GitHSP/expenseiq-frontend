@@ -5,6 +5,7 @@ import {
 } from "recharts";
 import ExchangeRatesWidget from "../components/ExchangeRatesWidget";
 import FinancialTips       from "../components/FinancialTips";
+import Icon, { CategoryIcon } from "../components/Icon";
 import { CATEGORIES, MONTHS } from "../constants/categories";
 import { INCOME_CATEGORIES }  from "../hooks/useIncome";
 import { isSameMonth }        from "../utils/helpers";
@@ -111,7 +112,8 @@ export default function Dashboard({
       id:       "balance",
       label:    "Net Balance",
       value:    fmt(netBalance),
-      sub:      netBalance >= 0 ? "↑ Surplus" : "↓ Deficit",
+      sub:      netBalance >= 0 ? "Surplus" : "Deficit",
+      subIcon:  netBalance >= 0 ? "arrow-up" : "arrow-down",
       gradient: netBalance >= 0
         ? "linear-gradient(135deg, #0070f3, #0050b3)"
         : "linear-gradient(135deg, #e11d48, #be123c)",
@@ -160,11 +162,13 @@ export default function Dashboard({
             <div style={{ fontSize:22, fontWeight:800, letterSpacing:"-0.8px", lineHeight:1.1, marginBottom:6 }}>
               {card.value}
             </div>
-            <div style={{ fontSize:11, opacity:0.65, fontWeight:500, marginBottom:8 }}>
+            <div style={{ fontSize:11, opacity:0.65, fontWeight:500, marginBottom:8, display:"flex", alignItems:"center", gap:3 }}>
+              {card.subIcon && <Icon name={card.subIcon} size={11} />}
               {card.sub}
             </div>
-            <div style={{ fontSize:10, opacity:0.6, fontWeight:600 }}>
-              {activeCard === card.id ? "▲ Click to collapse" : "▼ Click to expand"}
+            <div style={{ fontSize:10, opacity:0.6, fontWeight:600, display:"flex", alignItems:"center", gap:3 }}>
+              <Icon name={activeCard === card.id ? "chevron-up" : "chevron-down"} size={11} />
+              {activeCard === card.id ? "Click to collapse" : "Click to expand"}
             </div>
           </div>
         ))}
@@ -193,7 +197,7 @@ export default function Dashboard({
                     {thisMonthExp.length} transactions · Total {fmt(totalExpenses)}
                   </div>
                 </div>
-                <button className="btn-ghost" onClick={onViewAll}>View all →</button>
+                <button className="btn-ghost" onClick={onViewAll} style={{ display:"inline-flex", alignItems:"center", gap:4 }}>View all <Icon name="arrow-right" size={13} /></button>
               </div>
 
               {/* Category breakdown */}
@@ -210,7 +214,7 @@ export default function Dashboard({
                   return (
                     <div key={cat.name} style={{ marginBottom:10 }}>
                       <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, marginBottom:4 }}>
-                        <span style={{ fontWeight:600 }}>{cat.icon} {cat.name}</span>
+                        <span style={{ fontWeight:600, display:"inline-flex", alignItems:"center", gap:6 }}><Icon name={cat.icon} size={13} color={cat.color} /> {cat.name}</span>
                         <div style={{ display:"flex", gap:12 }}>
                           <span style={{ color:"var(--muted)", fontSize:11 }}>{pct.toFixed(0)}%</span>
                           <span style={{ fontWeight:700, color:"#e11d48" }}>{fmt(spent)}</span>
@@ -235,7 +239,7 @@ export default function Dashboard({
                   const cat = CATEGORIES.find(c => c.name === exp.category);
                   return (
                     <div key={exp.id} style={rowStyle}>
-                      <span style={{ fontSize:20, width:32, textAlign:"center", flexShrink:0 }}>{cat?.icon || "📦"}</span>
+                      <CategoryIcon cat={cat} fallback={"package"} />
                       <div style={{ flex:1, minWidth:0 }}>
                         <div style={{ fontWeight:600, fontSize:13, color:"var(--text)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{exp.title}</div>
                         <div style={{ fontSize:11, color:"var(--faint2)", marginTop:1 }}>{exp.category} · {exp.date}</div>
@@ -272,7 +276,7 @@ export default function Dashboard({
                     if (total === 0) return null;
                     return (
                       <div key={cat.name} style={{ display:"flex", alignItems:"center", gap:8, background:"var(--bg)", borderRadius:8, padding:"8px 14px", border:"1px solid var(--border)" }}>
-                        <span style={{ fontSize:16 }}>{cat.icon}</span>
+                        <CategoryIcon cat={cat} size={28} />
                         <div>
                           <div style={{ fontSize:10, color:"var(--faint2)", fontWeight:600, textTransform:"uppercase" }}>{cat.name}</div>
                           <div style={{ fontWeight:700, fontSize:13, color:"#059669" }}>{fmt(total)}</div>
@@ -293,7 +297,7 @@ export default function Dashboard({
                   const cat = INCOME_CATEGORIES.find(c => c.name === inc.category);
                   return (
                     <div key={inc.id} style={rowStyle}>
-                      <span style={{ fontSize:20, width:32, textAlign:"center", flexShrink:0 }}>{cat?.icon || "💰"}</span>
+                      <CategoryIcon cat={cat} fallback={"coins"} />
                       <div style={{ flex:1, minWidth:0 }}>
                         <div style={{ fontWeight:600, fontSize:13, color:"var(--text)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{inc.title}</div>
                         <div style={{ fontSize:11, color:"var(--faint2)", marginTop:1 }}>{inc.category} · {inc.date}</div>
@@ -340,8 +344,9 @@ export default function Dashboard({
                     width:`${Math.min(Math.max(parseFloat(savingsRate), 0), 100)}%`,
                   }} />
                 </div>
-                <div style={{ fontSize:11, color:"var(--faint2)" }}>
-                  {parseFloat(savingsRate) >= 20 ? "🎉 Great savings rate!" : parseFloat(savingsRate) >= 0 ? "💡 Try to save at least 20%" : "⚠️ Spending more than earning"}
+                <div style={{ fontSize:11, color:"var(--faint2)", display:"flex", alignItems:"center", gap:5 }}>
+                  <Icon name={parseFloat(savingsRate) >= 20 ? "party" : parseFloat(savingsRate) >= 0 ? "lightbulb" : "warning"} size={12} />
+                  {parseFloat(savingsRate) >= 20 ? "Great savings rate!" : parseFloat(savingsRate) >= 0 ? "Try to save at least 20%" : "Spending more than earning"}
                 </div>
               </div>
 
@@ -359,7 +364,7 @@ export default function Dashboard({
                     : INCOME_CATEGORIES.find(c => c.name === tx.category);
                   return (
                     <div key={`${tx.kind}-${tx.id}`} style={rowStyle}>
-                      <span style={{ fontSize:20, width:32, textAlign:"center", flexShrink:0 }}>{cat?.icon || (isExp ? "📦" : "💰")}</span>
+                      <CategoryIcon cat={cat} fallback={(isExp ? "package" : "coins")} />
                       <div style={{ flex:1, minWidth:0 }}>
                         <div style={{ fontWeight:600, fontSize:13, color:"var(--text)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{tx.title}</div>
                         <div style={{ fontSize:11, color:"var(--faint2)", marginTop:1 }}>{tx.category} · {tx.date}</div>
@@ -413,7 +418,7 @@ export default function Dashboard({
           <div className="card-title" style={{ marginBottom:16 }}>Spending by Category</div>
           {expensePieData.length === 0 ? (
             <div className="empty-state">
-              <div className="empty-icon">📊</div>
+              <div className="empty-icon"><Icon name="chart" size={40} strokeWidth={1.5} /></div>
               <div style={{ fontSize:13, color:"var(--faint2)" }}>No expenses this month</div>
             </div>
           ) : (
@@ -440,14 +445,14 @@ export default function Dashboard({
         </div>
         {incomes.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-icon">💰</div>
+            <div className="empty-icon"><Icon name="coins" size={40} strokeWidth={1.5} /></div>
             <div style={{ fontWeight:600, color:"var(--faint)", marginBottom:4 }}>No income yet</div>
           </div>
         ) : incomes.slice(0, 3).map(income => {
           const cat = INCOME_CATEGORIES.find(c => c.name === income.category);
           return (
             <div key={income.id} style={rowStyle}>
-              <span style={{ fontSize:20, width:32, textAlign:"center", flexShrink:0 }}>{cat?.icon || "💰"}</span>
+              <CategoryIcon cat={cat} fallback={"coins"} />
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ fontWeight:600, fontSize:13, color:"var(--text)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{income.title}</div>
                 <div style={{ fontSize:11, color:"var(--faint2)", marginTop:1 }}>{income.category} · {income.date}</div>
@@ -462,18 +467,18 @@ export default function Dashboard({
       <div className="card">
         <div className="card-header">
           <span className="card-title">Recent Expenses</span>
-          <button className="btn-ghost" onClick={onViewAll}>View all →</button>
+          <button className="btn-ghost" onClick={onViewAll} style={{ display:"inline-flex", alignItems:"center", gap:4 }}>View all <Icon name="arrow-right" size={13} /></button>
         </div>
         {expenses.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-icon">💸</div>
+            <div className="empty-icon"><Icon name="receipt" size={40} strokeWidth={1.5} /></div>
             <div style={{ fontWeight:600, color:"var(--faint)", marginBottom:4 }}>No expenses yet</div>
           </div>
         ) : expenses.slice(0, 5).map(exp => {
           const cat = CATEGORIES.find(c => c.name === exp.category);
           return (
             <div key={exp.id} style={rowStyle}>
-              <span style={{ fontSize:20, width:32, textAlign:"center", flexShrink:0 }}>{cat?.icon || "📦"}</span>
+              <CategoryIcon cat={cat} fallback={"package"} />
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ fontWeight:600, fontSize:13, color:"var(--text)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{exp.title}</div>
                 <div style={{ fontSize:11, color:"var(--faint2)", marginTop:1 }}>{exp.category} · {exp.date}</div>

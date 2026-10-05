@@ -1,11 +1,12 @@
 import { SUPPORTED_CURRENCIES } from "../hooks/useCurrency";
+import Icon from "./Icon";
 
 export default function TopBar({ onAddExpense, onExportCSV, user, onLogout, currency, setCurrency }) {
   return (
     <div className="topbar">
 
       {/* Logo */}
-      <div className="topbar-logo">💰 ExpenseIQ</div>
+      <div className="topbar-logo"><Icon name="wallet" size={20} /> ExpenseIQ</div>
 
       {/* Right side actions */}
       <div className="topbar-actions">
@@ -32,13 +33,13 @@ export default function TopBar({ onAddExpense, onExportCSV, user, onLogout, curr
               value={c.code}
               style={{ background:"#161616", color:"#e8e8e8" }}
             >
-              {c.flag} {c.code}
+              {c.code}
             </option>
           ))}
         </select>
 
-        <button className="topbar-csv" onClick={onExportCSV}>⬇</button>
-        <button className="topbar-btn" onClick={onAddExpense}>+ Add</button>
+        <button className="topbar-csv" onClick={onExportCSV} aria-label="Export CSV"><Icon name="download" size={16} /></button>
+        <button className="topbar-btn" onClick={onAddExpense}><Icon name="plus" size={14} /> Add</button>
       </div>
 
     </div>

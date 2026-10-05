@@ -1,5 +1,6 @@
 import { useState }  from "react";
 import { authAPI }   from "../utils/api";
+import Icon from "../components/Icon";
 
 export default function ForgotPassword({ onGoToLogin }) {
   const [email,   setEmail]   = useState("");
@@ -25,7 +26,7 @@ export default function ForgotPassword({ onGoToLogin }) {
     <div style={styles.page}>
       <div style={styles.card}>
 
-        <div style={styles.logo}>🔐</div>
+        <div style={styles.logo}><Icon name="lock" size={26} /></div>
         <div style={styles.title}>Reset password</div>
         <div style={styles.subtitle}>
           Enter your email and we'll send you a reset link
@@ -33,7 +34,7 @@ export default function ForgotPassword({ onGoToLogin }) {
 
         {success ? (
           <div style={styles.successBox}>
-            <div style={{ fontSize:"32px", marginBottom:"10px" }}>📬</div>
+            <div style={{ marginBottom:"10px", color:"#059669" }}><Icon name="mail" size={32} /></div>
             <div style={{ fontWeight:700, marginBottom:"6px", color:"#059669", fontSize:15 }}>
               Check your inbox!
             </div>
@@ -103,9 +104,16 @@ const styles = {
     boxShadow:    "0 8px 40px rgba(0,0,0,0.08)",
   },
   logo: {
-    fontSize:     "36px",
-    textAlign:    "center",
-    marginBottom: "8px",
+    width:          "52px",
+    height:         "52px",
+    margin:         "0 auto 12px",
+    borderRadius:   "14px",
+    background:     "#0070f3",
+    color:          "#fff",
+    display:        "flex",
+    alignItems:     "center",
+    justifyContent: "center",
+    boxShadow:      "0 6px 16px rgba(0,112,243,0.3)",
   },
   title: {
     fontSize:      "22px",

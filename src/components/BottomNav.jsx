@@ -1,4 +1,5 @@
 import { NAV_ITEMS } from "../constants/categories";
+import Icon from "./Icon";
 
 export default function BottomNav({ view, setView, badges }) {
   return (
@@ -11,7 +12,7 @@ export default function BottomNav({ view, setView, badges }) {
         >
           {/* Icon with badge */}
           <div style={{ position:"relative", display:"inline-block" }}>
-            <span className="bnav-icon">{item.icon}</span>
+            <span className="bnav-icon"><Icon name={item.icon} size={20} /></span>
             {badges?.[item.id] > 0 && (
               <span style={{
                 position:     "absolute",

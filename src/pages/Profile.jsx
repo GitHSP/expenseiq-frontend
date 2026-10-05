@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { authAPI }  from "../utils/api";
+import Icon, { IconLabel } from "../components/Icon";
 
 export default function Profile({ user, onLogout }) {
   const [tab,         setTab]         = useState("profile");
@@ -105,9 +106,9 @@ export default function Profile({ user, onLogout }) {
         width:        "fit-content",
       }}>
         {[
-          { id:"profile",  label:"👤 Profile"  },
-          { id:"password", label:"🔐 Password" },
-          { id:"danger",   label:"⚠️ Danger"   },
+          { id:"profile",  label:"Profile",  icon:"user"    },
+          { id:"password", label:"Password", icon:"lock"    },
+          { id:"danger",   label:"Danger",   icon:"warning" },
         ].map(t => (
           <button
             key={t.id}
@@ -123,8 +124,12 @@ export default function Profile({ user, onLogout }) {
               fontFamily:  "inherit",
               cursor:      "pointer",
               transition:  "all 0.15s",
+              display:     "inline-flex",
+              alignItems:  "center",
+              gap:         6,
             }}
           >
+            <Icon name={t.icon} size={14} />
             {t.label}
           </button>
         ))}
@@ -136,9 +141,9 @@ export default function Profile({ user, onLogout }) {
           background:"#f0fdf4", border:"1px solid #bbf7d0",
           borderRadius:8, padding:"10px 14px",
           fontSize:13, color:"#059669", fontWeight:500,
-          marginBottom:16,
+          marginBottom:16, display:"flex", alignItems:"center", gap:8,
         }}>
-          ✅ {success}
+          <Icon name="check-circle" size={15} /> {success}
         </div>
       )}
       {error && (
@@ -146,9 +151,9 @@ export default function Profile({ user, onLogout }) {
           background:"#fff1f2", border:"1px solid #fecdd3",
           borderRadius:8, padding:"10px 14px",
           fontSize:13, color:"#e11d48", fontWeight:500,
-          marginBottom:16,
+          marginBottom:16, display:"flex", alignItems:"center", gap:8,
         }}>
-          ⚠️ {error}
+          <Icon name="warning" size={15} /> {error}
         </div>
       )}
 
@@ -179,9 +184,9 @@ export default function Profile({ user, onLogout }) {
           <div style={{
             background:"#f0f7ff", border:"1px solid #bfdbfe",
             borderRadius:8, padding:"12px 14px", marginTop:8,
-            fontSize:12, color:"#0070f3",
+            fontSize:12, color:"#0070f3", display:"flex", alignItems:"center", gap:8,
           }}>
-            💡 Profile editing coming soon — for now your username and email are set at registration.
+            <Icon name="lightbulb" size={14} /> Profile editing coming soon — for now your username and email are set at registration.
           </div>
         </div>
       )}
@@ -235,7 +240,7 @@ export default function Profile({ user, onLogout }) {
       {tab === "danger" && (
         <div className="card" style={{ border:"1.5px solid #fecdd3" }}>
           <div className="card-title" style={{ marginBottom:6, color:"#e11d48" }}>
-            ⚠️ Danger Zone
+            <IconLabel name="warning" size={15}>Danger Zone</IconLabel>
           </div>
           <div style={{ fontSize:13, color:"var(--muted)", marginBottom:20 }}>
             These actions are permanent and cannot be undone.

@@ -1,4 +1,5 @@
 import { SUPPORTED_CURRENCIES } from "../hooks/useCurrency";
+import Icon, { IconLabel, Flag } from "./Icon";
 
 export default function ExchangeRatesWidget({
   rates, currency, getRate, getLastUpdatedText, loading, error, refresh
@@ -11,9 +12,9 @@ export default function ExchangeRatesWidget({
       {/* Header */}
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
         <div>
-          <div className="card-title">💱 Live Exchange Rates</div>
-          <div style={{ fontSize:11, color:"var(--muted)", marginTop:2 }}>
-            Base: 🇨🇦 CAD — Canadian Dollar
+          <div className="card-title"><IconLabel name="exchange" size={15}>Live Exchange Rates</IconLabel></div>
+          <div style={{ fontSize:11, color:"var(--muted)", marginTop:2, display:"flex", alignItems:"center", gap:5 }}>
+            Base: <Flag country="ca" size={10} /> CAD — Canadian Dollar
           </div>
         </div>
         <div style={{ display:"flex", alignItems:"center", gap:8 }}>
@@ -32,9 +33,13 @@ export default function ExchangeRatesWidget({
               cursor:       loading ? "not-allowed" : "pointer",
               color:        "var(--muted2)",
               fontWeight:   600,
+              display:      "inline-flex",
+              alignItems:   "center",
+              gap:          6,
             }}
           >
-            {loading ? "⏳" : "🔄 Refresh"}
+            <Icon name="refresh" size={13} className={loading ? "spin" : undefined} />
+            {loading ? "Refreshing" : "Refresh"}
           </button>
         </div>
       </div>
@@ -44,9 +49,10 @@ export default function ExchangeRatesWidget({
         <div style={{
           background:"#fff0f0", border:"1px solid #fca5a5",
           borderRadius:"10px", padding:"10px 14px",
-          fontSize:12, color:"#dc2626", marginBottom:12
+          fontSize:12, color:"#dc2626", marginBottom:12,
+          display:"flex", alignItems:"center", gap:8,
         }}>
-          ⚠️ {error}
+          <Icon name="warning" size={14} /> {error}
         </div>
       )}
 
@@ -70,7 +76,7 @@ export default function ExchangeRatesWidget({
               }}
             >
               <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:6 }}>
-                <span style={{ fontSize:18 }}>{curr.flag}</span>
+                <Flag country={curr.country} size={16} />
                 <div>
                   <div style={{ fontWeight:700, fontSize:12, color:"var(--text)" }}>{curr.code}</div>
                   <div style={{ fontSize:10, color:"var(--muted)" }}>{curr.name}</div>
@@ -99,9 +105,9 @@ export default function ExchangeRatesWidget({
           justifyContent: "space-between",
           alignItems:     "center",
         }}>
-          <div style={{ fontSize:13, color:"#6C5CE7", fontWeight:600 }}>
-            Currently viewing in{" "}
-            {SUPPORTED_CURRENCIES.find(c => c.code === currency)?.flag} {currency}
+          <div style={{ fontSize:13, color:"#6C5CE7", fontWeight:600, display:"flex", alignItems:"center", gap:6 }}>
+            Currently viewing in
+            <Flag country={SUPPORTED_CURRENCIES.find(c => c.code === currency)?.country} size={13} /> {currency}
           </div>
           <div style={{ fontSize:12, color:"var(--muted)" }}>
             1 CAD = {getRate(currency)?.toFixed(4)} {currency}

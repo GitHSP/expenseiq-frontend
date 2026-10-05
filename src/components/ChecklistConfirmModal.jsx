@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { CATEGORIES } from "../constants/categories";
+import Icon, { IconLabel, stripEmoji } from "./Icon";
 
 // Maps checklist category to expense category
 const CATEGORY_MAP = {
@@ -45,10 +46,10 @@ export default function ChecklistConfirmModal({
             letterSpacing: "-0.4px",
             marginBottom:  4,
           }}>
-            ✅ Mark as Complete?
+            <IconLabel name="check-circle" size={18} gap={8} color="#059669">Mark as Complete?</IconLabel>
           </div>
           <div style={{ fontSize:13, color:"var(--muted)" }}>
-            {item.label}
+            {stripEmoji(item.label)}
           </div>
         </div>
 
@@ -85,9 +86,9 @@ export default function ChecklistConfirmModal({
             color:        "#e11d48",
             fontWeight:   500,
           }}>
-            💳 This will reduce <strong>{debt.name}</strong> balance by{" "}
+            <Icon name="credit-card" size={13} style={{ marginRight:6, verticalAlign:"-2px" }} />This will reduce <strong>{debt.name}</strong> balance by{" "}
             <strong>${amount.toFixed(2)}</strong>
-            {" "}→ New balance:{" "}
+            {" "}<Icon name="arrow-right" size={12} style={{ verticalAlign:"-2px" }} /> New balance:{" "}
             <strong>
               ${Math.max(0, parseFloat(debt.current_balance) - amount).toFixed(2)}
             </strong>
@@ -106,7 +107,7 @@ export default function ChecklistConfirmModal({
             color:        "#059669",
             fontWeight:   500,
           }}>
-            🛡️ This will add <strong>${amount.toFixed(2)}</strong> to your Emergency Fund
+            <Icon name="shield" size={13} style={{ marginRight:6, verticalAlign:"-2px" }} />This will add <strong>${amount.toFixed(2)}</strong> to your Emergency Fund
           </div>
         )}
 
@@ -143,7 +144,7 @@ export default function ChecklistConfirmModal({
                 transition:    "all 0.15s",
               }}>
                 {addAsExpense && (
-                  <span style={{ color:"#fff", fontSize:12, fontWeight:800 }}>✓</span>
+                  <Icon name="check" size={13} strokeWidth={3} color="#fff" />
                 )}
               </div>
               <div>
@@ -192,7 +193,7 @@ export default function ChecklistConfirmModal({
                 >
                   {CATEGORIES.map(c => (
                     <option key={c.name} value={c.name}>
-                      {c.icon} {c.name}
+                      {c.name}
                     </option>
                   ))}
                 </select>
@@ -216,9 +217,13 @@ export default function ChecklistConfirmModal({
               fontSize:     14,
               cursor:       "pointer",
               fontFamily:   "inherit",
+              display:      "inline-flex",
+              alignItems:   "center",
+              justifyContent:"center",
+              gap:          6,
             }}
           >
-            ✅ Confirm
+            <Icon name="check" size={16} strokeWidth={2.5} /> Confirm
           </button>
           <button
             onClick={onCancel}

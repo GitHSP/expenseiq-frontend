@@ -33,7 +33,8 @@ import Profile           from "./pages/Profile";
 import { exportToCSV } from "./utils/helpers";
 
 import FinancialPlanner   from "./pages/FinancialPlanner";
-import Assistant          from "./pages/Assistant";
+import AssistantWidget    from "./components/AssistantWidget";
+import Icon               from "./components/Icon";
 
 export default function App() {
 
@@ -140,7 +141,7 @@ useEffect(() => {
         <Register
           onRegister={async (email, username, password, password2) => {
             await register(email, username, password, password2);
-            showToast("Account created! Welcome 🎉");
+            showToast("Account created! Welcome");
           }}
           onGoToLogin={() => setAuthView("login")}
         />
@@ -153,7 +154,7 @@ useEffect(() => {
       <Login
         onLogin={async (email, password) => {
           await login(email, password);
-          showToast("Welcome back! 👋");
+          showToast("Welcome back!");
         }}
         onGoToRegister={() => setAuthView("register")}
         onGoToForgot={()  => setAuthView("forgot-password")}
@@ -249,7 +250,7 @@ useEffect(() => {
         showToast("Income updated!");
       } else {
         await addIncome(formData);
-        showToast("Income added! 💰");
+        showToast("Income added!");
       }
       setShowIncomeModal(false);
     } catch (err) { showToast(err.message || "Something went wrong", "error"); }
@@ -287,7 +288,7 @@ async function handleLogout() {
               color:          "var(--muted)",
               gap:            12,
             }}>
-              <div style={{ fontSize:32 }}>⏳</div>
+              <Icon name="loader" size={32} className="spin" />
               <div style={{ fontWeight:600, fontSize:15 }}>Loading your data...</div>
               <div style={{ fontSize:12, color:"var(--faint)" }}>Fetching expenses and income...</div>
             </div>
@@ -352,15 +353,13 @@ async function handleLogout() {
             onAddExpense={async (formData) => {
               try {
                 await addExpense(formData);
-                showToast("Expense added from planner! ✅");
+                showToast("Expense added from planner!");
               } catch (err) {
                 showToast(err.message || "Failed to add expense", "error");
               }
             }}
           />
         );
-      case "assistant":
-        return <Assistant onActionsTaken={handleAssistantActions} />;
       case "profile":
         return (
           <Profile
@@ -424,6 +423,8 @@ async function handleLogout() {
           onClose={() => setShowModal(false)}
         />
       )}
+
+      <AssistantWidget onActionsTaken={handleAssistantActions} />
 
       {showIncomeModal && (
         <AddIncomeModal
