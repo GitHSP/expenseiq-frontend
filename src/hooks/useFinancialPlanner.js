@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { financialPlannerAPI }              from "../utils/api";
 
-export function useFinancialPlanner() {
+export function useFinancialPlanner(userId) {
   const [debts,         setDebts]         = useState([]);
   const [emergencyFund, setEmergencyFund] = useState(null);
   const [currentPlan,   setCurrentPlan]   = useState(null);
@@ -10,9 +10,9 @@ export function useFinancialPlanner() {
   const [error,         setError]         = useState(null);
   const [rolledOver,    setRolledOver]    = useState(false);
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async ({ silent = false } = {}) => {
     try {
-      setLoaded(false);
+      if (!silent) setLoaded(false);
       const token = localStorage.getItem("access_token");
       if (!token) { setLoaded(true); return; }
 
@@ -64,9 +64,20 @@ export function useFinancialPlanner() {
     }
   }, []);
 
+  // Load when a user logs in (or the page loads with a saved session),
+  // and clear when they log out — a mount-only load would run before
+  // login and never fetch again.
   useEffect(() => {
+    if (!userId) {
+      setDebts([]);
+      setEmergencyFund(null);
+      setCurrentPlan(null);
+      setChecklist([]);
+      setLoaded(true);
+      return;
+    }
     loadData();
-  }, [loadData]);
+  }, [userId, loadData]);
 
   // ── Debt actions ──
   async function addDebt(data) {

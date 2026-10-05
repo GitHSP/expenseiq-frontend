@@ -156,7 +156,7 @@ const syncInputStyle = {
   border: "1px solid var(--border)", borderRadius: 8, padding: "8px 10px",
 };
 
-export default function Assistant() {
+export default function Assistant({ onActionsTaken }) {
   const {
     messages, loaded, sending, error, sendMessage, resetConversation,
     syncEnabled, syncBusy, syncError, enableSync, disableSync,
@@ -174,7 +174,8 @@ export default function Assistant() {
     const value = (text ?? input).trim();
     if (!value || sending) return;
     setInput("");
-    await sendMessage(value);
+    const data = await sendMessage(value);
+    if (data?.actions?.length && onActionsTaken) onActionsTaken(data.actions);
   }
 
   function handleKeyDown(e) {

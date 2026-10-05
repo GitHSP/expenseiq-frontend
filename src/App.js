@@ -69,12 +69,14 @@ useEffect(() => {
   const {
     expenses, loaded,
     addExpense, updateExpense, deleteExpense,
-  } = useExpenses();
+    reload: reloadExpenses,
+  } = useExpenses(user?.id);
 
   const {
     incomes, loaded: incomeLoaded,
     addIncome, updateIncome, deleteIncome,
-  } = useIncome();
+    reload: reloadIncome,
+  } = useIncome(user?.id);
 
   const {
     debts, emergencyFund, currentPlan, checklist,
@@ -83,7 +85,30 @@ useEffect(() => {
     updateEmergencyFund,
     addChecklistItem, toggleChecklistItem, deleteChecklistItem,
     rolloverToNextMonth, generateChecklist,
-  } = useFinancialPlanner();
+    reload: reloadPlanner,
+  } = useFinancialPlanner(user?.id);
+
+  // ── Refresh data changed by the assistant ──
+  // The assistant writes straight to the backend, so the hooks above don't
+  // see those changes unless we refetch. Reload silently so the app doesn't
+  // drop back to the loading skeleton (which would unmount the chat).
+  function handleAssistantActions(actions) {
+    const tools = new Set(actions.map(a => a.tool));
+    const touches = (...names) => names.some(n => tools.has(n));
+    if (touches("add_expense", "update_expense", "delete_expense")) {
+      reloadExpenses({ silent: true });
+    }
+    if (touches("add_income")) {
+      reloadIncome({ silent: true });
+    }
+    if (touches(
+      "add_debt", "update_debt", "delete_debt", "update_emergency_fund",
+      "add_checklist_item", "toggle_checklist_item", "delete_checklist_item",
+      "generate_checklist", "rollover_month",
+    )) {
+      reloadPlanner({ silent: true });
+    }
+  }
 
   // ── Currency ──────────────────────────────
   const {
@@ -335,7 +360,7 @@ async function handleLogout() {
           />
         );
       case "assistant":
-        return <Assistant />;
+        return <Assistant onActionsTaken={handleAssistantActions} />;
       case "profile":
         return (
           <Profile

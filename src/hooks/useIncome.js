@@ -12,18 +12,18 @@ export const INCOME_CATEGORIES = [
   { name: "Other",      icon: "💡", color: "#6b7280" },
 ];
 
-export function useIncome() {
+export function useIncome(userId) {
   const [incomes, setIncomes] = useState([]);
   const [loaded,  setLoaded]  = useState(false);
   const [error,   setError]   = useState(null);
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async ({ silent = false } = {}) => {
     try {
-      setLoaded(false);
+      if (!silent) setLoaded(false);
       const token = localStorage.getItem("access_token");
       if (!token) { setLoaded(true); return; }
 
-      await new Promise(resolve => setTimeout(resolve, 300));
+      if (!silent) await new Promise(resolve => setTimeout(resolve, 300));
 
       const data = await incomeAPI.getAll();
       setIncomes(Array.isArray(data) ? data : []);
@@ -36,9 +36,17 @@ export function useIncome() {
     }
   }, []);
 
+  // Load when a user logs in (or the page loads with a saved session),
+  // and clear when they log out — a mount-only load would run before
+  // login and never fetch again.
   useEffect(() => {
+    if (!userId) {
+      setIncomes([]);
+      setLoaded(true);
+      return;
+    }
     loadData();
-  }, [loadData]);
+  }, [userId, loadData]);
 
   async function addIncome(formData) {
     try {
