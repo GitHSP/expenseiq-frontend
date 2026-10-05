@@ -3,6 +3,7 @@ import { financialPlannerAPI }              from "../utils/api";
 
 export function useFinancialPlanner(userId) {
   const [debts,         setDebts]         = useState([]);
+  const [recurring,     setRecurring]     = useState([]);
   const [emergencyFund, setEmergencyFund] = useState(null);
   const [currentPlan,   setCurrentPlan]   = useState(null);
   const [checklist,     setChecklist]     = useState([]);
@@ -16,37 +17,25 @@ export function useFinancialPlanner(userId) {
       const token = localStorage.getItem("access_token");
       if (!token) { setLoaded(true); return; }
 
-      const [debtsData, fundData] = await Promise.all([
+      // The current-plan request goes first: on the first visit of a new
+      // month it builds the month's checklist and applies interest to the
+      // debts, so debts must be fetched after it.
+      const planData = await financialPlannerAPI.getCurrentPlan();
+
+      const [debtsData, fundData, recurringData] = await Promise.all([
         financialPlannerAPI.getDebts(),
         financialPlannerAPI.getEmergencyFund(),
+        // Tolerate a backend that doesn't have recurring payments yet.
+        financialPlannerAPI.getRecurring().catch(() => []),
       ]);
 
       setDebts(Array.isArray(debtsData) ? debtsData : []);
       setEmergencyFund(fundData);
+      setRecurring(Array.isArray(recurringData) ? recurringData : []);
 
-      // ── Get current plan ──
-      let planData = await financialPlannerAPI.getCurrentPlan();
-
-      // ── Auto rollover check ──
-      const now          = new Date();
-      const currentMonth = now.getMonth() + 1;
-      const currentYear  = now.getFullYear();
-
-      if (
-        planData &&
-        (planData.month !== currentMonth || planData.year !== currentYear)
-      ) {
-        try {
-          const rolloverResult = await financialPlannerAPI.rollover();
-          planData = rolloverResult.plan;
-          if (rolloverResult.debts_updated) {
-            setDebts(rolloverResult.debts_updated);
-          }
-          setRolledOver(true);
-          setTimeout(() => setRolledOver(false), 5000);
-        } catch {
-          planData = await financialPlannerAPI.getCurrentPlan();
-        }
+      if (planData?.rolled_over) {
+        setRolledOver(true);
+        setTimeout(() => setRolledOver(false), 5000);
       }
 
       setCurrentPlan(planData);
@@ -70,6 +59,7 @@ export function useFinancialPlanner(userId) {
   useEffect(() => {
     if (!userId) {
       setDebts([]);
+      setRecurring([]);
       setEmergencyFund(null);
       setCurrentPlan(null);
       setChecklist([]);
@@ -97,6 +87,36 @@ export function useFinancialPlanner(userId) {
   async function deleteDebt(id) {
     await financialPlannerAPI.deleteDebt(id);
     await loadData();
+  }
+
+  // ── Recurring payments ──
+  // The backend re-syncs this month's checklist on every change, so
+  // refresh the plan and checklist alongside the list itself.
+  async function refreshRecurringAndChecklist() {
+    const [recurringData, planData] = await Promise.all([
+      financialPlannerAPI.getRecurring(),
+      financialPlannerAPI.getCurrentPlan(),
+    ]);
+    setRecurring(Array.isArray(recurringData) ? recurringData : []);
+    setCurrentPlan(planData);
+    setChecklist(Array.isArray(planData?.checklist_items) ? planData.checklist_items : []);
+  }
+
+  async function addRecurring(data) {
+    const item = await financialPlannerAPI.createRecurring(data);
+    await refreshRecurringAndChecklist();
+    return item;
+  }
+
+  async function updateRecurring(id, data) {
+    const item = await financialPlannerAPI.updateRecurring(id, data);
+    await refreshRecurringAndChecklist();
+    return item;
+  }
+
+  async function deleteRecurring(id) {
+    await financialPlannerAPI.deleteRecurring(id);
+    await refreshRecurringAndChecklist();
   }
 
   // ── Emergency fund ──
@@ -156,9 +176,10 @@ export function useFinancialPlanner(userId) {
   }
 
   return {
-    debts, emergencyFund, currentPlan, checklist,
+    debts, recurring, emergencyFund, currentPlan, checklist,
     loaded, error, rolledOver,
     addDebt, updateDebt, deleteDebt,
+    addRecurring, updateRecurring, deleteRecurring,
     updateEmergencyFund,
     addChecklistItem, toggleChecklistItem, deleteChecklistItem,
     rolloverToNextMonth, generateChecklist,

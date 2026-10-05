@@ -1,5 +1,6 @@
 import { useState }                from "react";
 import ChecklistConfirmModal       from "../components/ChecklistConfirmModal";
+import RecurringTab                from "../components/RecurringTab";
 import Icon, { IconLabel, stripEmoji } from "../components/Icon";
 
 const C = {
@@ -69,9 +70,10 @@ const labelStyle = {
 };
 
 export default function FinancialPlanner({
-  debts, emergencyFund, currentPlan, checklist, loaded,
+  debts, recurring, emergencyFund, currentPlan, checklist, loaded,
   rolledOver,
   addDebt, updateDebt, deleteDebt,
+  addRecurring, updateRecurring, deleteRecurring,
   updateEmergencyFund,
   addChecklistItem, toggleChecklistItem, deleteChecklistItem,
   rolloverToNextMonth, generateChecklist,
@@ -179,13 +181,12 @@ export default function FinancialPlanner({
 
   async function handleGenerateChecklist() {
     if (!window.confirm(
-      "Auto-generate checklist from your debts?\n\n" +
+      "Refresh this month's checklist?\n\n" +
       "This will:\n" +
-      "• Sort debts by highest APR (avalanche method)\n" +
-      "• Create minimum payment items for each debt\n" +
-      "• Add an extra payment item for your #1 priority debt\n" +
-      "• Add emergency savings item\n\n" +
-      "Existing debt payment items will be replaced!"
+      "• Add any missing recurring payments and debt payments\n" +
+      "• Update unticked items to match your Recurring and Debts tabs\n" +
+      "• Put all left-over money on your #1 priority debt\n\n" +
+      "Ticked items and items you added by hand are kept."
     )) return;
     try {
       const result = await generateChecklist();
@@ -350,7 +351,7 @@ export default function FinancialPlanner({
           <Icon name="party" size={24} color="#059669" />
           <div>
             <div style={{ fontWeight:700, color:"#059669", fontSize:14, marginBottom:3 }}>
-              New month detected — plan auto-generated!
+              New month started — checklist built from your recurring payments!
             </div>
             <div style={{ fontSize:12, color:"var(--muted)" }}>
               Interest applied to all debts. Checklist reset for{" "}
@@ -392,6 +393,7 @@ export default function FinancialPlanner({
       }}>
         {[
           { id:"debts",     label:"Debts",     icon:"credit-card" },
+          { id:"recurring", label:"Recurring", icon:"refresh"     },
           { id:"checklist", label:"Checklist", icon:"list-checks" },
           { id:"fund",      label:"Fund",      icon:"shield"      },
         ].map(tab => (
@@ -419,12 +421,12 @@ export default function FinancialPlanner({
               Sorted by highest APR — avalanche method
             </div>
             <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-              {debts.length > 0 && (
+              {(debts.length > 0 || recurring.length > 0) && (
                 <button
                   onClick={handleGenerateChecklist}
                   style={{ background:"#f0fdf4", color:C.green, border:"1px solid #bbf7d0", padding:"9px 16px", borderRadius:8, fontWeight:600, fontSize:13, cursor:"pointer", fontFamily:"inherit", whiteSpace:"nowrap", display:"inline-flex", alignItems:"center", gap:6 }}
                 >
-                  <Icon name="zap" size={14} /> Generate Checklist
+                  <Icon name="refresh" size={14} /> Refresh Checklist
                 </button>
               )}
               <button className="btn-primary" onClick={openAddDebt} style={{ padding:"9px 20px", fontSize:13 }}>
@@ -588,7 +590,10 @@ export default function FinancialPlanner({
           {/* Add item form */}
           {showItemForm && (
             <div className="card" style={{ marginBottom:16, border:`1.5px solid ${C.blue}` }}>
-              <div className="card-title" style={{ marginBottom:14 }}>New Checklist Item</div>
+              <div className="card-title" style={{ marginBottom:4 }}>New Checklist Item</div>
+              <div style={{ fontSize:12, color:C.muted, marginBottom:14 }}>
+                One-off for this month only. For payments that repeat every month, use the Recurring tab.
+              </div>
               <div className="form-grid-2">
                 <div className="form-group">
                   <label style={labelStyle}>Label *</label>
@@ -638,7 +643,7 @@ export default function FinancialPlanner({
               <div className="empty-icon"><Icon name="list-checks" size={40} strokeWidth={1.5} /></div>
               <div style={{ fontWeight:600, color:"var(--faint)", fontSize:15, marginBottom:6 }}>No checklist items yet</div>
               <div style={{ fontSize:13, color:"var(--faint)" }}>
-                Go to Debts tab and click "Generate Checklist"
+                Add your monthly payments in the Recurring tab — they'll appear here automatically
               </div>
             </div>
           ) : (
@@ -729,6 +734,22 @@ export default function FinancialPlanner({
             </div>
           )}
         </>
+      )}
+
+      {/* ════════════════════════════════════
+          TAB — RECURRING PAYMENTS
+      ════════════════════════════════════ */}
+      {activeTab === "recurring" && (
+        <RecurringTab
+          recurring={recurring}
+          debts={debts}
+          emergencyFund={emergencyFund}
+          addRecurring={addRecurring}
+          updateRecurring={updateRecurring}
+          deleteRecurring={deleteRecurring}
+          fmt={fmt}
+          showMsg={showMsg}
+        />
       )}
 
       {/* ════════════════════════════════════

@@ -748,9 +748,13 @@ select.input option { background: var(--card); color: var(--text); }
 }
 .assistant-panel.open { opacity: 1; visibility: visible; transform: translateY(0); }
 
+/* Leave room at the bottom of every page so the FAB never covers content */
+.main { padding-bottom: 104px; }
+
 @media (max-width: 768px) {
   /* Clear the bottom nav (~64px) */
   .assistant-fab { right: 16px; bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
+  .main { padding-bottom: 88px; }
   /* Full-screen sheet on phones; hide the FAB while it's open (panel has its own ✕) */
   .assistant-panel {
     inset: 0;

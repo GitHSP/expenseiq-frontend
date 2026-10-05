@@ -183,6 +183,34 @@ export const financialPlannerAPI = {
     return handleResponse(res);
   },
 
+  // ── Recurring payments ──
+  getRecurring: async () => {
+    const res = await fetch(`${FP_URL}/recurring/`, {
+      method: "GET", headers: getHeaders(true),
+    });
+    return handleResponse(res);
+  },
+  createRecurring: async (data) => {
+    const res = await fetch(`${FP_URL}/recurring/`, {
+      method: "POST", headers: getHeaders(true),
+      body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+  },
+  updateRecurring: async (id, data) => {
+    const res = await fetch(`${FP_URL}/recurring/${id}/`, {
+      method: "PATCH", headers: getHeaders(true),
+      body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+  },
+  deleteRecurring: async (id) => {
+    const res = await fetch(`${FP_URL}/recurring/${id}/`, {
+      method: "DELETE", headers: getHeaders(true),
+    });
+    return handleResponse(res);
+  },
+
   // ── Emergency Fund ──
   getEmergencyFund: async () => {
     const res = await fetch(`${FP_URL}/emergency-fund/`, {

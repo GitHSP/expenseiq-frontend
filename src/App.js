@@ -80,9 +80,10 @@ useEffect(() => {
   } = useIncome(user?.id);
 
   const {
-    debts, emergencyFund, currentPlan, checklist,
+    debts, recurring, emergencyFund, currentPlan, checklist,
     loaded: plannerLoaded, rolledOver,
     addDebt, updateDebt, deleteDebt,
+    addRecurring, updateRecurring, deleteRecurring,
     updateEmergencyFund,
     addChecklistItem, toggleChecklistItem, deleteChecklistItem,
     rolloverToNextMonth, generateChecklist,
@@ -106,6 +107,7 @@ useEffect(() => {
       "add_debt", "update_debt", "delete_debt", "update_emergency_fund",
       "add_checklist_item", "toggle_checklist_item", "delete_checklist_item",
       "generate_checklist", "rollover_month",
+      "add_recurring_payment", "update_recurring_payment", "delete_recurring_payment",
     )) {
       reloadPlanner({ silent: true });
     }
@@ -335,6 +337,7 @@ async function handleLogout() {
         return (
           <FinancialPlanner
             debts={debts}
+            recurring={recurring}
             emergencyFund={emergencyFund}
             currentPlan={currentPlan}
             checklist={checklist}
@@ -343,6 +346,9 @@ async function handleLogout() {
             addDebt={addDebt}
             updateDebt={updateDebt}
             deleteDebt={deleteDebt}
+            addRecurring={addRecurring}
+            updateRecurring={updateRecurring}
+            deleteRecurring={deleteRecurring}
             updateEmergencyFund={updateEmergencyFund}
             addChecklistItem={addChecklistItem}
             toggleChecklistItem={toggleChecklistItem}
