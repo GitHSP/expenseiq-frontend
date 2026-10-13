@@ -23,6 +23,7 @@ import BottomNav       from "./components/BottomNav";
 import Toast           from "./components/Toast";
 import AddExpenseModal from "./components/AddExpenseModal";
 import AddIncomeModal  from "./components/AddIncomeModal";
+import ImportStatementModal from "./components/ImportStatementModal";
 
 // Pages
 import Dashboard         from "./pages/Dashboard";
@@ -68,6 +69,7 @@ useEffect(() => {
   const [showModal,      setShowModal]      = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
   const [showIncomeModal, setShowIncomeModal] = useState(false);
+  const [showImport,      setShowImport]      = useState(false);
   const [editingIncome,   setEditingIncome]   = useState(null);
 
 
@@ -342,6 +344,7 @@ async function handleLogout() {
             onEdit={openEditModal}
             onDelete={handleDelete}
             formatAmount={formatAmount}
+            onImport={() => setShowImport(true)}
           />
         );
       case "analytics":
@@ -449,6 +452,19 @@ async function handleLogout() {
       )}
 
       <AssistantWidget onActionsTaken={handleAssistantActions} />
+
+      {showImport && (
+        <ImportStatementModal
+          formatAmount={formatAmount}
+          onClose={() => setShowImport(false)}
+          onImported={({ imported_expenses, imported_income }) => {
+            setShowImport(false);
+            reloadExpenses({ silent: true });
+            reloadIncome({ silent: true });
+            showToast(`Imported ${imported_expenses} expense${imported_expenses === 1 ? "" : "s"} and ${imported_income} income`);
+          }}
+        />
+      )}
 
       {showIncomeModal && (
         <AddIncomeModal

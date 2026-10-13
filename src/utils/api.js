@@ -151,6 +151,30 @@ export const incomeAPI = {
 // ─────────────────────────────────────────────
 // FINANCIAL PLANNER API
 // ─────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// STATEMENT IMPORT
+// ─────────────────────────────────────────────
+export const statementsAPI = {
+  // Upload CSV/OFX/QFX files; returns parsed rows to review (nothing saved).
+  preview: async (files) => {
+    const body = new FormData();
+    files.forEach(f => body.append("files", f));
+    const headers = {};
+    const token = getToken();
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+    const res = await fetch(`${BASE_URL}/statements/preview/`, { method: "POST", headers, body });
+    return handleResponse(res);
+  },
+  // Save the confirmed rows: [{ kind, title, amount, date, category }]
+  importRows: async (filename, rows) => {
+    const res = await fetch(`${BASE_URL}/statements/import/`, {
+      method: "POST", headers: getHeaders(true),
+      body: JSON.stringify({ filename, rows }),
+    });
+    return handleResponse(res);
+  },
+};
+
 const FP_URL = `${BASE_URL}/fp`;
 
 export const financialPlannerAPI = {

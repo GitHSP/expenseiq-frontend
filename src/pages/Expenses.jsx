@@ -8,7 +8,7 @@ const MONTHS = [
   "July","August","September","October","November","December"
 ];
 
-export default function Expenses({ expenses, onEdit, onDelete, formatAmount }) {
+export default function Expenses({ expenses, onEdit, onDelete, formatAmount, onImport }) {
   const [filterCat,   setFilterCat]   = useState("All");
   const [filterMonth, setFilterMonth] = useState("All");
   const [sortBy,      setSortBy]      = useState("date");
@@ -78,11 +78,19 @@ export default function Expenses({ expenses, onEdit, onDelete, formatAmount }) {
 
   return (
     <>
-      <div style={{ marginBottom:24 }}>
-        <div className="page-title">Expenses</div>
-        <div className="page-sub">
-          {filtered.length} transactions · Total {fmt(totalFiltered)}
+      <div style={{ marginBottom:24, display:"flex", justifyContent:"space-between", alignItems:"flex-end", gap:12, flexWrap:"wrap" }}>
+        <div>
+          <div className="page-title">Expenses</div>
+          <div className="page-sub">
+            {filtered.length} transactions · Total {fmt(totalFiltered)}
+          </div>
         </div>
+        {onImport && (
+          <button className="btn-secondary" onClick={onImport}
+            style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"9px 14px", fontSize:13 }}>
+            <Icon name="download" size={14} /> Import statement
+          </button>
+        )}
       </div>
 
       {/* ── Filters ── */}
