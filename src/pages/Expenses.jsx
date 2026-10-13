@@ -41,6 +41,7 @@ export default function Expenses({ expenses, onEdit, onDelete, formatAmount, onI
     });
 
   const totalFiltered = filtered.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+  const hasFilters = filterCat !== "All" || filterMonth !== "All" || search !== "";
 
   function handleSort(col) {
     if (sortBy === col) setSortDir(d => d === "asc" ? "desc" : "asc");
@@ -78,64 +79,71 @@ export default function Expenses({ expenses, onEdit, onDelete, formatAmount, onI
 
   return (
     <>
-      <div style={{ marginBottom:24, display:"flex", justifyContent:"space-between", alignItems:"flex-end", gap:12, flexWrap:"wrap" }}>
+      <div className="page-head">
         <div>
           <div className="page-title">Expenses</div>
           <div className="page-sub">
-            {filtered.length} transactions · Total {fmt(totalFiltered)}
+            {expenses.length} transactions in total
           </div>
         </div>
         {onImport && (
-          <button className="btn-secondary" onClick={onImport}
-            style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"9px 14px", fontSize:13 }}>
+          <button className="btn-secondary page-head-action" onClick={onImport}>
             <Icon name="download" size={14} /> Import statement
           </button>
         )}
       </div>
 
       {/* ── Filters ── */}
-      <div style={{
-        background:"var(--card)", border:"1px solid var(--border)", borderRadius:12,
-        padding:"14px 16px", marginBottom:16,
-        display:"flex", gap:10, flexWrap:"wrap", alignItems:"center",
-      }}>
-        <div style={{ position:"relative", flex:1, minWidth:180 }}>
-          <Icon name="search" size={15} style={{ position:"absolute", left:10, top:"50%", transform:"translateY(-50%)", color:"var(--faint2)" }} />
-          <input
-            style={{ width:"100%", background:"var(--bg)", border:"1px solid var(--border)", borderRadius:8, padding:"9px 12px 9px 32px", color:"var(--text)", fontSize:13, fontFamily:"inherit", outline:"none", boxSizing:"border-box" }}
-            placeholder="Search expenses..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
+      <div className="exp-filters">
+        <div className="exp-filters-row">
+          <div className="exp-search">
+            <Icon name="search" size={15} />
+            <input
+              placeholder="Search expenses..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              aria-label="Search expenses"
+            />
+          </div>
+          <select className="filter-select" value={filterCat} onChange={e => setFilterCat(e.target.value)} aria-label="Category">
+            <option value="All">All Categories</option>
+            {CATEGORIES.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+          </select>
+          <select className="filter-select" value={filterMonth} onChange={e => setFilterMonth(e.target.value)} aria-label="Month">
+            <option value="All">All Months</option>
+            {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
+          </select>
         </div>
-        <select className="filter-select" style={{ flex:1, minWidth:150 }} value={filterCat} onChange={e => setFilterCat(e.target.value)}>
-          <option value="All">All Categories</option>
-          {CATEGORIES.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
-        </select>
-        <select className="filter-select" style={{ flex:1, minWidth:140 }} value={filterMonth} onChange={e => setFilterMonth(e.target.value)}>
-          <option value="All">All Months</option>
-          {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
-        </select>
-        {onBulkDelete && filterMonth !== "All" && filtered.length > 0 && (
-          <button
-            className="btn-danger"
-            style={{ padding:"9px 14px", fontSize:12, display:"inline-flex", alignItems:"center", gap:4 }}
-            onClick={() => {
-              const label = `${MONTHS[parseInt(filterMonth)]} ${currentYear}`;
-              const narrowed = filterCat !== "All" || search !== "" ? " (matching your filters)" : "";
-              if (window.confirm(`Delete ${filtered.length} expense${filtered.length === 1 ? "" : "s"} from ${label}${narrowed}, totalling ${fmt(totalFiltered)}?\n\nThis can't be undone.`)) {
-                onBulkDelete(filtered.map(e => e.id), label);
-              }
-            }}
-          >
-            <Icon name="trash" size={13} /> Delete all {filtered.length}
-          </button>
-        )}
-        {(filterCat !== "All" || filterMonth !== "All" || search !== "") && (
-          <button className="btn-secondary" style={{ padding:"9px 14px", fontSize:12, display:"inline-flex", alignItems:"center", gap:4 }} onClick={() => { setFilterCat("All"); setFilterMonth("All"); setSearch(""); }}>
-            <Icon name="x" size={13} /> Clear
-          </button>
-        )}
+
+        {/* Results bar: what the filters matched, and what you can do with it */}
+        <div className="exp-results">
+          <div className="exp-results-summary">
+            <strong>{filtered.length}</strong> {filtered.length === 1 ? "expense" : "expenses"}
+            {filterMonth !== "All" && <> in {MONTHS[parseInt(filterMonth)]}</>}
+            <span className="exp-results-total">{fmt(totalFiltered)}</span>
+          </div>
+          {hasFilters && (
+            <div className="exp-results-actions">
+              <button className="btn-secondary" onClick={() => { setFilterCat("All"); setFilterMonth("All"); setSearch(""); }}>
+                <Icon name="x" size={13} /> Clear filters
+              </button>
+              {onBulkDelete && filterMonth !== "All" && filtered.length > 0 && (
+                <button
+                  className="btn-danger"
+                  onClick={() => {
+                    const label = `${MONTHS[parseInt(filterMonth)]} ${currentYear}`;
+                    const narrowed = filterCat !== "All" || search !== "" ? " (matching your filters)" : "";
+                    if (window.confirm(`Delete ${filtered.length} expense${filtered.length === 1 ? "" : "s"} from ${label}${narrowed}, totalling ${fmt(totalFiltered)}?\n\nThis can't be undone.`)) {
+                      onBulkDelete(filtered.map(e => e.id), label);
+                    }
+                  }}
+                >
+                  <Icon name="trash" size={13} /> Delete {filtered.length === 1 ? "it" : `all ${filtered.length}`}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ── Table ── */}
