@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Icon from "../components/Icon";
 
-export default function Register({ onRegister, onGoToLogin }) {
+export default function Register({ onRegister, onGoToLogin, onGoHome }) {
   const [email,     setEmail]     = useState("");
   const [username,  setUsername]  = useState("");
   const [password,  setPassword]  = useState("");
@@ -99,6 +99,14 @@ export default function Register({ onRegister, onGoToLogin }) {
         <button style={styles.btnOutline} onClick={onGoToLogin}>
           Sign in
         </button>
+
+        {onGoHome && (
+          <div style={{ textAlign:"center", marginTop:"18px" }}>
+            <span style={{ color:"#0070f3", cursor:"pointer", fontWeight:600, fontSize:"12px", display:"inline-flex", alignItems:"center", gap:"4px" }} onClick={onGoHome}>
+              <Icon name="chevron-left" size={13} /> Back to home
+            </span>
+          </div>
+        )}
 
       </div>
     </div>

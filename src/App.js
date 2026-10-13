@@ -14,6 +14,7 @@ import { useCurrency }         from "./hooks/useCurrency";
 import Login          from "./pages/Login";
 import Register       from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
+import Landing        from "./pages/Landing";
 
 // Layout
 import Sidebar         from "./components/Sidebar";
@@ -40,7 +41,11 @@ export default function App() {
 
   // ── Auth ──────────────────────────────────
   const { user, loading, login, register, logout, isLoggedIn } = useAuth();
-  const [authView, setAuthView] = useState("login");
+  const [authView, setAuthView] = useState("landing");
+  function goToAuthView(next) {
+    setAuthView(next);
+    window.scrollTo(0, 0);
+  }
 
   // ── Navigation ────────────────────────────
   const [view, setView] = useState("dashboard");
@@ -138,6 +143,16 @@ useEffect(() => {
 
   // ── Auth pages ────────────────────────────
   if (!isLoggedIn && !loading) {
+    if (authView === "landing") {
+      return (
+        <Landing
+          onGetStarted={() => goToAuthView("register")}
+          onSignIn={() => goToAuthView("login")}
+          darkMode={darkMode}
+          onToggleDark={() => setDarkMode(p => !p)}
+        />
+      );
+    }
     if (authView === "register") {
       return (
         <Register
@@ -145,12 +160,13 @@ useEffect(() => {
             await register(email, username, password, password2);
             showToast("Account created! Welcome");
           }}
-          onGoToLogin={() => setAuthView("login")}
+          onGoToLogin={() => goToAuthView("login")}
+          onGoHome={() => goToAuthView("landing")}
         />
       );
     }
     if (authView === "forgot-password") {
-      return <ForgotPassword onGoToLogin={() => setAuthView("login")} />;
+      return <ForgotPassword onGoToLogin={() => goToAuthView("login")} />;
     }
     return (
       <Login
@@ -158,8 +174,9 @@ useEffect(() => {
           await login(email, password);
           showToast("Welcome back!");
         }}
-        onGoToRegister={() => setAuthView("register")}
-        onGoToForgot={()  => setAuthView("forgot-password")}
+        onGoToRegister={() => goToAuthView("register")}
+        onGoToForgot={()  => goToAuthView("forgot-password")}
+        onGoHome={() => goToAuthView("landing")}
       />
     );
   }
@@ -271,6 +288,7 @@ useEffect(() => {
 // ─────────────────────────────────────────────
 async function handleLogout() {
   await logout();
+  setAuthView("landing");
   showToast("Logged out!");
 }
   // ─────────────────────────────────────────
