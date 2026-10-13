@@ -155,7 +155,7 @@ export const incomeAPI = {
 // STATEMENT IMPORT
 // ─────────────────────────────────────────────
 export const statementsAPI = {
-  // Upload CSV/OFX/QFX files; returns parsed rows to review (nothing saved).
+  // Upload PDF/CSV/OFX/QFX statements; returns parsed rows to review (nothing saved).
   preview: async (files) => {
     const body = new FormData();
     files.forEach(f => body.append("files", f));

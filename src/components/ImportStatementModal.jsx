@@ -4,7 +4,7 @@ import { CATEGORIES } from "../constants/categories";
 import { INCOME_CATEGORIES } from "../hooks/useIncome";
 import { statementsAPI } from "../utils/api";
 
-// Upload one or more bank/card statements (CSV, OFX, QFX), review the parsed
+// Upload one or more bank/card statements (PDF, CSV, OFX, QFX), review the parsed
 // rows, then import the ones that are ticked. The backend guesses categories
 // and flags transfers (including ones between the user's own accounts across
 // statements) and likely duplicates; those start unticked.
@@ -154,15 +154,16 @@ export default function ImportStatementModal({ onClose, onImported, formatAmount
               <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>
                 {busy ? "Reading your statements..." : "Drop statements here, or click to choose"}
               </div>
-              <div style={{ fontSize: 12, color: "var(--muted)" }}>CSV, OFX or QFX · up to 10 files, 2 MB each</div>
+              <div style={{ fontSize: 12, color: "var(--muted)" }}>PDF, CSV, OFX or QFX · up to 10 files, 5 MB each</div>
               <input
-                ref={fileInput} type="file" accept=".csv,.ofx,.qfx,.txt" multiple hidden
+                ref={fileInput} type="file" accept=".pdf,.csv,.ofx,.qfx,.txt" multiple hidden
                 onChange={e => { handleFiles(e.target.files); e.target.value = ""; }}
               />
             </div>
             <div style={{ fontSize: 12, color: "var(--muted2)", lineHeight: 1.6 }}>
               <strong>How to get one:</strong> in your bank's online banking, open the account or card,
-              choose <em>Download transactions</em>, and pick <em>CSV</em> (or <em>Quicken / QFX</em>).
+              save the <em>PDF statement</em> — or, for the most reliable import, choose
+              <em>Download transactions</em> and pick <em>CSV</em> (or <em>Quicken / QFX</em>).
               <br />
               <strong>Tip:</strong> add all your accounts and cards for the same period together —
               money moved between your own accounts is then matched up and skipped, so it isn't counted twice.
