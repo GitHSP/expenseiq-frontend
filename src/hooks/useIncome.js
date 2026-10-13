@@ -78,6 +78,13 @@ export function useIncome(userId) {
     }
   }
 
+  async function bulkDeleteIncomes(ids, label) {
+    const result = await incomeAPI.bulkDelete(ids, label);
+    const gone = new Set(ids);
+    setIncomes(prev => prev.filter(x => !gone.has(x.id)));
+    return result;
+  }
+
   async function deleteIncome(id) {
     try {
       await incomeAPI.delete(id);
@@ -89,7 +96,7 @@ export function useIncome(userId) {
 
   return {
     incomes, loaded, error,
-    addIncome, updateIncome, deleteIncome,
+    addIncome, updateIncome, deleteIncome, bulkDeleteIncomes,
     reload: loadData,
   };
 }

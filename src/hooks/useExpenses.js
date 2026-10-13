@@ -74,6 +74,13 @@ export function useExpenses(userId) {
     }
   }
 
+  async function bulkDeleteExpenses(ids, label) {
+    const result = await expensesAPI.bulkDelete(ids, label);
+    const gone = new Set(ids);
+    setExpenses(prev => prev.filter(x => !gone.has(x.id)));
+    return result;
+  }
+
   async function deleteExpense(id) {
     try {
       await expensesAPI.delete(id);
@@ -85,7 +92,7 @@ export function useExpenses(userId) {
 
   return {
     expenses, loaded, error,
-    addExpense, updateExpense, deleteExpense,
+    addExpense, updateExpense, deleteExpense, bulkDeleteExpenses,
     reload: loadData,
   };
 }

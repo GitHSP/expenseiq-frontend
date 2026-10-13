@@ -77,13 +77,13 @@ useEffect(() => {
   // ── Data hooks ────────────────────────────
   const {
     expenses, loaded,
-    addExpense, updateExpense, deleteExpense,
+    addExpense, updateExpense, deleteExpense, bulkDeleteExpenses,
     reload: reloadExpenses,
   } = useExpenses(user?.id);
 
   const {
     incomes, loaded: incomeLoaded,
-    addIncome, updateIncome, deleteIncome,
+    addIncome, updateIncome, deleteIncome, bulkDeleteIncomes,
     reload: reloadIncome,
   } = useIncome(user?.id);
 
@@ -326,6 +326,12 @@ async function handleLogout() {
             incomes={incomes}
             onEditIncome={openEditIncomeModal}
             onDeleteIncome={handleDeleteIncome}
+            onBulkDeleteIncome={async (ids, label) => {
+              try {
+                const { deleted } = await bulkDeleteIncomes(ids, label);
+                showToast(`Deleted ${deleted} income entr${deleted === 1 ? "y" : "ies"}`, "error");
+              } catch (err) { showToast(err.message || "Failed to delete", "error"); }
+            }}
             onAddIncome={openAddIncomeModal}
             currency={currency}
             rates={rates}
@@ -346,6 +352,12 @@ async function handleLogout() {
             onDelete={handleDelete}
             formatAmount={formatAmount}
             onImport={() => setShowImport(true)}
+            onBulkDelete={async (ids, label) => {
+              try {
+                const { deleted } = await bulkDeleteExpenses(ids, label);
+                showToast(`Deleted ${deleted} expense${deleted === 1 ? "" : "s"}`, "error");
+              } catch (err) { showToast(err.message || "Failed to delete", "error"); }
+            }}
           />
         );
       case "analytics":

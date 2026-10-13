@@ -8,7 +8,7 @@ const MONTHS = [
   "July","August","September","October","November","December"
 ];
 
-export default function Expenses({ expenses, onEdit, onDelete, formatAmount, onImport }) {
+export default function Expenses({ expenses, onEdit, onDelete, formatAmount, onImport, onBulkDelete }) {
   const [filterCat,   setFilterCat]   = useState("All");
   const [filterMonth, setFilterMonth] = useState("All");
   const [sortBy,      setSortBy]      = useState("date");
@@ -116,6 +116,21 @@ export default function Expenses({ expenses, onEdit, onDelete, formatAmount, onI
           <option value="All">All Months</option>
           {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
         </select>
+        {onBulkDelete && filterMonth !== "All" && filtered.length > 0 && (
+          <button
+            className="btn-danger"
+            style={{ padding:"9px 14px", fontSize:12, display:"inline-flex", alignItems:"center", gap:4 }}
+            onClick={() => {
+              const label = `${MONTHS[parseInt(filterMonth)]} ${currentYear}`;
+              const narrowed = filterCat !== "All" || search !== "" ? " (matching your filters)" : "";
+              if (window.confirm(`Delete ${filtered.length} expense${filtered.length === 1 ? "" : "s"} from ${label}${narrowed}, totalling ${fmt(totalFiltered)}?\n\nThis can't be undone.`)) {
+                onBulkDelete(filtered.map(e => e.id), label);
+              }
+            }}
+          >
+            <Icon name="trash" size={13} /> Delete all {filtered.length}
+          </button>
+        )}
         {(filterCat !== "All" || filterMonth !== "All" || search !== "") && (
           <button className="btn-secondary" style={{ padding:"9px 14px", fontSize:12, display:"inline-flex", alignItems:"center", gap:4 }} onClick={() => { setFilterCat("All"); setFilterMonth("All"); setSearch(""); }}>
             <Icon name="x" size={13} /> Clear

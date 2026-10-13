@@ -86,7 +86,7 @@ const rowStyle = {
 
 export default function Dashboard({
   expenses, onEdit, onDelete, onViewAll,
-  incomes, onEditIncome, onDeleteIncome, onAddIncome,
+  incomes, onEditIncome, onDeleteIncome, onAddIncome, onBulkDeleteIncome,
   currency, rates, getRate, formatAmount,
   getLastUpdatedText, ratesLoading, ratesError, refreshRates,
   debts,
@@ -520,6 +520,13 @@ export default function Dashboard({
           <span className="card-title">Income · {monthLabel}</span>
           <div style={{ display:"flex", alignItems:"center", gap:10 }}>
             <span style={{ fontSize:13, fontWeight:700, color:"#059669" }}>+{fmt(totalIncome)}</span>
+            {onBulkDeleteIncome && thisMonthInc.length > 1 && (
+              <button className="btn-ghost" style={{ color:"#e11d48", fontSize:12, display:"inline-flex", alignItems:"center", gap:4 }}
+                onClick={() => window.confirm(`Delete all ${thisMonthInc.length} income entries from ${monthLabel}, totalling ${fmt(totalIncome)}?\n\nThis can't be undone.`)
+                  && onBulkDeleteIncome(thisMonthInc.map(i => i.id), monthLabel)}>
+                <Icon name="trash" size={12} /> Delete all
+              </button>
+            )}
             <button className="btn-primary" style={{ padding:"7px 14px", fontSize:12 }} onClick={onAddIncome}>
               + Add Income
             </button>

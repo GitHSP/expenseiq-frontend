@@ -88,6 +88,13 @@ export const authAPI = {
 // EXPENSES
 // ─────────────────────────────────────────────
 export const expensesAPI = {
+  bulkDelete: async (ids, label) => {
+    const res = await fetch(`${BASE_URL}/expenses/bulk-delete/`, {
+      method: "POST", headers: getHeaders(true),
+      body: JSON.stringify({ ids, label }),
+    });
+    return handleResponse(res);
+  },
   getAll: async () => {
     const res = await fetch(`${BASE_URL}/expenses/`, {
       method: "GET", headers: getHeaders(true),
@@ -120,6 +127,13 @@ export const expensesAPI = {
 // INCOME
 // ─────────────────────────────────────────────
 export const incomeAPI = {
+  bulkDelete: async (ids, label) => {
+    const res = await fetch(`${BASE_URL}/income/bulk-delete/`, {
+      method: "POST", headers: getHeaders(true),
+      body: JSON.stringify({ ids, label }),
+    });
+    return handleResponse(res);
+  },
   getAll: async () => {
     const res = await fetch(`${BASE_URL}/income/`, {
       method: "GET", headers: getHeaders(true),
