@@ -20,6 +20,58 @@ const TOOLTIP_STYLE = {
   boxShadow:    "0 4px 12px rgba(0,0,0,0.08)",
 };
 
+const iconBtn = {
+  background: "transparent", border: "1px solid var(--border)", borderRadius: 6,
+  padding: "5px 7px", cursor: "pointer", color: "var(--muted)",
+  display: "inline-flex", alignItems: "center",
+};
+
+// Every transaction of one kind for the month, in a scrolling box, with
+// edit/delete so unclear titles (e.g. from imported statements) can be fixed.
+function TransactionList({ items, kind, fmt, onEdit, onDelete, empty }) {
+  const isIncome = kind === "income";
+  if (items.length === 0) {
+    return (
+      <div className="empty-state" style={{ padding:"24px 0" }}>
+        <div className="empty-icon"><Icon name={isIncome ? "coins" : "receipt"} size={36} strokeWidth={1.5} /></div>
+        <div style={{ fontWeight:600, color:"var(--faint)" }}>{empty}</div>
+      </div>
+    );
+  }
+  return (
+    <div className="tx-scroll">
+      {items.map(item => {
+        const cat = (isIncome ? INCOME_CATEGORIES : CATEGORIES).find(c => c.name === item.category);
+        return (
+          <div key={item.id} style={rowStyle}>
+            <CategoryIcon cat={cat} fallback={isIncome ? "coins" : "package"} />
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ fontWeight:600, fontSize:13, color:"var(--text)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{item.title}</div>
+              <div style={{ fontSize:11, color:"var(--faint2)", marginTop:1 }}>{item.category} · {item.date}</div>
+            </div>
+            <div style={{ fontWeight:700, fontSize:14, color: isIncome ? "#059669" : "#e11d48", whiteSpace:"nowrap" }}>
+              {isIncome ? "+" : "-"}{fmt(item.amount)}
+            </div>
+            <div style={{ display:"flex", gap:4, flexShrink:0 }}>
+              {onEdit && (
+                <button style={iconBtn} onClick={() => onEdit(item)} aria-label={`Edit ${item.title}`} title="Edit">
+                  <Icon name="pencil" size={13} />
+                </button>
+              )}
+              {onDelete && (
+                <button style={{ ...iconBtn, color:"#e11d48" }} aria-label={`Delete ${item.title}`} title="Delete"
+                  onClick={() => window.confirm(`Delete "${item.title}"?`) && onDelete(item.id)}>
+                  <Icon name="trash" size={13} />
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 const rowStyle = {
   display:      "flex",
   alignItems:   "center",
@@ -39,12 +91,25 @@ export default function Dashboard({
   getLastUpdatedText, ratesLoading, ratesError, refreshRates,
   debts,
 }) {
-  const now          = new Date();
-  const currentMonth = now.getMonth();
-  const currentYear  = now.getFullYear();
-  const dayOfMonth   = now.getDate();
-
+  const now = new Date();
   const [activeCard, setActiveCard] = useState(null);
+  // Month being viewed — defaults to this month; past months matter once
+  // last month's statements are imported.
+  const [view, setView] = useState({ month: now.getMonth(), year: now.getFullYear() });
+  const currentMonth = view.month;
+  const currentYear  = view.year;
+  const isCurrent    = currentMonth === now.getMonth() && currentYear === now.getFullYear();
+  const daysInMonth  = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const dayOfMonth   = isCurrent ? now.getDate() : daysInMonth;
+  const monthLabel   = `${MONTHS[currentMonth]} ${currentYear}`;
+
+  function shiftMonth(delta) {
+    setView(({ month, year }) => {
+      const d = new Date(year, month + delta, 1);
+      return { month: d.getMonth(), year: d.getFullYear() };
+    });
+    setActiveCard(null);
+  }
 
   // ── Filter this month using safe date parsing ──
   const thisMonthExp = expenses.filter(e =>
@@ -96,7 +161,7 @@ export default function Dashboard({
   const statCards = [
     {
       id:       "expenses",
-      label:    "This Month",
+      label:    isCurrent ? "This Month" : `${MONTHS[currentMonth].slice(0, 3)} Spending`,
       value:    fmt(totalExpenses),
       sub:      `${thisMonthExp.length} expenses · avg ${fmt(dailyAvg)}/day`,
       gradient: "linear-gradient(135deg, #e11d48, #be123c)",
@@ -123,9 +188,21 @@ export default function Dashboard({
   return (
     <>
       {/* ── Page header ── */}
-      <div style={{ marginBottom:28 }}>
-        <div className="page-title">Dashboard</div>
-        <div className="page-sub">{MONTHS[currentMonth]} {currentYear}</div>
+      <div style={{ marginBottom:28, display:"flex", justifyContent:"space-between", alignItems:"flex-end", gap:12, flexWrap:"wrap" }}>
+        <div>
+          <div className="page-title">Dashboard</div>
+          <div className="page-sub">{isCurrent ? "This month" : "Viewing a past month"}</div>
+        </div>
+        <div className="month-picker" role="group" aria-label="Month">
+          <button onClick={() => shiftMonth(-1)} aria-label="Previous month"><Icon name="chevron-left" size={16} /></button>
+          <span>{monthLabel}</span>
+          <button onClick={() => shiftMonth(1)} aria-label="Next month" disabled={isCurrent}><Icon name="chevron-right" size={16} /></button>
+          {!isCurrent && (
+            <button className="month-picker-today" onClick={() => setView({ month: now.getMonth(), year: now.getFullYear() })}>
+              This month
+            </button>
+          )}
+        </div>
       </div>
 
       {/* ── Financial Tips ── */}
@@ -133,6 +210,8 @@ export default function Dashboard({
         expenses={expenses}
         incomes={incomes}
         debts={debts || []}
+        month={currentMonth}
+        year={currentYear}
       />
 
       {/* ── Clickable stat cards ── */}
@@ -234,7 +313,7 @@ export default function Dashboard({
                   All Transactions
                 </div>
                 {thisMonthExp.length === 0 ? (
-                  <div style={{ textAlign:"center", color:"var(--faint)", padding:"20px 0", fontSize:13 }}>No expenses this month</div>
+                  <div style={{ textAlign:"center", color:"var(--faint)", padding:"20px 0", fontSize:13 }}>No expenses in {MONTHS[currentMonth]}</div>
                 ) : thisMonthExp.map(exp => {
                   const cat = CATEGORIES.find(c => c.name === exp.category);
                   return (
@@ -419,7 +498,7 @@ export default function Dashboard({
           {expensePieData.length === 0 ? (
             <div className="empty-state">
               <div className="empty-icon"><Icon name="chart" size={40} strokeWidth={1.5} /></div>
-              <div style={{ fontSize:13, color:"var(--faint2)" }}>No expenses this month</div>
+              <div style={{ fontSize:13, color:"var(--faint2)" }}>No expenses in {MONTHS[currentMonth]}</div>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={220}>
@@ -435,58 +514,39 @@ export default function Dashboard({
         </div>
       </div>
 
-      {/* ── Recent Income ── */}
+      {/* ── Income & expenses for the month (scrollable, editable) ── */}
       <div className="card">
         <div className="card-header">
-          <span className="card-title">Recent Income</span>
-          <button className="btn-primary" style={{ padding:"7px 14px", fontSize:12 }} onClick={onAddIncome}>
-            + Add Income
-          </button>
-        </div>
-        {incomes.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-icon"><Icon name="coins" size={40} strokeWidth={1.5} /></div>
-            <div style={{ fontWeight:600, color:"var(--faint)", marginBottom:4 }}>No income yet</div>
+          <span className="card-title">Income · {monthLabel}</span>
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <span style={{ fontSize:13, fontWeight:700, color:"#059669" }}>+{fmt(totalIncome)}</span>
+            <button className="btn-primary" style={{ padding:"7px 14px", fontSize:12 }} onClick={onAddIncome}>
+              + Add Income
+            </button>
           </div>
-        ) : incomes.slice(0, 3).map(income => {
-          const cat = INCOME_CATEGORIES.find(c => c.name === income.category);
-          return (
-            <div key={income.id} style={rowStyle}>
-              <CategoryIcon cat={cat} fallback={"coins"} />
-              <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ fontWeight:600, fontSize:13, color:"var(--text)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{income.title}</div>
-                <div style={{ fontSize:11, color:"var(--faint2)", marginTop:1 }}>{income.category} · {income.date}</div>
-              </div>
-              <div style={{ fontWeight:700, fontSize:14, color:"#059669" }}>+{fmt(income.amount)}</div>
-            </div>
-          );
-        })}
+        </div>
+        <TransactionList
+          items={[...thisMonthInc].sort((a, b) => b.date.localeCompare(a.date))}
+          kind="income" fmt={fmt}
+          onEdit={onEditIncome} onDelete={onDeleteIncome}
+          empty={`No income in ${MONTHS[currentMonth]}`}
+        />
       </div>
 
-      {/* ── Recent Expenses ── */}
       <div className="card">
         <div className="card-header">
-          <span className="card-title">Recent Expenses</span>
-          <button className="btn-ghost" onClick={onViewAll} style={{ display:"inline-flex", alignItems:"center", gap:4 }}>View all <Icon name="arrow-right" size={13} /></button>
-        </div>
-        {expenses.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-icon"><Icon name="receipt" size={40} strokeWidth={1.5} /></div>
-            <div style={{ fontWeight:600, color:"var(--faint)", marginBottom:4 }}>No expenses yet</div>
+          <span className="card-title">Expenses · {monthLabel}</span>
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <span style={{ fontSize:13, fontWeight:700, color:"#e11d48" }}>-{fmt(totalExpenses)}</span>
+            <button className="btn-ghost" onClick={onViewAll} style={{ display:"inline-flex", alignItems:"center", gap:4 }}>View all <Icon name="arrow-right" size={13} /></button>
           </div>
-        ) : expenses.slice(0, 5).map(exp => {
-          const cat = CATEGORIES.find(c => c.name === exp.category);
-          return (
-            <div key={exp.id} style={rowStyle}>
-              <CategoryIcon cat={cat} fallback={"package"} />
-              <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ fontWeight:600, fontSize:13, color:"var(--text)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{exp.title}</div>
-                <div style={{ fontSize:11, color:"var(--faint2)", marginTop:1 }}>{exp.category} · {exp.date}</div>
-              </div>
-              <div style={{ fontWeight:700, fontSize:14, color:"#e11d48" }}>-{fmt(exp.amount)}</div>
-            </div>
-          );
-        })}
+        </div>
+        <TransactionList
+          items={[...thisMonthExp].sort((a, b) => b.date.localeCompare(a.date))}
+          kind="expense" fmt={fmt}
+          onEdit={onEdit} onDelete={onDelete}
+          empty={`No expenses in ${MONTHS[currentMonth]}`}
+        />
       </div>
     </>
   );

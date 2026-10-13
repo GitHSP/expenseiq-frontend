@@ -1,25 +1,22 @@
 import { useMemo }    from "react";
+import { isSameMonth } from "../utils/helpers";
 import { CATEGORIES } from "../constants/categories";
 import Icon, { IconLabel } from "./Icon";
 
-export default function FinancialTips({ expenses, incomes, debts }) {
+export default function FinancialTips({ expenses, incomes, debts, month, year }) {
 
   const tips = useMemo(() => {
     const now          = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear  = now.getFullYear();
+    const currentMonth = month ?? now.getMonth();
+    const currentYear  = year ?? now.getFullYear();
+    const isCurrent    = currentMonth === now.getMonth() && currentYear === now.getFullYear();
     const result       = [];
 
     // ── This month data ──
-    const thisMonthExp = expenses.filter(e => {
-      const d = new Date(e.date);
-      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-    });
-
-    const thisMonthInc = incomes.filter(i => {
-      const d = new Date(i.date);
-      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-    });
+    // isSameMonth reads "YYYY-MM-DD" directly — new Date() would treat it as
+    // UTC and shift the 1st of the month into the previous month in Canada.
+    const thisMonthExp = expenses.filter(e => isSameMonth(e.date, currentMonth, currentYear));
+    const thisMonthInc = incomes.filter(i => isSameMonth(i.date, currentMonth, currentYear));
 
     const totalExpenses = thisMonthExp.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
     const totalIncome   = thisMonthInc.reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
@@ -81,7 +78,7 @@ export default function FinancialTips({ expenses, incomes, debts }) {
     // ── Tip 4: Debts due soon (within 7 days, by day-of-month) ──
     const todayDay = now.getDate();
     const dueSoonDebts = (debts || []).filter(d => {
-      if (!d.is_active || !d.due_day) return false;
+      if (!isCurrent || !d.is_active || !d.due_day) return false;
       const diff = d.due_day - todayDay;
       return diff >= 0 && diff <= 7;
     });
@@ -122,7 +119,7 @@ export default function FinancialTips({ expenses, incomes, debts }) {
     // Return max 3 tips
     return result.slice(0, 3);
 
-  }, [expenses, incomes, debts]);
+  }, [expenses, incomes, debts, month, year]);
 
   // ── Colors per type ──
   const colors = {

@@ -35,7 +35,7 @@ export default function ImportStatementModal({ onClose, onImported, formatAmount
   const [error,    setError]    = useState("");
   const [preview,  setPreview]  = useState(null);
   const [flips,    setFlips]    = useState({});          // file index -> purchases are positive
-  const [edits,    setEdits]    = useState({});          // row id -> { include?, kind?, category? }
+  const [edits,    setEdits]    = useState({});          // row id -> { include?, kind?, category?, title?, tick? }
   const [dragOver, setDragOver] = useState(false);
   const fileInput = useRef(null);
 
@@ -72,7 +72,9 @@ export default function ImportStatementModal({ onClose, onImported, formatAmount
         ? e.category
         : (kind === "expense" ? r.expense_category : r.income_category);
       const include = e.include ?? (!r.is_transfer && !r.transfer_match && !duplicate);
-      return { ...r, kind, duplicate, category, include };
+      const title = e.title ?? r.title;
+      const tick = !!r.checklist_match && (e.tick ?? true);
+      return { ...r, kind, duplicate, category, include, title, tick };
     });
   }, [preview, flips, edits]);
 
@@ -91,6 +93,7 @@ export default function ImportStatementModal({ onClose, onImported, formatAmount
   const selected   = rows.filter(r => r.include);
   const pairCount  = rows.filter(r => r.transfer_match?.type === "pair").length / 2;
   const earlierHalves = rows.filter(r => r.transfer_match?.type === "existing");
+  const ticks      = rows.filter(r => r.tick);
   const expenses   = selected.filter(r => r.kind === "expense");
   const income     = selected.filter(r => r.kind === "income");
   const sum        = list => list.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
@@ -99,10 +102,14 @@ export default function ImportStatementModal({ onClose, onImported, formatAmount
     setError("");
     setBusy(true);
     try {
-      const result = await statementsAPI.importRows("statement", selected.map(r => ({
-        kind: r.kind, title: r.title, amount: r.amount, date: r.date, category: r.category,
-        source: preview.files[r.file]?.filename,
-      })));
+      const result = await statementsAPI.importRows(
+        "statement",
+        selected.map(r => ({
+          kind: r.kind, title: r.title.trim() || r.raw_description, amount: r.amount,
+          date: r.date, category: r.category, source: preview.files[r.file]?.filename,
+        })),
+        ticks.map(r => r.checklist_match.id),
+      );
       onImported(result);
     } catch (err) {
       setError(err.message || "Import failed — nothing was saved.");
@@ -242,7 +249,25 @@ export default function ImportStatementModal({ onClose, onImported, formatAmount
                               {preview.files[r.file]?.filename}
                             </span>
                           )}
-                          <span style={{ fontWeight: 600 }} title={r.raw_description}>{r.title}</span>
+                          <input
+                            value={r.title} aria-label="Description" title={`Bank description: ${r.raw_description}`}
+                            onChange={e => edit(r.id, { title: e.target.value })}
+                            style={{
+                              display: "block", width: "100%", minWidth: 160, fontWeight: 600, fontSize: 13,
+                              fontFamily: "inherit", color: "var(--text)", background: "transparent",
+                              border: "1px solid transparent", borderRadius: 6, padding: "3px 6px", margin: "0 -6px",
+                            }}
+                            onFocus={e => { e.target.style.borderColor = "var(--border)"; e.target.style.background = "var(--card)"; }}
+                            onBlur={e => { e.target.style.borderColor = "transparent"; e.target.style.background = "transparent"; }}
+                          />
+                          {r.checklist_match && (
+                            <label style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 600,
+                                            color: "#059669", marginTop: 3, cursor: "pointer" }}
+                              title={`Unticked in your ${r.checklist_match.month} Planner checklist`}>
+                              <input type="checkbox" checked={r.tick} onChange={e => edit(r.id, { tick: e.target.checked })} />
+                              <Icon name="list-checks" size={12} /> Tick "{r.checklist_match.label}" in Planner
+                            </label>
+                          )}
                           {r.transfer_match?.type === "pair" && (
                             <span title={`Matches "${r.transfer_match.title}" on ${r.transfer_match.date} in ${preview.files[r.transfer_match.file]?.filename}`}>
                               <Badge color="#7c3aed">Transfer between your accounts</Badge>
@@ -285,14 +310,17 @@ export default function ImportStatementModal({ onClose, onImported, formatAmount
                 {expenses.length} expense{expenses.length === 1 ? "" : "s"} ({fmt(sum(expenses))})
                 {" · "}{income.length} income ({fmt(sum(income))})
                 {rows.length - selected.length > 0 && ` · ${rows.length - selected.length} skipped`}
+                {ticks.length > 0 && <> · <strong style={{ color: "#059669" }}>{ticks.length} Planner item{ticks.length === 1 ? "" : "s"} to tick</strong></>}
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <button className="btn-secondary" onClick={() => { setStep("upload"); setPreview(null); setError(""); }} disabled={busy}>
                   Choose another file
                 </button>
-                <button className="btn-primary" onClick={handleImport} disabled={busy || selected.length === 0}
+                <button className="btn-primary" onClick={handleImport} disabled={busy || (selected.length === 0 && ticks.length === 0)}
                   style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                  {busy ? "Importing..." : `Import ${selected.length} transaction${selected.length === 1 ? "" : "s"}`}
+                  {busy ? "Importing..." : selected.length
+                    ? `Import ${selected.length} transaction${selected.length === 1 ? "" : "s"}`
+                    : `Tick ${ticks.length} Planner item${ticks.length === 1 ? "" : "s"}`}
                 </button>
               </div>
             </div>

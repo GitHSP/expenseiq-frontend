@@ -457,11 +457,15 @@ async function handleLogout() {
         <ImportStatementModal
           formatAmount={formatAmount}
           onClose={() => setShowImport(false)}
-          onImported={({ imported_expenses, imported_income }) => {
+          onImported={({ imported_expenses, imported_income, ticked_checklist }) => {
             setShowImport(false);
             reloadExpenses({ silent: true });
             reloadIncome({ silent: true });
-            showToast(`Imported ${imported_expenses} expense${imported_expenses === 1 ? "" : "s"} and ${imported_income} income`);
+            if (ticked_checklist) reloadPlanner({ silent: true });
+            showToast(
+              `Imported ${imported_expenses} expense${imported_expenses === 1 ? "" : "s"} and ${imported_income} income` +
+              (ticked_checklist ? ` · ticked ${ticked_checklist} in Planner` : "")
+            );
           }}
         />
       )}

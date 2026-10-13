@@ -165,11 +165,12 @@ export const statementsAPI = {
     const res = await fetch(`${BASE_URL}/statements/preview/`, { method: "POST", headers, body });
     return handleResponse(res);
   },
-  // Save the confirmed rows: [{ kind, title, amount, date, category }]
-  importRows: async (filename, rows) => {
+  // Save the confirmed rows: [{ kind, title, amount, date, category, source }]
+  // and tick the matched Planner checklist items (ids).
+  importRows: async (filename, rows, checklistItems = []) => {
     const res = await fetch(`${BASE_URL}/statements/import/`, {
       method: "POST", headers: getHeaders(true),
-      body: JSON.stringify({ filename, rows }),
+      body: JSON.stringify({ filename, rows, checklist_items: checklistItems }),
     });
     return handleResponse(res);
   },
