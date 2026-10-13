@@ -24,8 +24,8 @@ export default function Login({ onLogin, onGoToRegister, onGoToForgot, onGoHome 
     <div style={styles.page}>
       <div style={styles.card}>
 
-        <div style={styles.logo}><Icon name="wallet" size={26} /></div>
-        <div style={styles.title}>ExpenseIQ</div>
+        <div style={styles.logo}><Icon name="mountain" size={26} /></div>
+        <div style={styles.title}>Glacier</div>
         <div style={styles.subtitle}>Sign in to your account</div>
 
         {error && <div style={styles.error}>{error}</div>}

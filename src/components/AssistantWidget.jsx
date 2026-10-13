@@ -20,7 +20,7 @@ export default function AssistantWidget({ onActionsTaken }) {
       <div
         className={`assistant-panel${open ? " open" : ""}`}
         role="dialog"
-        aria-label="Assistant"
+        aria-label="Aurora assistant"
         aria-hidden={!open}
       >
         <Assistant onActionsTaken={onActionsTaken} onClose={() => setOpen(false)} />
@@ -29,8 +29,8 @@ export default function AssistantWidget({ onActionsTaken }) {
       <button
         className={`assistant-fab${open ? " open" : ""}`}
         onClick={() => setOpen(o => !o)}
-        aria-label={open ? "Close assistant" : "Open assistant"}
-        title="Assistant"
+        aria-label={open ? "Close Aurora" : "Ask Aurora"}
+        title="Ask Aurora"
       >
         <Icon name={open ? "x" : "chat"} size={open ? 22 : 26} />
       </button>

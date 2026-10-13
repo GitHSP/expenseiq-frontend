@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────
-   ExpenseIQ — Modern Professional Light Theme
+   Glacier — Modern Professional Light Theme
    Inspired by Stripe & Vercel design systems
    ───────────────────────────────────────────── */
 /* ── CSS Variables — Light theme default ── */
@@ -785,3 +785,10 @@ select.input option { background: var(--card); color: var(--text); }
 .month-picker button:disabled { color: var(--faint); cursor: default; }
 .month-picker .month-picker-today { color: #0070f3; border-left: 1px solid var(--border); border-radius: 0 7px 7px 0; }
 .tx-scroll { max-height: 360px; overflow-y: auto; padding-right: 4px; }
+
+/* Brand mark (Glacier peak) in the sidebar and mobile top bar */
+.logo-mark {
+  width: 24px; height: 24px; border-radius: 7px; flex-shrink: 0;
+  background: linear-gradient(180deg, #0a84ff, #0050b3); color: #fff;
+  display: inline-flex; align-items: center; justify-content: center;
+}

@@ -10,9 +10,9 @@ const FEATURES = [
   { icon: "target",      title: "Debt avalanche planner",    body: "Ranks your cards and loans by interest rate and tells you exactly where extra money should go." },
   { icon: "list-checks", title: "Monthly payment checklist", body: "Rent, bills and minimums appear every month on their own — tick them off as you pay." },
   { icon: "shield",      title: "Emergency fund tracker",    body: "Set a target and watch the safety net grow with every pay day." },
-  { icon: "chat",        title: "AI assistant",              body: "Just say \"I spent $12 on lunch\" or \"my rent is now $700\" — it updates the app for you." },
+  { icon: "chat",        title: "Aurora, your AI assistant", body: "Just tell Aurora \"I spent $12 on lunch\" or \"my rent is now $700\" — it updates the app for you." },
   { icon: "exchange",    title: "Multi-currency",            body: "View everything in CAD, USD, GBP, EUR, AUD, INR or AED with live exchange rates." },
-  { icon: "lock",        title: "Private by design",         body: "Your assistant chat history is encrypted on your own device." },
+  { icon: "lock",        title: "Private by design",         body: "Your chats with Aurora are encrypted on your own device." },
 ];
 
 // Rule-of-thumb split of take-home pay, shown as a static guide.
@@ -168,8 +168,8 @@ export default function Landing({ onGetStarted, onSignIn, darkMode, onToggleDark
       {/* ── Nav ── */}
       <header className="lp-nav">
         <div className="lp-brand">
-          <span className="lp-brand-mark"><Icon name="wallet" size={18} /></span>
-          ExpenseIQ
+          <span className="lp-brand-mark"><Icon name="mountain" size={18} /></span>
+          Glacier
         </div>
         <nav className="lp-nav-actions">
           <button className="lp-icon-btn" onClick={onToggleDark} aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}>
@@ -184,10 +184,10 @@ export default function Landing({ onGetStarted, onSignIn, darkMode, onToggleDark
         {/* ── Hero ── */}
         <section className="lp-hero">
           <div className="lp-hero-text">
-            <span className="lp-eyebrow"><Icon name="sparkles" size={13} /> Budgeting, debt payoff & an AI assistant</span>
+            <span className="lp-eyebrow"><Icon name="sparkles" size={13} /> Budgeting, debt payoff & Aurora, your AI assistant</span>
             <h1>Know where every dollar goes — and where the next one should.</h1>
             <p>
-              ExpenseIQ tracks your spending, builds your monthly payment checklist,
+              Glacier tracks your spending, builds your monthly payment checklist,
               and pays down debt the smart way, highest interest first.
             </p>
             <div className="lp-hero-cta">
@@ -213,7 +213,7 @@ export default function Landing({ onGetStarted, onSignIn, darkMode, onToggleDark
         <section className="lp-section">
           <div className="lp-section-head">
             <h2>Everything in one place</h2>
-            <p>From a coffee to a credit card balance, ExpenseIQ keeps the whole picture together.</p>
+            <p>From a coffee to a credit card balance, Glacier keeps the whole picture together.</p>
           </div>
           <div className="lp-features">
             {FEATURES.map(f => (
@@ -253,7 +253,7 @@ export default function Landing({ onGetStarted, onSignIn, darkMode, onToggleDark
       </main>
 
       <footer className="lp-footer">
-        <span>© {new Date().getFullYear()} ExpenseIQ</span>
+        <span>© {new Date().getFullYear()} Glacier</span>
         <button className="lp-link" onClick={onSignIn}>Sign in</button>
       </footer>
     </div>

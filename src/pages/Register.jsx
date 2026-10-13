@@ -34,7 +34,7 @@ export default function Register({ onRegister, onGoToLogin, onGoHome }) {
     <div style={styles.page}>
       <div style={styles.card}>
 
-        <div style={styles.logo}><Icon name="wallet" size={26} /></div>
+        <div style={styles.logo}><Icon name="mountain" size={26} /></div>
         <div style={styles.title}>Create account</div>
         <div style={styles.subtitle}>Start managing your finances today</div>
 

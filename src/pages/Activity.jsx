@@ -19,7 +19,7 @@ const AREAS = {
 
 const SOURCES = {
   app:       { label: "You",          icon: "user" },
-  assistant: { label: "AI assistant", icon: "bot" },
+  assistant: { label: "Aurora", icon: "bot" },
   import:    { label: "Import",       icon: "download" },
   system:    { label: "Automatic",    icon: "timer" },
 };

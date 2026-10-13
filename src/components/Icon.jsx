@@ -8,7 +8,7 @@ import {
   Check, X, Lock, KeyRound, Mail, Search, ArrowUp, ArrowDown, ArrowUpDown,
   ChevronUp, ChevronDown, ArrowRight, Calendar, PiggyBank, Target, Banknote,
   Timer, Trash2, Bell, ListChecks, Link2, MessageCircle, Hand, Coins,
-  CircleAlert, Hourglass, ShieldCheck, ChevronLeft, ChevronRight, Pause, Play, History, Bot,
+  CircleAlert, Hourglass, ShieldCheck, ChevronLeft, ChevronRight, Pause, Play, History, Bot, MountainSnow,
 } from "lucide-react";
 
 // Every icon in the app goes through this registry, so data (category lists,
@@ -40,7 +40,7 @@ const ICONS = {
   coins: Coins, alert: CircleAlert, hourglass: Hourglass,
   "shield-check": ShieldCheck, "chevron-left": ChevronLeft,
   "chevron-right": ChevronRight, pause: Pause, play: Play,
-  history: History, bot: Bot,
+  history: History, bot: Bot, mountain: MountainSnow,
 };
 
 export default function Icon({ name, size = 16, strokeWidth = 2, style, ...rest }) {

@@ -6,7 +6,7 @@ export default function TopBar({ onAddExpense, onExportCSV, user, onLogout, curr
     <div className="topbar">
 
       {/* Logo */}
-      <div className="topbar-logo"><Icon name="wallet" size={20} /> ExpenseIQ</div>
+      <div className="topbar-logo"><span className="logo-mark"><Icon name="mountain" size={14} /></span> Glacier</div>
 
       {/* Right side actions */}
       <div className="topbar-actions">

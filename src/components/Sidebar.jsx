@@ -15,8 +15,8 @@ export default function Sidebar({
 
       {/* ── Logo ── */}
       <div className="sidebar-logo">
-        <div className="logo-dot" />
-        {!collapsed && <span className="logo-text">ExpenseIQ</span>}
+        <span className="logo-mark"><Icon name="mountain" size={14} /></span>
+        {!collapsed && <span className="logo-text">Glacier</span>}
         <button
           className="sidebar-collapse-btn"
           onClick={() => setCollapsed(p => !p)}
