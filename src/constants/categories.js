@@ -29,5 +29,6 @@ export const NAV_ITEMS = [
   { id: "expenses",   label: "Expenses",   icon: "receipt" },
   { id: "analytics",  label: "Analytics",  icon: "chart" },
   { id: "payments",   label: "Planner",    icon: "clipboard" },
+  { id: "activity",   label: "Activity",   icon: "history" },
   { id: "profile",    label: "Profile",    icon: "user" },
 ];

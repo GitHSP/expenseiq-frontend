@@ -36,6 +36,7 @@ import { exportToCSV } from "./utils/helpers";
 
 import FinancialPlanner   from "./pages/FinancialPlanner";
 import AssistantWidget    from "./components/AssistantWidget";
+import Activity           from "./pages/Activity";
 import Icon               from "./components/Icon";
 
 export default function App() {
@@ -387,6 +388,8 @@ async function handleLogout() {
             }}
           />
         );
+      case "activity":
+        return <Activity formatAmount={formatAmount} />;
       case "profile":
         return (
           <Profile

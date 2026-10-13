@@ -152,6 +152,22 @@ export const incomeAPI = {
 // FINANCIAL PLANNER API
 // ─────────────────────────────────────────────
 // ─────────────────────────────────────────────
+// ACTIVITY HISTORY
+// ─────────────────────────────────────────────
+export const activityAPI = {
+  // Newest first; pass `before` (the last id received) to page backwards.
+  list: async ({ area, before, limit = 50 } = {}) => {
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (area) params.set("area", area);
+    if (before) params.set("before", String(before));
+    const res = await fetch(`${BASE_URL}/activity/?${params}`, {
+      method: "GET", headers: getHeaders(true),
+    });
+    return handleResponse(res);
+  },
+};
+
+// ─────────────────────────────────────────────
 // STATEMENT IMPORT
 // ─────────────────────────────────────────────
 export const statementsAPI = {
