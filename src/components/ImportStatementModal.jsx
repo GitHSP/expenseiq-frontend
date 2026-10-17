@@ -161,7 +161,7 @@ export default function ImportStatementModal({ onClose, onImported, formatAmount
               <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>
                 {busy ? "Reading your statements..." : "Drop statements here, or click to choose"}
               </div>
-              <div style={{ fontSize: 12, color: "var(--muted)" }}>PDF, CSV, OFX or QFX · up to 10 files, 5 MB each</div>
+              <div style={{ fontSize: 12, color: "var(--muted)" }}>PDF, CSV, OFX or QFX · up to 50 files, 5 MB each</div>
               <input
                 ref={fileInput} type="file" accept=".pdf,.csv,.ofx,.qfx,.txt" multiple hidden
                 onChange={e => { handleFiles(e.target.files); e.target.value = ""; }}
