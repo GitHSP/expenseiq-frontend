@@ -326,6 +326,7 @@ export const accountsAPI = {
     return handleResponse(await authFetch(`${BASE_URL}/statements/transactions/?${params}`, { headers: getHeaders(true) }));
   },
   recurring: async () => handleResponse(await authFetch(`${BASE_URL}/statements/recurring/`, { headers: getHeaders(true) })),
+  summary: async () => handleResponse(await authFetch(`${BASE_URL}/statements/summary/`, { headers: getHeaders(true) })),
 };
 
 const FP_URL = `${BASE_URL}/fp`;

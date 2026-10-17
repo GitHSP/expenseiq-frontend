@@ -155,7 +155,7 @@ export default function ImportStatementModal({ onClose, onImported, formatAmount
     try {
       const statements = preview.files.map((f, i) => ({
         filename: f.filename, file_hash: f.file_hash,
-        period_start: f.period_start, period_end: f.period_end,
+        period_start: f.period_start, period_end: f.period_end, summary: f.summary,
         account: assign[i]?.id ? { id: assign[i].id } : { ...assign[i], name: assign[i].name.trim() },
         transactions: rows.filter(r => r.file === i).map(r => {
           const moneyOut = (parseFloat(r.signed_amount) < 0) !== !!flips[r.file];

@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Bar, BarChart, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis,
+} from "recharts";
 import Icon from "../components/Icon";
-import { accountsAPI } from "../utils/api";
+import { accountsAPI, financialPlannerAPI } from "../utils/api";
 
 // Accounts: every bank account and card the user has uploaded statements for.
 //   Overview      — accounts, which months have statements, and gaps
@@ -52,6 +55,7 @@ function Tabs({ tab, setTab }) {
                   borderRadius: 10, padding: 4, overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
       {[
         { id: "overview",     label: "Overview",     icon: "landmark" },
+        { id: "cards",        label: "Cards",        icon: "credit-card" },
         { id: "recurring",    label: "Recurring",    icon: "repeat" },
         { id: "transactions", label: "Transactions", icon: "receipt" },
       ].map(t => (
@@ -409,9 +413,9 @@ function RecurringTab({ recurring, accounts, months, fmt }) {
           { label: "Per year", value: fmt(total * 12), sub: "at today's amounts", gradient: "linear-gradient(135deg, #059669, #047857)" },
           { label: "Not seen recently", value: String(stopped.length), sub: "possibly cancelled", gradient: "linear-gradient(135deg, #64748b, #475569)" },
         ].map(card => (
-          <div key={card.label} style={{ background: card.gradient, borderRadius: 12, padding: 20, color: "#fff" }}>
+          <div key={card.label} style={{ background: card.gradient, borderRadius: 12, padding: 20, color: "#fff", minWidth: 0 }}>
             <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.8px", opacity: 0.75, marginBottom: 8 }}>{card.label}</div>
-            <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.8px", lineHeight: 1.1, marginBottom: 6 }}>{card.value}</div>
+            <div style={{ fontSize: "clamp(16px, 4.6vw, 22px)", fontWeight: 800, letterSpacing: "-0.8px", lineHeight: 1.1, marginBottom: 6 }}>{card.value}</div>
             <div style={{ fontSize: 11, opacity: 0.7, fontWeight: 500 }}>{card.sub}</div>
           </div>
         ))}
@@ -622,11 +626,243 @@ function TransactionsTab({ accounts, months, filter, setFilter, fmt }) {
 }
 
 // ─────────────────────────────────────────────
+// Income & expenses by month (Overview)
+// ─────────────────────────────────────────────
 
-export default function Accounts({ formatAmount, onImport, refreshKey, onEntriesDeleted }) {
+const TOOLTIP_STYLE = { background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 };
+
+function MonthlySummary({ summary, fmt }) {
+  if (!summary?.months?.length) return null;
+  const data = summary.months.map(m => ({ name: shortMonth(m.month), Income: parseFloat(m.income), Expenses: parseFloat(m.expenses) }));
+  const cell = { padding: "7px 10px", borderTop: "1px solid var(--subtle2)", textAlign: "right", whiteSpace: "nowrap" };
+  return (
+    <div className="card" style={{ marginBottom: 20 }}>
+      <div className="card-title" style={{ marginBottom: 4, display: "flex", alignItems: "center", gap: 8 }}>
+        <Icon name="chart" size={16} /> Income &amp; expenses by month
+      </div>
+      <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 12 }}>
+        From all your statements. Transfers between your own accounts and card payments aren't counted; card refunds lower spending.
+      </div>
+      <ResponsiveContainer width="100%" height={200}>
+        <BarChart data={data} barGap={3}>
+          <XAxis dataKey="name" tick={{ fill: "var(--faint2)", fontSize: 11 }} axisLine={false} tickLine={false} />
+          <YAxis tick={{ fill: "var(--faint2)", fontSize: 10 }} axisLine={false} tickLine={false} width={44} />
+          <Tooltip formatter={v => fmt(v)} contentStyle={TOOLTIP_STYLE} />
+          <Legend wrapperStyle={{ fontSize: 11 }} />
+          <Bar dataKey="Income" fill="#059669" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="Expenses" fill="#e11d48" radius={[4, 4, 0, 0]} />
+        </BarChart>
+      </ResponsiveContainer>
+      <div style={{ overflowX: "auto", marginTop: 8 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 360 }}>
+          <thead>
+            <tr style={{ color: "var(--muted)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+              <th style={{ ...cell, borderTop: "none", textAlign: "left" }}>Month</th>
+              <th style={{ ...cell, borderTop: "none" }}>Income</th>
+              <th style={{ ...cell, borderTop: "none" }}>Expenses</th>
+              <th style={{ ...cell, borderTop: "none" }}>Net</th>
+            </tr>
+          </thead>
+          <tbody>
+            {summary.months.map(m => (
+              <tr key={m.month}>
+                <td style={{ ...cell, textAlign: "left" }}>{monthLabel(m.month)}</td>
+                <td style={{ ...cell, color: "#059669" }}>{fmt(m.income)}</td>
+                <td style={{ ...cell, color: "#e11d48" }}>{fmt(m.expenses)}</td>
+                <td style={{ ...cell, fontWeight: 700, color: parseFloat(m.net) < 0 ? "#e11d48" : "var(--text)" }}>{fmt(m.net)}</td>
+              </tr>
+            ))}
+            <tr style={{ fontWeight: 800 }}>
+              <td style={{ ...cell, textAlign: "left" }}>Total</td>
+              <td style={{ ...cell, color: "#059669" }}>{fmt(summary.total_income)}</td>
+              <td style={{ ...cell, color: "#e11d48" }}>{fmt(summary.total_expenses)}</td>
+              <td style={{ ...cell, color: parseFloat(summary.total_net) < 0 ? "#e11d48" : "var(--text)" }}>{fmt(summary.total_net)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// Cards: balance, payments and spending per statement, linked Planner debt
+// ─────────────────────────────────────────────
+
+function CardPanel({ account, debts, fmt, onChanged }) {
+  const card = account.card;
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const history = card.history;
+  const limit = parseFloat(card.credit_limit || "") || null;
+  const est = card.estimated_balance !== null ? parseFloat(card.estimated_balance) : null;
+  const used = limit && est !== null ? Math.min(100, Math.max(0, (est / limit) * 100)) : null;
+  const data = history.map(h => ({
+    name: shortMonth(ymOf(h.period_end)),
+    Paid: parseFloat(h.paid), Spent: parseFloat(h.spent), Interest: parseFloat(h.interest),
+    Balance: h.new_balance !== null ? parseFloat(h.new_balance) : null,
+  }));
+  const totals = history.reduce((t, h) => ({ paid: t.paid + parseFloat(h.paid), spent: t.spent + parseFloat(h.spent),
+                                              interest: t.interest + parseFloat(h.interest) }), { paid: 0, spent: 0, interest: 0 });
+  const cell = { padding: "7px 10px", borderTop: "1px solid var(--subtle2)", textAlign: "right", whiteSpace: "nowrap" };
+
+  async function link(debtId) {
+    setBusy(true); setError("");
+    try { await accountsAPI.update(account.id, { debt: debtId ? Number(debtId) : null }); onChanged(true); }
+    catch (e) { setError(e.message || "Couldn't link the debt"); }
+    finally { setBusy(false); }
+  }
+
+  const stat = (label, value, sub, color) => (
+    <div style={{ background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 10, padding: "10px 12px", minWidth: 0 }}>
+      <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.6px", color: "var(--muted)" }}>{label}</div>
+      <div style={{ fontSize: 18, fontWeight: 800, marginTop: 2, color: color || "var(--text)" }}>{value}</div>
+      {sub && <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{sub}</div>}
+    </div>
+  );
+
+  return (
+    <div className="card" style={{ marginBottom: 16 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
+        <div style={{ fontWeight: 800, fontSize: 16, display: "flex", alignItems: "center", gap: 8 }}>
+          <Icon name="credit-card" size={18} /> {account.name}
+        </div>
+        <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--muted2)" }}
+          title="The Planner debt this card's statements keep up to date">
+          <Icon name="link" size={13} /> Planner debt
+          <select value={account.debt?.id || ""} disabled={busy} onChange={e => link(e.target.value)}
+            style={{ ...selectStyle, padding: "5px 8px", fontSize: 12 }} aria-label={`Planner debt for ${account.name}`}>
+            <option value="">Not linked</option>
+            {debts.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+          </select>
+        </label>
+      </div>
+      {error && <div style={{ color: "#e11d48", fontSize: 12, marginBottom: 8 }}>{error}</div>}
+
+      {card.statement_balance === null ? (
+        <div style={{ fontSize: 13, color: "var(--muted)" }}>No balance found on this card's statements yet.</div>
+      ) : (
+        <>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10, marginBottom: 14 }}>
+            {stat("Statement balance", fmt(card.statement_balance), `on ${dayLabel(card.statement_end)}, ${card.statement_end.slice(0, 4)}`)}
+            {stat("Paid since", fmt(card.paid_since),
+                  card.payments_since.length ? `${card.payments_since.length} payment${card.payments_since.length === 1 ? "" : "s"} from your bank` : "none found yet",
+                  parseFloat(card.paid_since) > 0 ? "#059669" : undefined)}
+            {stat("Owed now (est.)", fmt(card.estimated_balance), "new purchases show on the next statement")}
+            {card.minimum_payment && stat("Minimum due", fmt(card.minimum_payment), card.payment_due ? `by ${dayLabel(card.payment_due)}` : "")}
+            {limit && stat("Credit used", `${Math.round(used)}%`, `of ${fmt(limit)}`, used >= 90 ? "#e11d48" : used >= 70 ? "#d97706" : "#059669")}
+          </div>
+          {account.debt && (
+            <div style={{ fontSize: 12, color: "var(--muted2)", marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
+              <Icon name="check-circle" size={13} style={{ color: "#059669" }} />
+              Planner debt <strong>{account.debt.name}</strong> is {fmt(account.debt.current_balance)} — updated from the newest statement.
+            </div>
+          )}
+          {card.payments_since.length > 0 && (
+            <div style={{ fontSize: 12, color: "var(--muted2)", marginBottom: 12 }}>
+              {card.payments_since.map((p, i) => (
+                <div key={i}>{dayLabel(p.date)} · {fmt(p.amount)} from {p.from}</div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {history.length > 0 && (
+        <>
+          <ResponsiveContainer width="100%" height={210}>
+            <ComposedChart data={data} barGap={2}>
+              <XAxis dataKey="name" tick={{ fill: "var(--faint2)", fontSize: 11 }} axisLine={false} tickLine={false} />
+              <YAxis yAxisId="flow" tick={{ fill: "var(--faint2)", fontSize: 10 }} axisLine={false} tickLine={false} width={44} />
+              <YAxis yAxisId="bal" orientation="right" tick={{ fill: "var(--faint2)", fontSize: 10 }} axisLine={false} tickLine={false} width={50} />
+              <Tooltip formatter={v => fmt(v)} contentStyle={TOOLTIP_STYLE} />
+              <Legend wrapperStyle={{ fontSize: 11 }} />
+              <Bar yAxisId="flow" dataKey="Paid" fill="#059669" radius={[4, 4, 0, 0]} />
+              <Bar yAxisId="flow" dataKey="Spent" fill="#db2777" radius={[4, 4, 0, 0]} />
+              <Bar yAxisId="flow" dataKey="Interest" fill="#d97706" radius={[4, 4, 0, 0]} />
+              <Line yAxisId="bal" dataKey="Balance" stroke="#0070f3" strokeWidth={2} dot={{ r: 3 }} connectNulls />
+            </ComposedChart>
+          </ResponsiveContainer>
+          <div style={{ overflowX: "auto", marginTop: 6 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, minWidth: 560 }}>
+              <thead>
+                <tr style={{ color: "var(--muted)", fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                  {["Statement", "Owed before", "Paid", "Spent", "Interest", "Owed after", "Minimum"].map((h, i) => (
+                    <th key={h} style={{ ...cell, borderTop: "none", textAlign: i ? "right" : "left" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {[...history].reverse().map(h => (
+                  <tr key={h.statement_id}>
+                    <td style={{ ...cell, textAlign: "left" }}>{dayLabel(h.period_start)} – {dayLabel(h.period_end)}</td>
+                    <td style={cell}>{h.previous_balance !== null ? fmt(h.previous_balance) : "—"}</td>
+                    <td style={{ ...cell, color: "#059669" }}>{fmt(h.paid)}</td>
+                    <td style={{ ...cell, color: "#db2777" }}>{fmt(h.spent)}</td>
+                    <td style={{ ...cell, color: "#d97706" }}>{fmt(h.interest)}</td>
+                    <td style={{ ...cell, fontWeight: 700 }}>{h.new_balance !== null ? fmt(h.new_balance) : "—"}</td>
+                    <td style={cell}>{h.minimum_payment ? fmt(h.minimum_payment) : "—"}</td>
+                  </tr>
+                ))}
+                <tr style={{ fontWeight: 800 }}>
+                  <td style={{ ...cell, textAlign: "left" }}>Total</td><td style={cell} />
+                  <td style={{ ...cell, color: "#059669" }}>{fmt(totals.paid)}</td>
+                  <td style={{ ...cell, color: "#db2777" }}>{fmt(totals.spent)}</td>
+                  <td style={{ ...cell, color: "#d97706" }}>{fmt(totals.interest)}</td>
+                  <td style={cell} /><td style={cell} />
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function CardsTab({ accounts, debts, fmt, onChanged }) {
+  const cards = accounts.filter(a => a.kind === "credit_card" && a.card);
+  if (!cards.length) {
+    return (
+      <div className="empty-state">
+        <div className="empty-icon"><Icon name="credit-card" size={40} strokeWidth={1.5} /></div>
+        <div style={{ fontWeight: 600, color: "var(--faint)", fontSize: 15 }}>No credit-card statements yet</div>
+      </div>
+    );
+  }
+  const owed = cards.reduce((s, a) => s + (parseFloat(a.card.estimated_balance) || 0), 0);
+  const paid = cards.reduce((s, a) => s + a.card.history.reduce((t, h) => t + parseFloat(h.paid), 0), 0);
+  const spent = cards.reduce((s, a) => s + a.card.history.reduce((t, h) => t + parseFloat(h.spent), 0), 0);
+  const interest = cards.reduce((s, a) => s + a.card.history.reduce((t, h) => t + parseFloat(h.interest), 0), 0);
+  return (
+    <>
+      <div className="stat-grid" style={{ marginBottom: 20 }}>
+        {[
+          { label: "Owed on cards (est.)", value: fmt(owed), sub: `${cards.length} card${cards.length === 1 ? "" : "s"}`, gradient: "linear-gradient(135deg, #e11d48, #be123c)" },
+          { label: "Paid to cards", value: fmt(paid), sub: "over the statements uploaded", gradient: "linear-gradient(135deg, #059669, #047857)" },
+          { label: "Spent on cards", value: fmt(spent), sub: "purchases, fees, cash advances", gradient: "linear-gradient(135deg, #db2777, #be185d)" },
+          { label: "Interest paid", value: fmt(interest), sub: "money that didn't reduce what you owe", gradient: "linear-gradient(135deg, #f59e0b, #d97706)" },
+        ].map(c => (
+          <div key={c.label} style={{ background: c.gradient, borderRadius: 12, padding: 20, color: "#fff", minWidth: 0 }}>
+            <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.8px", opacity: 0.75, marginBottom: 8 }}>{c.label}</div>
+            <div style={{ fontSize: "clamp(16px, 4.6vw, 22px)", fontWeight: 800, letterSpacing: "-0.8px", lineHeight: 1.1, marginBottom: 6 }}>{c.value}</div>
+            <div style={{ fontSize: 11, opacity: 0.7, fontWeight: 500 }}>{c.sub}</div>
+          </div>
+        ))}
+      </div>
+      {cards.map(a => <CardPanel key={a.id} account={a} debts={debts} fmt={fmt} onChanged={onChanged} />)}
+    </>
+  );
+}
+
+// ─────────────────────────────────────────────
+
+export default function Accounts({ formatAmount, onImport, refreshKey, onEntriesDeleted, onDebtsChanged }) {
   const [tab, setTab] = useState("overview");
   const [data, setData] = useState(null);
   const [recurring, setRecurring] = useState({ items: [], monthly_total: "0.00" });
+  const [summary, setSummary] = useState(null);
+  const [debts, setDebts] = useState([]);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState({ account: "", month: "", q: "" });
 
@@ -635,9 +871,14 @@ export default function Accounts({ formatAmount, onImport, refreshKey, onEntries
   const load = useCallback(async () => {
     setError("");
     try {
-      const [accounts, rec] = await Promise.all([accountsAPI.list(), accountsAPI.recurring()]);
+      const [accounts, rec, sum, debtList] = await Promise.all([
+        accountsAPI.list(), accountsAPI.recurring(), accountsAPI.summary(),
+        financialPlannerAPI.getDebts().catch(() => []),
+      ]);
       setData(accounts);
       setRecurring(rec);
+      setSummary(sum);
+      setDebts(Array.isArray(debtList) ? debtList : debtList?.results || []);
     } catch (e) {
       setError(e.message || "Couldn't load your accounts");
     }
@@ -702,19 +943,25 @@ export default function Accounts({ formatAmount, onImport, refreshKey, onEntries
                   { label: "Missing statements", value: String(gapCount), sub: gapCount ? "gaps between your statements" : "no gaps found",
                     gradient: gapCount ? "linear-gradient(135deg, #f59e0b, #d97706)" : "linear-gradient(135deg, #059669, #047857)" },
                 ].map(card => (
-                  <div key={card.label} style={{ background: card.gradient, borderRadius: 12, padding: 20, color: "#fff" }}>
+                  <div key={card.label} style={{ background: card.gradient, borderRadius: 12, padding: 20, color: "#fff", minWidth: 0 }}>
                     <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.8px", opacity: 0.75, marginBottom: 8 }}>{card.label}</div>
-                    <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.8px", lineHeight: 1.1, marginBottom: 6 }}>{card.value}</div>
+                    <div style={{ fontSize: "clamp(16px, 4.6vw, 22px)", fontWeight: 800, letterSpacing: "-0.8px", lineHeight: 1.1, marginBottom: 6 }}>{card.value}</div>
                     <div style={{ fontSize: 11, opacity: 0.7, fontWeight: 500 }}>{card.sub}</div>
                   </div>
                 ))}
               </div>
+              <MonthlySummary summary={summary} fmt={fmt} />
               <CoverageGrid accounts={accounts} months={months} onOpen={openTransactions} />
               {accounts.map(a => (
                 <AccountCard key={`${a.id}-${a.name}-${a.kind}`} account={a} accounts={accounts} months={months} fmt={fmt}
                   onOpen={openTransactions} onChanged={load} onEntriesDeleted={r => onEntriesDeleted?.(r)} />
               ))}
             </>
+          )}
+
+          {tab === "cards" && (
+            <CardsTab accounts={accounts} debts={debts} fmt={fmt}
+              onChanged={debtsChanged => { load(); if (debtsChanged) onDebtsChanged?.(); }} />
           )}
 
           {tab === "recurring" && <RecurringTab recurring={recurring} accounts={accounts} months={months} fmt={fmt} />}

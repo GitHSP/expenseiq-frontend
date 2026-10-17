@@ -419,6 +419,7 @@ async function handleLogout() {
             formatAmount={formatAmount}
             refreshKey={accountsKey}
             onImport={() => setShowImport(true)}
+            onDebtsChanged={() => reloadPlanner({ silent: true })}
             onEntriesDeleted={({ deleted_expenses, deleted_income }) => {
               reloadExpenses({ silent: true });
               reloadIncome({ silent: true });
@@ -501,18 +502,19 @@ async function handleLogout() {
         <ImportStatementModal
           formatAmount={formatAmount}
           onClose={() => setShowImport(false)}
-          onImported={({ imported_expenses, imported_income, ticked_checklist, statements_saved, resync }) => {
+          onImported={({ imported_expenses, imported_income, ticked_checklist, statements_saved, resync, debts_updated }) => {
             setShowImport(false);
             setAccountsKey(k => k + 1);
             reloadExpenses({ silent: true });
             reloadIncome({ silent: true });
-            if (ticked_checklist) reloadPlanner({ silent: true });
+            if (ticked_checklist || debts_updated?.length) reloadPlanner({ silent: true });
             showToast(
               `Imported ${imported_expenses} expense${imported_expenses === 1 ? "" : "s"} and ${imported_income} income` +
               (ticked_checklist ? ` · ticked ${ticked_checklist} in Planner` : "") +
               (statements_saved ? ` · ${statements_saved} statement${statements_saved === 1 ? "" : "s"} saved to Accounts` : "") +
               (resync?.statements ? ` · ${resync.statements} re-read (${resync.rows_added} rows added, ${resync.rows_removed} removed` +
-                (resync.entries_removed ? `, ${resync.entries_removed} wrong entr${resync.entries_removed === 1 ? "y" : "ies"} deleted` : "") + ")" : "")
+                (resync.entries_removed ? `, ${resync.entries_removed} wrong entr${resync.entries_removed === 1 ? "y" : "ies"} deleted` : "") + ")" : "") +
+              (debts_updated?.length ? ` · updated ${debts_updated.map(d => d.debt).join(", ")} in Planner` : "")
             );
           }}
         />
