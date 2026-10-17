@@ -277,7 +277,7 @@ export default function ImportStatementModal({ onClose, onImported, formatAmount
                       onChange={v => setAssign(prev => ({ ...prev, [i]: v }))} />
                   )}
                   {f.already_uploaded && (
-                    <Badge color="#d97706">Uploaded before ({f.already_uploaded.date}) — its rows are already on {f.already_uploaded.account}</Badge>
+                    <Badge color="#d97706">Uploaded before ({f.already_uploaded.date}) — importing again updates it on {f.already_uploaded.account}</Badge>
                   )}
                 </div>
               ))}
