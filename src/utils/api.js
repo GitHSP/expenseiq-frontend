@@ -308,6 +308,12 @@ export const accountsAPI = {
   remove: async (id) => handleResponse(await authFetch(`${BASE_URL}/statements/accounts/${id}/`, {
     method: "DELETE", headers: getHeaders(true),
   })),
+  merge: async (id, into) => handleResponse(await authFetch(`${BASE_URL}/statements/accounts/${id}/merge/`, {
+    method: "POST", headers: getHeaders(true), body: JSON.stringify({ into }),
+  })),
+  moveStatement: async (id, account) => handleResponse(await authFetch(`${BASE_URL}/statements/${id}/`, {
+    method: "PATCH", headers: getHeaders(true), body: JSON.stringify({ account }),
+  })),
   removeStatement: async (id, deleteEntries) => handleResponse(await authFetch(
     `${BASE_URL}/statements/${id}/${deleteEntries ? "?delete_entries=1" : ""}`,
     { method: "DELETE", headers: getHeaders(true) },

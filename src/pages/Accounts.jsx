@@ -152,7 +152,8 @@ function CoverageGrid({ accounts, months, onOpen }) {
   );
 }
 
-function AccountCard({ account, months, fmt, onOpen, onChanged, onEntriesDeleted }) {
+function AccountCard({ account, accounts, months, fmt, onOpen, onChanged, onEntriesDeleted }) {
+  const others = accounts.filter(a => a.id !== account.id);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(account.name);
@@ -216,6 +217,22 @@ function AccountCard({ account, months, fmt, onOpen, onChanged, onEntriesDeleted
             onClick={() => setOpen(o => !o)} aria-expanded={open}>
             <Icon name="file-text" size={13} /> Statements <Icon name={open ? "chevron-up" : "chevron-down"} size={12} />
           </button>
+          {others.length > 0 && (
+            <select value="" disabled={busy} aria-label={`Merge ${account.name} into another account`}
+              title="If this is the same account as another one (detected twice), merge it"
+              style={{ ...selectStyle, padding: "5px 8px", fontSize: 12 }}
+              onChange={e => {
+                const into = others.find(a => String(a.id) === e.target.value);
+                if (into && window.confirm(`Merge ${account.name} into ${into.name}?
+
+Its ${statements.length} statement${statements.length === 1 ? "" : "s"} and all transactions move to ${into.name}, and ${account.name} is removed.`)) {
+                  run(async () => { await accountsAPI.merge(account.id, into.id); onChanged(); });
+                }
+              }}>
+              <option value="">Merge into…</option>
+              {others.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+            </select>
+          )}
           {!editing && (
             <button className="btn-ghost" style={{ padding: "6px 8px" }} aria-label={`Rename ${account.name}`} onClick={() => setEditing(true)}>
               <Icon name="pencil" size={14} />
@@ -238,6 +255,17 @@ function AccountCard({ account, months, fmt, onOpen, onChanged, onEntriesDeleted
                 <div style={{ fontWeight: 600 }}>{dayLabel(s.period_start)} – {dayLabel(s.period_end)}, {s.period_end.slice(0, 4)}</div>
                 <div style={{ fontSize: 11, color: "var(--muted)", wordBreak: "break-all" }}>{s.filename} · {s.count} rows</div>
               </div>
+              {others.length > 0 && (
+                <select value="" disabled={busy} aria-label={`Move ${s.filename} to another account`}
+                  style={{ ...selectStyle, padding: "4px 6px", fontSize: 11, maxWidth: 150 }}
+                  onChange={e => {
+                    const to = others.find(a => String(a.id) === e.target.value);
+                    if (to) run(async () => { await accountsAPI.moveStatement(s.id, to.id); onChanged(); });
+                  }}>
+                  <option value="">Move to…</option>
+                  {others.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                </select>
+              )}
               <div style={{ fontSize: 12, textAlign: "right" }}>
                 <div style={{ color: "#059669" }}>+{fmt(s.money_in)}</div>
                 <div style={{ color: "#e11d48" }}>−{fmt(s.money_out)}</div>
@@ -683,7 +711,7 @@ export default function Accounts({ formatAmount, onImport, refreshKey, onEntries
               </div>
               <CoverageGrid accounts={accounts} months={months} onOpen={openTransactions} />
               {accounts.map(a => (
-                <AccountCard key={`${a.id}-${a.name}-${a.kind}`} account={a} months={months} fmt={fmt}
+                <AccountCard key={`${a.id}-${a.name}-${a.kind}`} account={a} accounts={accounts} months={months} fmt={fmt}
                   onOpen={openTransactions} onChanged={load} onEntriesDeleted={r => onEntriesDeleted?.(r)} />
               ))}
             </>
