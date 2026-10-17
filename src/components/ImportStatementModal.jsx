@@ -213,6 +213,19 @@ export default function ImportStatementModal({ onClose, onImported, formatAmount
               ))}
             </div>
 
+            {preview.skipped?.length > 0 && (
+              <div style={{ fontSize: 12, color: "#b45309", background: "rgba(217,119,6,0.08)", border: "1px solid rgba(217,119,6,0.3)",
+                            borderRadius: 8, padding: "8px 12px", marginBottom: 10, lineHeight: 1.5 }}>
+                <strong>Couldn't read {preview.skipped.length === 1 ? "1 file" : `${preview.skipped.length} files`}</strong> — the rest are below.
+                {preview.skipped.map(s => (
+                  <div key={s.filename} style={{ display: "flex", gap: 6, marginTop: 2 }}>
+                    <Icon name="warning" size={12} style={{ marginTop: 3 }} />
+                    <span><strong>{s.filename}:</strong> {s.error}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {earlierHalves.length > 0 && (
               <div style={{ fontSize: 12, color: "#7c3aed", background: "rgba(124,58,237,0.07)", border: "1px solid rgba(124,58,237,0.25)",
                             borderRadius: 8, padding: "8px 12px", marginBottom: 10, lineHeight: 1.5 }}>
