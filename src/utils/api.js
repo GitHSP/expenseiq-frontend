@@ -17,11 +17,54 @@ function getHeaders(auth = true) {
   return headers;
 }
 
+// Access tokens are short-lived (15 min). When a request comes back 401,
+// trade the refresh token for a new access token once and retry, so the user
+// isn't logged out mid-session. Concurrent 401s share one refresh, because
+// each refresh token can only be used once (they rotate).
+let refreshInFlight = null;
+
+function refreshAccessToken() {
+  const refresh = localStorage.getItem("refresh_token");
+  if (!refresh) return Promise.resolve(false);
+  if (!refreshInFlight) {
+    refreshInFlight = fetch(`${BASE_URL}/auth/token/refresh/`, {
+      method: "POST", headers: getHeaders(false),
+      body: JSON.stringify({ refresh }),
+    })
+      .then(async res => {
+        if (!res.ok) return false;
+        const data = await res.json();
+        localStorage.setItem("access_token", data.access);
+        if (data.refresh) localStorage.setItem("refresh_token", data.refresh);
+        return true;
+      })
+      .catch(() => false)
+      .finally(() => { refreshInFlight = null; });
+  }
+  return refreshInFlight;
+}
+
+async function authFetch(url, options = {}) {
+  const res = await fetch(url, options);
+  if (res.status !== 401 || !localStorage.getItem("refresh_token")) return res;
+  if (!(await refreshAccessToken())) {
+    // The session is over (expired, or revoked by a password change).
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    window.dispatchEvent(new Event("auth:expired"));
+    return res;
+  }
+  const headers = { ...(options.headers || {}), Authorization: `Bearer ${getToken()}` };
+  return fetch(url, { ...options, headers });
+}
+
 async function handleResponse(res) {
   if (res.status === 204) return null;
   const data = await res.json();
   if (!res.ok) {
-    throw new Error(data.error || data.detail || JSON.stringify(data));
+    const err = new Error(data.error || data.detail || JSON.stringify(data));
+    err.status = res.status;
+    throw err;
   }
   return data;
 }
@@ -52,7 +95,7 @@ export const authAPI = {
     return handleResponse(res);
   },
   me: async () => {
-    const res = await fetch(`${BASE_URL}/auth/me/`, {
+    const res = await authFetch(`${BASE_URL}/auth/me/`, {
       method: "GET", headers: getHeaders(true),
     });
     return handleResponse(res);
@@ -72,7 +115,7 @@ export const authAPI = {
     return handleResponse(res);
   },
   changePassword: async (currentPassword, newPassword, newPassword2) => {
-    const res = await fetch(`${BASE_URL}/auth/change-password/`, {
+    const res = await authFetch(`${BASE_URL}/auth/change-password/`, {
       method: "POST", headers: getHeaders(true),
       body: JSON.stringify({
         old_password:  currentPassword,
@@ -80,7 +123,13 @@ export const authAPI = {
         new_password2: newPassword2,
       }),
     });
-    return handleResponse(res);
+    const data = await handleResponse(res);
+    // Changing the password signs out every other session; keep this one.
+    if (data?.access_token) {
+      localStorage.setItem("access_token", data.access_token);
+      localStorage.setItem("refresh_token", data.refresh_token);
+    }
+    return data;
   },
 };
 
@@ -89,34 +138,34 @@ export const authAPI = {
 // ─────────────────────────────────────────────
 export const expensesAPI = {
   bulkDelete: async (ids, label) => {
-    const res = await fetch(`${BASE_URL}/expenses/bulk-delete/`, {
+    const res = await authFetch(`${BASE_URL}/expenses/bulk-delete/`, {
       method: "POST", headers: getHeaders(true),
       body: JSON.stringify({ ids, label }),
     });
     return handleResponse(res);
   },
   getAll: async () => {
-    const res = await fetch(`${BASE_URL}/expenses/`, {
+    const res = await authFetch(`${BASE_URL}/expenses/`, {
       method: "GET", headers: getHeaders(true),
     });
     return handleResponse(res);
   },
   create: async (data) => {
-    const res = await fetch(`${BASE_URL}/expenses/`, {
+    const res = await authFetch(`${BASE_URL}/expenses/`, {
       method: "POST", headers: getHeaders(true),
       body: JSON.stringify(data),
     });
     return handleResponse(res);
   },
   update: async (id, data) => {
-    const res = await fetch(`${BASE_URL}/expenses/${id}/`, {
+    const res = await authFetch(`${BASE_URL}/expenses/${id}/`, {
       method: "PUT", headers: getHeaders(true),
       body: JSON.stringify(data),
     });
     return handleResponse(res);
   },
   delete: async (id) => {
-    const res = await fetch(`${BASE_URL}/expenses/${id}/`, {
+    const res = await authFetch(`${BASE_URL}/expenses/${id}/`, {
       method: "DELETE", headers: getHeaders(true),
     });
     return handleResponse(res);
@@ -128,34 +177,34 @@ export const expensesAPI = {
 // ─────────────────────────────────────────────
 export const incomeAPI = {
   bulkDelete: async (ids, label) => {
-    const res = await fetch(`${BASE_URL}/income/bulk-delete/`, {
+    const res = await authFetch(`${BASE_URL}/income/bulk-delete/`, {
       method: "POST", headers: getHeaders(true),
       body: JSON.stringify({ ids, label }),
     });
     return handleResponse(res);
   },
   getAll: async () => {
-    const res = await fetch(`${BASE_URL}/income/`, {
+    const res = await authFetch(`${BASE_URL}/income/`, {
       method: "GET", headers: getHeaders(true),
     });
     return handleResponse(res);
   },
   create: async (data) => {
-    const res = await fetch(`${BASE_URL}/income/`, {
+    const res = await authFetch(`${BASE_URL}/income/`, {
       method: "POST", headers: getHeaders(true),
       body: JSON.stringify(data),
     });
     return handleResponse(res);
   },
   update: async (id, data) => {
-    const res = await fetch(`${BASE_URL}/income/${id}/`, {
+    const res = await authFetch(`${BASE_URL}/income/${id}/`, {
       method: "PUT", headers: getHeaders(true),
       body: JSON.stringify(data),
     });
     return handleResponse(res);
   },
   delete: async (id) => {
-    const res = await fetch(`${BASE_URL}/income/${id}/`, {
+    const res = await authFetch(`${BASE_URL}/income/${id}/`, {
       method: "DELETE", headers: getHeaders(true),
     });
     return handleResponse(res);
@@ -174,7 +223,7 @@ export const activityAPI = {
     const params = new URLSearchParams({ limit: String(limit) });
     if (area) params.set("area", area);
     if (before) params.set("before", String(before));
-    const res = await fetch(`${BASE_URL}/activity/?${params}`, {
+    const res = await authFetch(`${BASE_URL}/activity/?${params}`, {
       method: "GET", headers: getHeaders(true),
     });
     return handleResponse(res);
@@ -192,13 +241,13 @@ export const statementsAPI = {
     const headers = {};
     const token = getToken();
     if (token) headers["Authorization"] = `Bearer ${token}`;
-    const res = await fetch(`${BASE_URL}/statements/preview/`, { method: "POST", headers, body });
+    const res = await authFetch(`${BASE_URL}/statements/preview/`, { method: "POST", headers, body });
     return handleResponse(res);
   },
   // Save the confirmed rows: [{ kind, title, amount, date, category, source }]
   // and tick the matched Planner checklist items (ids).
   importRows: async (filename, rows, checklistItems = []) => {
-    const res = await fetch(`${BASE_URL}/statements/import/`, {
+    const res = await authFetch(`${BASE_URL}/statements/import/`, {
       method: "POST", headers: getHeaders(true),
       body: JSON.stringify({ filename, rows, checklist_items: checklistItems }),
     });
@@ -212,27 +261,27 @@ export const financialPlannerAPI = {
 
   // ── Debts ──
   getDebts: async () => {
-    const res = await fetch(`${FP_URL}/debts/`, {
+    const res = await authFetch(`${FP_URL}/debts/`, {
       method: "GET", headers: getHeaders(true),
     });
     return handleResponse(res);
   },
   createDebt: async (data) => {
-    const res = await fetch(`${FP_URL}/debts/`, {
+    const res = await authFetch(`${FP_URL}/debts/`, {
       method: "POST", headers: getHeaders(true),
       body: JSON.stringify(data),
     });
     return handleResponse(res);
   },
   updateDebt: async (id, data) => {
-    const res = await fetch(`${FP_URL}/debts/${id}/`, {
+    const res = await authFetch(`${FP_URL}/debts/${id}/`, {
       method: "PATCH", headers: getHeaders(true),
       body: JSON.stringify(data),
     });
     return handleResponse(res);
   },
   deleteDebt: async (id) => {
-    const res = await fetch(`${FP_URL}/debts/${id}/`, {
+    const res = await authFetch(`${FP_URL}/debts/${id}/`, {
       method: "DELETE", headers: getHeaders(true),
     });
     return handleResponse(res);
@@ -240,27 +289,27 @@ export const financialPlannerAPI = {
 
   // ── Recurring payments ──
   getRecurring: async () => {
-    const res = await fetch(`${FP_URL}/recurring/`, {
+    const res = await authFetch(`${FP_URL}/recurring/`, {
       method: "GET", headers: getHeaders(true),
     });
     return handleResponse(res);
   },
   createRecurring: async (data) => {
-    const res = await fetch(`${FP_URL}/recurring/`, {
+    const res = await authFetch(`${FP_URL}/recurring/`, {
       method: "POST", headers: getHeaders(true),
       body: JSON.stringify(data),
     });
     return handleResponse(res);
   },
   updateRecurring: async (id, data) => {
-    const res = await fetch(`${FP_URL}/recurring/${id}/`, {
+    const res = await authFetch(`${FP_URL}/recurring/${id}/`, {
       method: "PATCH", headers: getHeaders(true),
       body: JSON.stringify(data),
     });
     return handleResponse(res);
   },
   deleteRecurring: async (id) => {
-    const res = await fetch(`${FP_URL}/recurring/${id}/`, {
+    const res = await authFetch(`${FP_URL}/recurring/${id}/`, {
       method: "DELETE", headers: getHeaders(true),
     });
     return handleResponse(res);
@@ -268,13 +317,13 @@ export const financialPlannerAPI = {
 
   // ── Emergency Fund ──
   getEmergencyFund: async () => {
-    const res = await fetch(`${FP_URL}/emergency-fund/`, {
+    const res = await authFetch(`${FP_URL}/emergency-fund/`, {
       method: "GET", headers: getHeaders(true),
     });
     return handleResponse(res);
   },
   updateEmergencyFund: async (data) => {
-    const res = await fetch(`${FP_URL}/emergency-fund/`, {
+    const res = await authFetch(`${FP_URL}/emergency-fund/`, {
       method: "PATCH", headers: getHeaders(true),
       body: JSON.stringify(data),
     });
@@ -283,13 +332,13 @@ export const financialPlannerAPI = {
 
   // ── Monthly Plan ──
   getCurrentPlan: async () => {
-    const res = await fetch(`${FP_URL}/plans/current/`, {
+    const res = await authFetch(`${FP_URL}/plans/current/`, {
       method: "GET", headers: getHeaders(true),
     });
     return handleResponse(res);
   },
   updatePlan: async (id, data) => {
-    const res = await fetch(`${FP_URL}/plans/${id}/`, {
+    const res = await authFetch(`${FP_URL}/plans/${id}/`, {
       method: "PATCH", headers: getHeaders(true),
       body: JSON.stringify(data),
     });
@@ -298,7 +347,7 @@ export const financialPlannerAPI = {
 
   // ── Rollover ──
   rollover: async () => {
-    const res = await fetch(`${FP_URL}/plans/rollover/`, {
+    const res = await authFetch(`${FP_URL}/plans/rollover/`, {
       method: "POST", headers: getHeaders(true),
     });
     return handleResponse(res);
@@ -306,7 +355,7 @@ export const financialPlannerAPI = {
 
   // ── Generate Checklist ──
   generateChecklist: async () => {
-    const res = await fetch(`${FP_URL}/plans/generate-checklist/`, {
+    const res = await authFetch(`${FP_URL}/plans/generate-checklist/`, {
       method: "POST", headers: getHeaders(true),
     });
     return handleResponse(res);
@@ -315,26 +364,26 @@ export const financialPlannerAPI = {
 
   // ── Checklist ──
   getChecklist: async (planId) => {
-    const res = await fetch(`${FP_URL}/plans/${planId}/checklist/`, {
+    const res = await authFetch(`${FP_URL}/plans/${planId}/checklist/`, {
       method: "GET", headers: getHeaders(true),
     });
     return handleResponse(res);
   },
   createChecklist: async (planId, data) => {
-    const res = await fetch(`${FP_URL}/plans/${planId}/checklist/`, {
+    const res = await authFetch(`${FP_URL}/plans/${planId}/checklist/`, {
       method: "POST", headers: getHeaders(true),
       body: JSON.stringify(data),
     });
     return handleResponse(res);
   },
   toggleChecklist: async (id) => {
-    const res = await fetch(`${FP_URL}/checklist/${id}/toggle/`, {
+    const res = await authFetch(`${FP_URL}/checklist/${id}/toggle/`, {
       method: "POST", headers: getHeaders(true),
     });
     return handleResponse(res);
   },
   deleteChecklist: async (id) => {
-    const res = await fetch(`${FP_URL}/checklist/${id}/`, {
+    const res = await authFetch(`${FP_URL}/checklist/${id}/`, {
       method: "DELETE", headers: getHeaders(true),
     });
     return handleResponse(res);
@@ -348,7 +397,7 @@ export const financialPlannerAPI = {
 // (from IndexedDB) on every call; the backend never stores it.
 export const assistantAPI = {
   chat: async (messages) => {
-    const res = await fetch(`${BASE_URL}/assistant/chat/`, {
+    const res = await authFetch(`${BASE_URL}/assistant/chat/`, {
       method: "POST", headers: getHeaders(true),
       body: JSON.stringify({ messages }),
     });
@@ -357,14 +406,14 @@ export const assistantAPI = {
 
   // ── Phase 2: sync — server only ever sees opaque ciphertext ──
   getEncryptionKey: async () => {
-    const res = await fetch(`${BASE_URL}/assistant/encryption-key/`, {
+    const res = await authFetch(`${BASE_URL}/assistant/encryption-key/`, {
       method: "GET", headers: getHeaders(true),
     });
     if (res.status === 404) return null;
     return handleResponse(res);
   },
   setEncryptionKey: async (data) => {
-    const res = await fetch(`${BASE_URL}/assistant/encryption-key/`, {
+    const res = await authFetch(`${BASE_URL}/assistant/encryption-key/`, {
       method: "PUT", headers: getHeaders(true),
       body: JSON.stringify(data),
     });
@@ -372,20 +421,20 @@ export const assistantAPI = {
   },
   pullMessages: async (since) => {
     const qs = since ? `?since=${encodeURIComponent(since)}` : "";
-    const res = await fetch(`${BASE_URL}/assistant/sync/messages/${qs}`, {
+    const res = await authFetch(`${BASE_URL}/assistant/sync/messages/${qs}`, {
       method: "GET", headers: getHeaders(true),
     });
     return handleResponse(res);
   },
   pushMessages: async (messages) => {
-    const res = await fetch(`${BASE_URL}/assistant/sync/messages/`, {
+    const res = await authFetch(`${BASE_URL}/assistant/sync/messages/`, {
       method: "POST", headers: getHeaders(true),
       body: JSON.stringify({ messages }),
     });
     return handleResponse(res);
   },
   clearSyncedMessages: async () => {
-    const res = await fetch(`${BASE_URL}/assistant/sync/messages/`, {
+    const res = await authFetch(`${BASE_URL}/assistant/sync/messages/`, {
       method: "DELETE", headers: getHeaders(true),
     });
     return handleResponse(res);

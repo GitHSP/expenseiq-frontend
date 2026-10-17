@@ -10,14 +10,26 @@ export function useAuth() {
     if (token) {
       authAPI.me()
         .then(userData => setUser(userData))
-        .catch(() => {
-          localStorage.removeItem("access_token");
-          localStorage.removeItem("refresh_token");
+        .catch(err => {
+          // Only a real "not logged in" ends the session. A network hiccup
+          // or a server restart shouldn't throw away a valid login.
+          if (err.status === 401) {
+            localStorage.removeItem("access_token");
+            localStorage.removeItem("refresh_token");
+          }
         })
         .finally(() => setLoading(false));
     } else {
       setLoading(false);
     }
+  }, []);
+
+  // The API client signals when the session can't be renewed (expired, or
+  // revoked by a password change elsewhere) — show the login screen.
+  useEffect(() => {
+    const onExpired = () => setUser(null);
+    window.addEventListener("auth:expired", onExpired);
+    return () => window.removeEventListener("auth:expired", onExpired);
   }, []);
 
   async function login(email, password) {
