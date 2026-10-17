@@ -286,6 +286,40 @@ export const statementsAPI = {
     });
     return handleResponse(res);
   },
+  // Save whole statements: every row is kept on its account; rows with
+  // `import` are also saved as expenses/income. See StatementImportView.
+  importStatements: async (statements, checklistItems = []) => {
+    const res = await authFetch(`${BASE_URL}/statements/import/`, {
+      method: "POST", headers: getHeaders(true),
+      body: JSON.stringify({ statements, checklist_items: checklistItems }),
+    });
+    return handleResponse(res);
+  },
+};
+
+// ─────────────────────────────────────────────
+// ACCOUNTS (built from uploaded statements)
+// ─────────────────────────────────────────────
+export const accountsAPI = {
+  list: async () => handleResponse(await authFetch(`${BASE_URL}/statements/accounts/`, { headers: getHeaders(true) })),
+  update: async (id, changes) => handleResponse(await authFetch(`${BASE_URL}/statements/accounts/${id}/`, {
+    method: "PATCH", headers: getHeaders(true), body: JSON.stringify(changes),
+  })),
+  remove: async (id) => handleResponse(await authFetch(`${BASE_URL}/statements/accounts/${id}/`, {
+    method: "DELETE", headers: getHeaders(true),
+  })),
+  removeStatement: async (id, deleteEntries) => handleResponse(await authFetch(
+    `${BASE_URL}/statements/${id}/${deleteEntries ? "?delete_entries=1" : ""}`,
+    { method: "DELETE", headers: getHeaders(true) },
+  )),
+  transactions: async ({ account, month, q } = {}) => {
+    const params = new URLSearchParams();
+    if (account) params.set("account", account);
+    if (month) params.set("month", month);
+    if (q) params.set("q", q);
+    return handleResponse(await authFetch(`${BASE_URL}/statements/transactions/?${params}`, { headers: getHeaders(true) }));
+  },
+  recurring: async () => handleResponse(await authFetch(`${BASE_URL}/statements/recurring/`, { headers: getHeaders(true) })),
 };
 
 const FP_URL = `${BASE_URL}/fp`;

@@ -37,6 +37,7 @@ import { exportToCSV } from "./utils/helpers";
 import FinancialPlanner   from "./pages/FinancialPlanner";
 import AssistantWidget    from "./components/AssistantWidget";
 import Activity           from "./pages/Activity";
+import Accounts           from "./pages/Accounts";
 import Icon               from "./components/Icon";
 
 export default function App() {
@@ -51,6 +52,7 @@ export default function App() {
 
   // ── Navigation ────────────────────────────
   const [view, setView] = useState("dashboard");
+  const [accountsKey, setAccountsKey] = useState(0);   // bumped after an import to refresh Accounts
 
   // ── Dark mode ─────────────────────────────
   const [darkMode, setDarkMode] = useState(
@@ -411,6 +413,19 @@ async function handleLogout() {
         );
       case "activity":
         return <Activity formatAmount={formatAmount} />;
+      case "accounts":
+        return (
+          <Accounts
+            formatAmount={formatAmount}
+            refreshKey={accountsKey}
+            onImport={() => setShowImport(true)}
+            onEntriesDeleted={({ deleted_expenses, deleted_income }) => {
+              reloadExpenses({ silent: true });
+              reloadIncome({ silent: true });
+              showToast(`Deleted ${deleted_expenses} expense${deleted_expenses === 1 ? "" : "s"} and ${deleted_income} income`, "error");
+            }}
+          />
+        );
       case "profile":
         return (
           <Profile
@@ -486,14 +501,16 @@ async function handleLogout() {
         <ImportStatementModal
           formatAmount={formatAmount}
           onClose={() => setShowImport(false)}
-          onImported={({ imported_expenses, imported_income, ticked_checklist }) => {
+          onImported={({ imported_expenses, imported_income, ticked_checklist, statements_saved }) => {
             setShowImport(false);
+            setAccountsKey(k => k + 1);
             reloadExpenses({ silent: true });
             reloadIncome({ silent: true });
             if (ticked_checklist) reloadPlanner({ silent: true });
             showToast(
               `Imported ${imported_expenses} expense${imported_expenses === 1 ? "" : "s"} and ${imported_income} income` +
-              (ticked_checklist ? ` · ticked ${ticked_checklist} in Planner` : "")
+              (ticked_checklist ? ` · ticked ${ticked_checklist} in Planner` : "") +
+              (statements_saved ? ` · ${statements_saved} statement${statements_saved === 1 ? "" : "s"} saved to Accounts` : "")
             );
           }}
         />

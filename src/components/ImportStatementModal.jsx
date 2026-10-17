@@ -8,6 +8,8 @@ import { statementsAPI } from "../utils/api";
 // rows, then import the ones that are ticked. The backend guesses categories
 // and flags transfers (including ones between the user's own accounts across
 // statements) and likely duplicates; those start unticked.
+// Each statement is also saved to an account (detected, or chosen here) with
+// all of its rows, for the Accounts page.
 
 const EXPENSE_NAMES = CATEGORIES.map(c => c.name);
 const FILE_COLORS   = ["#0070f3", "#059669", "#d97706", "#db2777", "#0891b2", "#7c3aed"];
@@ -18,6 +20,45 @@ const selectStyle = {
   background: "var(--card)", color: "var(--text)", border: "1px solid var(--border)",
   borderRadius: 6, padding: "5px 6px", fontSize: 12, fontFamily: "inherit", maxWidth: 160,
 };
+
+const ACCOUNT_KINDS = [
+  { id: "chequing", label: "Chequing" }, { id: "savings", label: "Savings" },
+  { id: "credit_card", label: "Credit card" }, { id: "other", label: "Other" },
+];
+
+// Which account a statement belongs to: one of the user's accounts, or a new
+// one (named from what was detected, editable).
+function AccountPicker({ value, onChange, accounts, guesses }) {
+  const selected = value.id ? `a:${value.id}` : "new";
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+      <Icon name="landmark" size={12} style={{ color: "var(--muted)" }} />
+      <select style={selectStyle} value={selected} aria-label="Account"
+        onChange={e => {
+          const v = e.target.value;
+          if (v.startsWith("a:")) onChange({ id: Number(v.slice(2)) });
+          else if (v.startsWith("g:")) onChange({ ...guesses[Number(v.slice(2))] });
+          else onChange({ name: value.name || "", kind: value.kind || "other", institution: "", last4: "" });
+        }}>
+        {accounts.map(a => <option key={a.id} value={`a:${a.id}`}>{a.name}</option>)}
+        {guesses.map((g, i) => !value.id && g.name === value.name ? null :
+          <option key={`g${i}`} value={`g:${i}`}>New: {g.name}</option>)}
+        <option value="new">{value.id ? "New account…" : `New: ${value.name || "…"}`}</option>
+      </select>
+      {!value.id && (
+        <>
+          <input value={value.name} onChange={e => onChange({ ...value, name: e.target.value })}
+            placeholder="Account name" aria-label="New account name"
+            style={{ ...selectStyle, maxWidth: 190 }} />
+          <select style={selectStyle} value={value.kind} aria-label="Account type"
+            onChange={e => onChange({ ...value, kind: e.target.value })}>
+            {ACCOUNT_KINDS.map(k => <option key={k.id} value={k.id}>{k.label}</option>)}
+          </select>
+        </>
+      )}
+    </span>
+  );
+}
 
 function Badge({ color, children }) {
   return (
@@ -36,6 +77,7 @@ export default function ImportStatementModal({ onClose, onImported, formatAmount
   const [preview,  setPreview]  = useState(null);
   const [flips,    setFlips]    = useState({});          // file index -> purchases are positive
   const [edits,    setEdits]    = useState({});          // row id -> { include?, kind?, category?, title?, tick? }
+  const [assign,   setAssign]   = useState({});          // file index -> { id } | { name, kind, institution, last4 }
   const [dragOver, setDragOver] = useState(false);
   const fileInput = useRef(null);
 
@@ -50,6 +92,7 @@ export default function ImportStatementModal({ onClose, onImported, formatAmount
       const data = await statementsAPI.preview(files);
       setPreview(data);
       setFlips(Object.fromEntries(data.files.map((f, i) => [i, f.suggest_flip])));
+      setAssign(Object.fromEntries(data.files.map((f, i) => [i, f.account_id ? { id: f.account_id } : { ...f.account_guess }])));
       setEdits({});
       setStep("review");
     } catch (err) {
@@ -97,19 +140,36 @@ export default function ImportStatementModal({ onClose, onImported, formatAmount
   const expenses   = selected.filter(r => r.kind === "expense");
   const income     = selected.filter(r => r.kind === "income");
   const sum        = list => list.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
+  // Distinct new accounts detected across the files, so several statements
+  // can go to the same new account.
+  const guesses = useMemo(() => {
+    const seen = new Map();
+    (preview?.files || []).forEach(f => { if (!f.account_id && !seen.has(f.account_guess.name)) seen.set(f.account_guess.name, f.account_guess); });
+    return [...seen.values()];
+  }, [preview]);
+  const unnamed = preview ? preview.files.some((f, i) => !assign[i]?.id && !assign[i]?.name?.trim()) : false;
 
   async function handleImport() {
     setError("");
     setBusy(true);
     try {
-      const result = await statementsAPI.importRows(
-        "statement",
-        selected.map(r => ({
-          kind: r.kind, title: r.title.trim() || r.raw_description, amount: r.amount,
-          date: r.date, category: r.category, source: preview.files[r.file]?.filename,
-        })),
-        ticks.map(r => r.checklist_match.id),
-      );
+      const statements = preview.files.map((f, i) => ({
+        filename: f.filename, file_hash: f.file_hash,
+        period_start: f.period_start, period_end: f.period_end,
+        account: assign[i]?.id ? { id: assign[i].id } : { ...assign[i], name: assign[i].name.trim() },
+        transactions: rows.filter(r => r.file === i).map(r => {
+          const moneyOut = (parseFloat(r.signed_amount) < 0) !== !!flips[r.file];
+          const title = r.title.trim() || r.raw_description;
+          return {
+            date: r.date, description: r.raw_description, title,
+            amount: moneyOut ? `-${r.amount}` : r.amount,
+            category: r.kind === "expense" ? r.category : r.expense_category,
+            kind: r.transfer_match || r.is_transfer ? "transfer" : r.duplicate ? "duplicate" : "skipped",
+            ...(r.include ? { import: { kind: r.kind, title, category: r.category } } : {}),
+          };
+        }),
+      }));
+      const result = await statementsAPI.importStatements(statements, ticks.map(r => r.checklist_match.id));
       onImported(result);
     } catch (err) {
       setError(err.message || "Import failed — nothing was saved.");
@@ -174,6 +234,7 @@ export default function ImportStatementModal({ onClose, onImported, formatAmount
               <br />
               <strong>Tip:</strong> add all your accounts and cards for the same period together —
               money moved between your own accounts is then matched up and skipped, so it isn't counted twice.
+              Every statement is also kept under its account (see <em>Accounts</em>) with all its transactions.
               Nothing is saved until you review and confirm.
             </div>
           </>
@@ -194,7 +255,8 @@ export default function ImportStatementModal({ onClose, onImported, formatAmount
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 10 }}>
               {preview.files.map((f, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", fontSize: 12 }}>
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", fontSize: 12,
+                                      paddingBottom: 6, borderBottom: "1px solid var(--subtle2)" }}>
                   <span style={{ fontWeight: 700, color: FILE_COLORS[i % FILE_COLORS.length], display: "inline-flex", alignItems: "center", gap: 5 }}>
                     <Icon name="receipt" size={12} /> {f.filename}
                   </span>
@@ -209,6 +271,14 @@ export default function ImportStatementModal({ onClose, onImported, formatAmount
                       }} />
                     Purchases are positive numbers{f.suggest_flip ? " (detected)" : ""}
                   </label>
+                  <span style={{ color: "var(--muted)" }}>{f.period_start} – {f.period_end}</span>
+                  {assign[i] && (
+                    <AccountPicker value={assign[i]} accounts={preview.accounts || []} guesses={guesses}
+                      onChange={v => setAssign(prev => ({ ...prev, [i]: v }))} />
+                  )}
+                  {f.already_uploaded && (
+                    <Badge color="#d97706">Uploaded before ({f.already_uploaded.date}) — its rows are already on {f.already_uploaded.account}</Badge>
+                  )}
                 </div>
               ))}
             </div>
@@ -329,11 +399,12 @@ export default function ImportStatementModal({ onClose, onImported, formatAmount
                 <button className="btn-secondary" onClick={() => { setStep("upload"); setPreview(null); setError(""); }} disabled={busy}>
                   Choose another file
                 </button>
-                <button className="btn-primary" onClick={handleImport} disabled={busy || (selected.length === 0 && ticks.length === 0)}
+                <button className="btn-primary" onClick={handleImport} disabled={busy || rows.length === 0 || unnamed}
+                  title={unnamed ? "Name the new account for each statement" : undefined}
                   style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
                   {busy ? "Importing..." : selected.length
                     ? `Import ${selected.length} transaction${selected.length === 1 ? "" : "s"}`
-                    : `Tick ${ticks.length} Planner item${ticks.length === 1 ? "" : "s"}`}
+                    : `Save ${preview.files.length} statement${preview.files.length === 1 ? "" : "s"}`}
                 </button>
               </div>
             </div>
