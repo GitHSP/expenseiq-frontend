@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { authAPI }  from "../utils/api";
 import Icon, { IconLabel } from "../components/Icon";
+import SecurityTab from "../components/SecurityTab";
 
-export default function Profile({ user, onLogout }) {
+export default function Profile({ user, onLogout, onLogoutEverywhere }) {
   const [tab,         setTab]         = useState("profile");
   const [username,    setUsername]    = useState(user?.username || "");
   const [email] = useState(user?.email || "");
@@ -108,6 +109,7 @@ export default function Profile({ user, onLogout }) {
         {[
           { id:"profile",  label:"Profile",  icon:"user"    },
           { id:"password", label:"Password", icon:"lock"    },
+          { id:"security", label:"Security", icon:"shield-check" },
           { id:"danger",   label:"Danger",   icon:"warning" },
         ].map(t => (
           <button
@@ -236,6 +238,8 @@ export default function Profile({ user, onLogout }) {
         </div>
       )}
 
+      {tab === "security" && <SecurityTab />}
+
       {/* Danger zone tab */}
       {tab === "danger" && (
         <div className="card" style={{ border:"1.5px solid #fecdd3" }}>
@@ -257,10 +261,10 @@ export default function Profile({ user, onLogout }) {
           }}>
             <div>
               <div style={{ fontWeight:700, fontSize:13, color:"var(--text)" }}>Sign out of all devices</div>
-              <div style={{ fontSize:12, color:"var(--muted)", marginTop:2 }}>Logs you out everywhere</div>
+              <div style={{ fontSize:12, color:"var(--muted)", marginTop:2 }}>Ends every session — phone, laptop, everywhere — including this one</div>
             </div>
             <button
-              onClick={onLogout}
+              onClick={() => window.confirm("Sign out of Glacier on every device?") && (onLogoutEverywhere || onLogout)()}
               style={{
                 background:   "#fff1f2",
                 color:        "#e11d48",

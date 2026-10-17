@@ -1,23 +1,82 @@
 import { useState } from "react";
 import Icon from "../components/Icon";
 
-export default function Login({ onLogin, onGoToRegister, onGoToForgot, onGoHome }) {
+export default function Login({ onLogin, onTwoFactor, onGoToRegister, onGoToForgot, onGoHome }) {
   const [email,    setEmail]    = useState("");
   const [password, setPassword] = useState("");
   const [error,    setError]    = useState("");
   const [loading,  setLoading]  = useState(false);
+  const [mfaToken, setMfaToken] = useState(null);   // set when a code is needed
+  const [code,     setCode]     = useState("");
+  const [useBackup, setUseBackup] = useState(false);
 
   async function handleSubmit() {
     if (!email || !password) { setError("Please fill in all fields"); return; }
     setError("");
     setLoading(true);
     try {
-      await onLogin(email, password);
+      const result = await onLogin(email, password);
+      if (result?.mfa_required) setMfaToken(result.mfa_token);
     } catch (err) {
       setError(err.message || "Invalid email or password");
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleCode() {
+    if (!code.trim()) { setError("Enter the code from your authenticator app"); return; }
+    setError("");
+    setLoading(true);
+    try {
+      await onTwoFactor(mfaToken, code.trim());
+    } catch (err) {
+      setError(err.message || "That code didn't work");
+      if (/expired|password again/i.test(err.message || "")) { setMfaToken(null); setCode(""); }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (mfaToken) {
+    return (
+      <div style={styles.page}>
+        <div style={styles.card}>
+          <div style={styles.logo}><Icon name="shield-check" size={26} /></div>
+          <div style={styles.title}>Two-factor sign-in</div>
+          <div style={styles.subtitle}>
+            {useBackup ? "Enter one of your backup codes" : "Enter the 6-digit code from your authenticator app"}
+          </div>
+          {error && <div style={styles.error}>{error}</div>}
+          <div style={styles.formGroup}>
+            <label style={styles.label} htmlFor="mfa-code">{useBackup ? "Backup code" : "Code"}</label>
+            <input
+              id="mfa-code"
+              style={{ ...styles.input, letterSpacing: useBackup ? "1px" : "6px", fontSize: "20px", textAlign: "center" }}
+              inputMode={useBackup ? "text" : "numeric"}
+              autoComplete="one-time-code"
+              autoFocus
+              maxLength={useBackup ? 14 : 6}
+              placeholder={useBackup ? "xxxx-xxxx-xxxx" : "123456"}
+              value={code}
+              onChange={e => setCode(useBackup ? e.target.value : e.target.value.replace(/\D/g, ""))}
+              onKeyDown={e => e.key === "Enter" && handleCode()}
+            />
+          </div>
+          <button style={{ ...styles.btn, opacity: loading ? 0.7 : 1 }} onClick={handleCode} disabled={loading}>
+            {loading ? "Checking..." : "Verify"}
+          </button>
+          <div style={{ textAlign: "center", marginTop: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
+            <span style={styles.link} onClick={() => { setUseBackup(b => !b); setCode(""); setError(""); }}>
+              {useBackup ? "Use my authenticator app instead" : "Lost your phone? Use a backup code"}
+            </span>
+            <span style={{ ...styles.link, color: "var(--muted)" }} onClick={() => { setMfaToken(null); setCode(""); setError(""); }}>
+              Back to sign in
+            </span>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

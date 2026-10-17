@@ -42,7 +42,7 @@ import Icon               from "./components/Icon";
 export default function App() {
 
   // ── Auth ──────────────────────────────────
-  const { user, loading, login, register, logout, isLoggedIn } = useAuth();
+  const { user, loading, login, loginTwoFactor, register, logout, logoutEverywhere, isLoggedIn } = useAuth();
   const [authView, setAuthView] = useState("landing");
   function goToAuthView(next) {
     setAuthView(next);
@@ -174,8 +174,17 @@ useEffect(() => {
     return (
       <Login
         onLogin={async (email, password) => {
-          await login(email, password);
-          showToast("Welcome back!");
+          const result = await login(email, password);
+          if (!result.mfa_required) showToast("Welcome back!");
+          return result;
+        }}
+        onTwoFactor={async (mfaToken, code) => {
+          const result = await loginTwoFactor(mfaToken, code);
+          if (result.backup_codes_left !== undefined) {
+            showToast(`Signed in with a backup code — ${result.backup_codes_left} left`);
+          } else {
+            showToast("Welcome back!");
+          }
         }}
         onGoToRegister={() => goToAuthView("register")}
         onGoToForgot={()  => goToAuthView("forgot-password")}
@@ -407,6 +416,11 @@ async function handleLogout() {
           <Profile
             user={user}
             onLogout={handleLogout}
+            onLogoutEverywhere={async () => {
+              await logoutEverywhere();
+              setAuthView("landing");
+              showToast("Signed out on every device");
+            }}
           />
         );
 

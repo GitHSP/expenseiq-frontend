@@ -32,12 +32,30 @@ export function useAuth() {
     return () => window.removeEventListener("auth:expired", onExpired);
   }, []);
 
-  async function login(email, password) {
-    const data = await authAPI.login(email, password);
+  function startSession(data) {
     localStorage.setItem("access_token",  data.access_token);
     localStorage.setItem("refresh_token", data.refresh_token);
     setUser(data.user);
     return data;
+  }
+
+  // Returns { mfa_required, mfa_token } when two-factor is on; the caller
+  // then asks for a code and calls loginTwoFactor.
+  async function login(email, password) {
+    const data = await authAPI.login(email, password);
+    if (data.mfa_required) return data;
+    return startSession(data);
+  }
+
+  async function loginTwoFactor(mfaToken, code) {
+    return startSession(await authAPI.loginTwoFactor(mfaToken, code));
+  }
+
+  async function logoutEverywhere() {
+    try { await authAPI.logoutAll(); } catch {}
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    setUser(null);
   }
 
   async function register(email, username, password, password2) {
@@ -64,6 +82,8 @@ export function useAuth() {
     user,
     loading,
     login,
+    loginTwoFactor,
+    logoutEverywhere,
     register,
     logout,
     isLoggedIn: !!user,

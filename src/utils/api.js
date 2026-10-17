@@ -94,6 +94,20 @@ export const authAPI = {
     });
     return handleResponse(res);
   },
+  // Second login step when two-factor is on.
+  loginTwoFactor: async (mfaToken, code) => {
+    const res = await fetch(`${BASE_URL}/auth/login/2fa/`, {
+      method: "POST", headers: getHeaders(false),
+      body: JSON.stringify({ mfa_token: mfaToken, code }),
+    });
+    return handleResponse(res);
+  },
+  logoutAll: async () => {
+    const res = await authFetch(`${BASE_URL}/auth/logout-all/`, {
+      method: "POST", headers: getHeaders(true),
+    });
+    return handleResponse(res);
+  },
   me: async () => {
     const res = await authFetch(`${BASE_URL}/auth/me/`, {
       method: "GET", headers: getHeaders(true),
@@ -131,6 +145,25 @@ export const authAPI = {
     }
     return data;
   },
+};
+
+// ─────────────────────────────────────────────
+// TWO-FACTOR (authenticator app)
+// ─────────────────────────────────────────────
+export const twoFactorAPI = {
+  status: async () => handleResponse(await authFetch(`${BASE_URL}/auth/2fa/`, { headers: getHeaders(true) })),
+  // Returns { qr_svg, secret, otpauth_uri } — not active until confirmed.
+  setup: async () => handleResponse(await authFetch(`${BASE_URL}/auth/2fa/`, { method: "POST", headers: getHeaders(true) })),
+  // Returns { enabled: true, backup_codes: [...] }.
+  confirm: async (code) => handleResponse(await authFetch(`${BASE_URL}/auth/2fa/`, {
+    method: "PUT", headers: getHeaders(true), body: JSON.stringify({ code }),
+  })),
+  disable: async (password, code) => handleResponse(await authFetch(`${BASE_URL}/auth/2fa/`, {
+    method: "DELETE", headers: getHeaders(true), body: JSON.stringify({ password, code }),
+  })),
+  newBackupCodes: async (code) => handleResponse(await authFetch(`${BASE_URL}/auth/2fa/backup-codes/`, {
+    method: "POST", headers: getHeaders(true), body: JSON.stringify({ code }),
+  })),
 };
 
 // ─────────────────────────────────────────────
