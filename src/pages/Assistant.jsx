@@ -55,11 +55,15 @@ function Heads({ onAsk }) {
 // Light formatting for Aurora's replies: **bold**, "- " bullet lists and
 // "| a | b |" tables. Built from React elements (text is never parsed as
 // HTML), so anything in a reply is shown, not run.
+// Markdown escapes ("upg\*paymentico") are shown without the backslash.
+const unescape = s => s.replace(/\\([*_#|`[\]()>~-])/g, "$1");
+
 function Inline({ text }) {
-  return String(text).split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
+  // Bold first (it may contain escaped stars), then everything else.
+  return String(text).split(/(\*\*(?:\\.|[^*\\])+\*\*)/g).map((part, i) =>
     part.startsWith("**") && part.endsWith("**") && part.length > 4
-      ? <strong key={i}>{part.slice(2, -2)}</strong>
-      : <span key={i}>{part.replace(/(^|\s)\*([^*\s][^*]*)\*(?=\s|$)/g, "$1$2")}</span>);
+      ? <strong key={i}>{unescape(part.slice(2, -2))}</strong>
+      : <span key={i}>{unescape(part.replace(/(^|\s)\*([^*\s][^*]*)\*(?=\s|$)/g, "$1$2"))}</span>);
 }
 
 function RichText({ text }) {
@@ -151,7 +155,7 @@ function ActionChips({ actions }) {
   );
 }
 
-function MessageBubble({ message }) {
+function MessageBubble({ message, onRetry, canRetry }) {
   const isUser = message.role === "user";
   return (
     <div style={{
@@ -177,6 +181,14 @@ function MessageBubble({ message }) {
         )}
         {message.isError ? stripEmoji(message.content) : isUser ? message.content : <RichText text={message.content} />}
         {!isUser && <ActionChips actions={message.actions} />}
+        {message.isError && message.retryText && canRetry && (
+          <button onClick={() => onRetry(message.retryText)}
+            style={{ display: "inline-flex", alignItems: "center", gap: 5, marginTop: 8, fontSize: 12, fontWeight: 700,
+                     color: "#0070f3", background: "rgba(0,112,243,0.08)", border: "1px solid rgba(0,112,243,0.25)",
+                     borderRadius: 8, padding: "5px 10px", cursor: "pointer", fontFamily: "inherit" }}>
+            <Icon name="refresh" size={12} /> Retry
+          </button>
+        )}
       </div>
     </div>
   );
@@ -401,8 +413,12 @@ export default function Assistant({ onActionsTaken, onClose }) {
           </div>
         ) : (
           <>
-            {messages.map((m) => (
-              <MessageBubble key={m.id} message={m} />
+            {messages.map((m, i) => (
+              <MessageBubble key={m.id} message={m} canRetry={i === messages.length - 1 && !sending}
+                onRetry={async text => {
+                  const data = await sendMessage(text, { retry: true });
+                  if (data?.actions?.length && onActionsTaken) onActionsTaken(data.actions);
+                }} />
             ))}
             {sending && (
               <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: 14 }}>

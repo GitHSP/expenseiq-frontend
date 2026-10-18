@@ -111,26 +111,35 @@ export function useAssistant() {
     return record;
   }, [pushToSync]);
 
-  const sendMessage = useCallback(async (text) => {
+  // `retry`: ask again after a failed reply, without adding the question twice.
+  const sendMessage = useCallback(async (text, { retry = false } = {}) => {
     const trimmed = (text || "").trim();
     if (!trimmed || sending || !dekRef.current) return null;
 
     setError(null);
-    await saveMessage({ role: "user", content: trimmed });
+    if (!retry) await saveMessage({ role: "user", content: trimmed });
     setSending(true);
 
     try {
       const historyRecords = await getAllMessages();
       const decrypted = await Promise.all(historyRecords.map(r => decryptRecord(dekRef.current, r)));
-      const history = decrypted.map(m => ({ role: m.role, content: m.content }));
+      // Error notes aren't part of the conversation, and the last 30
+      // messages are plenty of context (and keep requests quick).
+      const history = decrypted.filter(m => !m.isError).map(m => ({ role: m.role, content: m.content })).slice(-30);
+      while (history.length && history[0].role !== "user") history.shift();
       const data = await assistantAPI.chat(history);
 
       await saveMessage({ role: "assistant", content: data.reply || "Done.", actions: data.actions || [] });
       return data;
     } catch (err) {
-      const message = err.message || "Something went wrong talking to the assistant.";
+      // Safari says "Load failed", Chrome "Failed to fetch": the connection
+      // dropped or the server took too long / was restarting.
+      const network = err instanceof TypeError || /load failed|failed to fetch|networkerror/i.test(err.message || "");
+      const message = network
+        ? "Couldn't reach Glacier — the connection dropped or the server took too long. Tap Retry to ask again."
+        : err.message || "Something went wrong talking to the assistant.";
       setError(message);
-      await saveMessage({ role: "assistant", content: message, isError: true });
+      await saveMessage({ role: "assistant", content: message, isError: true, retryText: trimmed });
       return null;
     } finally {
       setSending(false);
