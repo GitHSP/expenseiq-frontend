@@ -113,6 +113,11 @@ useEffect(() => {
     if (touches("add_income")) {
       reloadIncome({ silent: true });
     }
+    if (touches("add_rule")) {          // rules can rename, recategorise or remove imported entries
+      reloadExpenses({ silent: true });
+      reloadIncome({ silent: true });
+      setAccountsKey(k => k + 1);
+    }
     if (touches(
       "add_debt", "update_debt", "delete_debt", "update_emergency_fund",
       "add_checklist_item", "toggle_checklist_item", "delete_checklist_item",

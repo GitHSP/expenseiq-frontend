@@ -470,6 +470,8 @@ export const financialPlannerAPI = {
 // Stateless proxy — sends the full message history the frontend owns
 // (from IndexedDB) on every call; the backend never stores it.
 export const assistantAPI = {
+  // What Aurora would flag right now (price rises, fees, cards near limit...).
+  alerts: async () => handleResponse(await authFetch(`${BASE_URL}/assistant/alerts/`, { headers: getHeaders(true) })),
   chat: async (messages) => {
     const res = await authFetch(`${BASE_URL}/assistant/chat/`, {
       method: "POST", headers: getHeaders(true),

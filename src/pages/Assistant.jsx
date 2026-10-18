@@ -1,13 +1,56 @@
 import { useState, useRef, useEffect } from "react";
 import { useAssistant } from "../hooks/useAssistant";
 import Icon, { stripEmoji } from "../components/Icon";
+import { assistantAPI } from "../utils/api";
 
 const SUGGESTIONS = [
+  "How did my last month go?",
+  "Which card should I pay first, and how much?",
   "How much did I spend on coffee, and on which card?",
-  "What did I spend at Amazon in September?",
-  "How much do I owe on my cards, and when is it due?",
-  "I spent $12 on lunch today",
+  "Keep my dining under $300 a month",
 ];
+
+const ALERT_COLORS = { danger: "#e11d48", warning: "#d97706", info: "#0070f3" };
+
+// Things Aurora would flag right now, shown before the first message.
+function Heads({ onAsk }) {
+  const [alerts, setAlerts] = useState([]);
+  useEffect(() => {
+    let alive = true;
+    assistantAPI.alerts().then(d => alive && setAlerts(d.alerts || [])).catch(() => {});
+    return () => { alive = false; };
+  }, []);
+  if (!alerts.length) return null;
+  return (
+    <div style={{ maxWidth: 420, margin: "0 auto 14px", border: "1px solid var(--border)", borderRadius: 10,
+                  background: "var(--card)", overflow: "hidden" }}>
+      <div style={{ padding: "8px 12px", fontSize: 12, fontWeight: 700, color: "var(--muted)", display: "flex",
+                    alignItems: "center", gap: 6, borderBottom: "1px solid var(--subtle2)" }}>
+        <Icon name="bell" size={13} /> Worth a look
+      </div>
+      {alerts.slice(0, 4).map((a, i) => (
+        <button key={i} onClick={() => onAsk(`Tell me more about this: ${a.title}`)}
+          style={{ display: "block", width: "100%", textAlign: "left", padding: "8px 12px", background: "transparent",
+                   border: "none", borderTop: i ? "1px solid var(--subtle2)" : "none", cursor: "pointer",
+                   fontFamily: "inherit", color: "var(--text)" }}>
+          <div style={{ fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ width: 7, height: 7, borderRadius: 4, background: ALERT_COLORS[a.severity] || "#64748b", flexShrink: 0 }} />
+            {a.title}
+          </div>
+          <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 2, marginLeft: 13, display: "-webkit-box",
+                        WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{a.detail}</div>
+        </button>
+      ))}
+      {alerts.length > 4 && (
+        <button onClick={() => onAsk("What needs my attention?")}
+          style={{ width: "100%", padding: "7px 12px", fontSize: 12, color: "#0070f3", background: "transparent",
+                   border: "none", borderTop: "1px solid var(--subtle2)", cursor: "pointer", fontFamily: "inherit" }}>
+          {alerts.length - 4} more — ask Aurora
+        </button>
+      )}
+    </div>
+  );
+}
 
 // Light formatting for Aurora's replies: **bold**, "- " bullet lists and
 // "| a | b |" tables. Built from React elements (text is never parsed as
@@ -331,6 +374,7 @@ export default function Assistant({ onActionsTaken, onClose }) {
           </div>
         ) : messages.length === 0 ? (
           <div style={{ padding: "24px 8px" }}>
+            <Heads onAsk={handleSend} />
             <div style={{ color: "var(--muted)", fontSize: 14, marginBottom: 14, textAlign: "center" }}>
               <Icon name="wave" size={15} style={{ marginRight: 6, verticalAlign: "-2px" }} />Hi! I'm Aurora, your money assistant. Try something like:
             </div>
