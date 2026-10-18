@@ -3,11 +3,83 @@ import { useAssistant } from "../hooks/useAssistant";
 import Icon, { stripEmoji } from "../components/Icon";
 
 const SUGGESTIONS = [
+  "How much did I spend on coffee, and on which card?",
+  "What did I spend at Amazon in September?",
+  "How much do I owe on my cards, and when is it due?",
   "I spent $12 on lunch today",
-  "Add my Visa, $2000 at 22%, minimum $60",
-  "How much debt do I have left?",
-  "Mark my rent payment as paid",
 ];
+
+// Light formatting for Aurora's replies: **bold**, "- " bullet lists and
+// "| a | b |" tables. Built from React elements (text is never parsed as
+// HTML), so anything in a reply is shown, not run.
+function Inline({ text }) {
+  return String(text).split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
+    part.startsWith("**") && part.endsWith("**") && part.length > 4
+      ? <strong key={i}>{part.slice(2, -2)}</strong>
+      : <span key={i}>{part.replace(/(^|\s)\*([^*\s][^*]*)\*(?=\s|$)/g, "$1$2")}</span>);
+}
+
+function RichText({ text }) {
+  const lines = String(text || "").split("\n");
+  const blocks = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (/^\s*\|.*\|\s*$/.test(line)) {
+      const rows = [];
+      while (i < lines.length && /^\s*\|.*\|\s*$/.test(lines[i])) {
+        if (!/^\s*\|[\s:|-]+\|\s*$/.test(lines[i])) rows.push(lines[i].trim().slice(1, -1).split("|").map(c => c.trim()));
+        i++;
+      }
+      i--;
+      blocks.push({ type: "table", rows });
+    } else if (/^\s*([-•*]|\d+\.)\s+/.test(line)) {
+      const items = [];
+      while (i < lines.length && /^\s*([-•*]|\d+\.)\s+/.test(lines[i])) {
+        items.push(lines[i].replace(/^\s*([-•*]|\d+\.)\s+/, ""));
+        i++;
+      }
+      i--;
+      blocks.push({ type: "list", items });
+    } else {
+      blocks.push({ type: "text", text: line.replace(/^#{1,4}\s+/, "") , heading: /^#{1,4}\s+/.test(line) });
+    }
+  }
+  return blocks.map((b, i) => {
+    if (b.type === "table") {
+      return (
+        <div key={i} style={{ overflowX: "auto", margin: "6px 0" }}>
+          <table style={{ borderCollapse: "collapse", fontSize: 13, width: "100%" }}>
+            <tbody>
+              {b.rows.map((r, ri) => (
+                <tr key={ri} style={{ borderTop: ri ? "1px solid var(--subtle2)" : "none" }}>
+                  {r.map((c, ci) => {
+                    const Cell = ri === 0 ? "th" : "td";
+                    return (
+                      <Cell key={ci} style={{ padding: "4px 8px 4px 0", textAlign: ci && /^[-−]?[A-Z$€£₹]*\$?[\d,.]+/.test(c) ? "right" : "left",
+                                             fontWeight: ri === 0 ? 700 : 400, whiteSpace: ci ? "nowrap" : "normal" }}>
+                        <Inline text={c} />
+                      </Cell>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+    if (b.type === "list") {
+      return (
+        <ul key={i} style={{ margin: "4px 0", paddingLeft: 18 }}>
+          {b.items.map((it, ii) => <li key={ii} style={{ margin: "2px 0" }}><Inline text={it} /></li>)}
+        </ul>
+      );
+    }
+    return b.text.trim() === ""
+      ? <div key={i} style={{ height: 6 }} />
+      : <div key={i} style={b.heading ? { fontWeight: 700, marginTop: 4 } : undefined}><Inline text={b.text} /></div>;
+  });
+}
 
 function ActionChips({ actions }) {
   if (!actions || actions.length === 0) return null;
@@ -54,13 +126,13 @@ function MessageBubble({ message }) {
         boxShadow:    `0 1px 2px var(--shadow)`,
         fontSize:     14,
         lineHeight:   1.5,
-        whiteSpace:   "pre-wrap",
+        whiteSpace:   isUser ? "pre-wrap" : "normal",
         wordBreak:    "break-word",
       }}>
         {message.isError && (
           <Icon name="warning" size={14} color="#d97706" style={{ marginRight: 6, verticalAlign: "-2px" }} />
         )}
-        {message.isError ? stripEmoji(message.content) : message.content}
+        {message.isError ? stripEmoji(message.content) : isUser ? message.content : <RichText text={message.content} />}
         {!isUser && <ActionChips actions={message.actions} />}
       </div>
     </div>
