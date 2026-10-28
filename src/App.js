@@ -386,6 +386,8 @@ async function handleLogout() {
       case "payments":
         return (
           <FinancialPlanner
+            currency={currency}
+            getRate={getRate}
             debts={debts}
             recurring={recurring}
             emergencyFund={emergencyFund}

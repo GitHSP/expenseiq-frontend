@@ -1,5 +1,7 @@
 import { useState } from "react";
 import Icon, { IconLabel } from "./Icon";
+import UnitSelect from "./UnitSelect";
+import { moneyUnit } from "../utils/money";
 
 // Payments and income that repeat every month. Each month's checklist is
 // built from this list plus the user's debts (the backend handles that), so
@@ -43,8 +45,9 @@ function ordinal(n) {
 export default function RecurringTab({
   recurring, debts, emergencyFund,
   addRecurring, updateRecurring, deleteRecurring,
-  fmt, showMsg,
+  fmt, showMsg, unit = "CAD", setUnit = () => {}, getRate = c => (c === "CAD" ? 1 : null),
 }) {
+  const money = moneyUnit(unit, getRate);
   const [form,      setForm]      = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState(null);
   const [showForm,  setShowForm]  = useState(false);
@@ -72,7 +75,7 @@ export default function RecurringTab({
   function openEdit(item) {
     setForm({
       label:         item.label,
-      amount:        item.amount,
+      amount:        money.fromCAD(item.amount),
       due_day:       item.due_day ?? "",
       category:      item.category,
       is_auto_debit: item.is_auto_debit,
@@ -88,7 +91,7 @@ export default function RecurringTab({
     }
     const data = {
       label:         form.label.trim(),
-      amount:        num(form.amount).toFixed(2),
+      amount:        money.toCAD(form.amount).toFixed(2),
       due_day:       form.due_day === "" ? null : parseInt(form.due_day, 10),
       category:      form.category,
       is_auto_debit: form.category === "auto_debit" || form.is_auto_debit,
@@ -183,7 +186,10 @@ export default function RecurringTab({
                 onChange={e => setForm(p => ({ ...p, label: e.target.value }))} />
             </div>
             <div className="form-group">
-              <label style={labelStyle}>Amount per month *</label>
+              <label style={{ ...labelStyle, display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
+                Amount per month *
+                <UnitSelect unit={money.unit} onChange={setUnit} getRate={getRate} style={{ textTransform: "none", letterSpacing: 0 }} />
+              </label>
               <input style={inputStyle} type="number" inputMode="decimal" placeholder="0.00" value={form.amount}
                 onChange={e => setForm(p => ({ ...p, amount: e.target.value }))} />
             </div>

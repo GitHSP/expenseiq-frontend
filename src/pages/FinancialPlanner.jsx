@@ -1,7 +1,9 @@
-import { useState }                from "react";
+import { useEffect, useState }     from "react";
 import ChecklistConfirmModal       from "../components/ChecklistConfirmModal";
 import RecurringTab                from "../components/RecurringTab";
 import Icon, { IconLabel, stripEmoji } from "../components/Icon";
+import UnitSelect from "../components/UnitSelect";
+import { moneyUnit } from "../utils/money";
 
 const C = {
   blue:    "#0070f3",
@@ -78,7 +80,12 @@ export default function FinancialPlanner({
   addChecklistItem, toggleChecklistItem, deleteChecklistItem,
   rolloverToNextMonth, generateChecklist,
   formatAmount, onAddExpense,
+  currency = "CAD", getRate = c => (c === "CAD" ? 1 : null),
 }) {
+  // Amounts in these forms are typed in this currency and saved in CAD.
+  const [unit, setUnit] = useState(currency);
+  useEffect(() => { setUnit(currency); }, [currency]);      // follow the app's currency
+  const money = moneyUnit(unit, getRate);
   const [activeTab,    setActiveTab]    = useState("debts");
   const [showDebtForm, setShowDebtForm] = useState(false);
   const [editingDebt,  setEditingDebt]  = useState(null);
@@ -127,10 +134,10 @@ export default function FinancialPlanner({
     setDebtForm({
       name:                debt.name,
       debt_type:           debt.debt_type,
-      current_balance:     debt.current_balance,
+      current_balance:     money.fromCAD(debt.current_balance),
       annual_interest_rate:debt.annual_interest_rate,
-      minimum_payment:     debt.minimum_payment,
-      credit_limit:        debt.credit_limit || "",
+      minimum_payment:     money.fromCAD(debt.minimum_payment),
+      credit_limit:        debt.credit_limit ? money.fromCAD(debt.credit_limit) : "",
       due_day:             debt.due_day || "",
       avalanche_order:     debt.avalanche_order,
       notes:               debt.notes || "",
@@ -147,10 +154,10 @@ export default function FinancialPlanner({
     try {
       const payload = {
         ...debtForm,
-        current_balance:      parseFloat(debtForm.current_balance)      || 0,
+        current_balance:      money.toCAD(debtForm.current_balance)     || 0,
         annual_interest_rate: parseFloat(debtForm.annual_interest_rate) || 0,
-        minimum_payment:      parseFloat(debtForm.minimum_payment)      || 0,
-        credit_limit:         debtForm.credit_limit ? parseFloat(debtForm.credit_limit) : null,
+        minimum_payment:      money.toCAD(debtForm.minimum_payment)     || 0,
+        credit_limit:         debtForm.credit_limit ? money.toCAD(debtForm.credit_limit) : null,
         due_day:              debtForm.due_day ? parseInt(debtForm.due_day) : null,
         avalanche_order:      parseInt(debtForm.avalanche_order) || 1,
       };
@@ -252,7 +259,7 @@ export default function FinancialPlanner({
     try {
       await addChecklistItem({
         ...itemForm,
-        amount:  itemForm.amount  ? parseFloat(itemForm.amount)  : null,
+        amount:  itemForm.amount  ? money.toCAD(itemForm.amount)  : null,
         due_day: itemForm.due_day ? parseInt(itemForm.due_day)   : null,
       });
       setItemForm({ label:"", amount:"", category:"debt_min", due_day:"", is_auto_debit:false, sort_order:0 });
@@ -276,7 +283,7 @@ export default function FinancialPlanner({
 
   async function handleUpdateFund() {
     try {
-      await updateEmergencyFund({ current_balance: parseFloat(fundBalance) || 0 });
+      await updateEmergencyFund({ current_balance: money.toCAD(fundBalance) || 0 });
       setEditingFund(false);
       showMsg("Emergency fund updated!");
     } catch (err) {
@@ -456,7 +463,10 @@ export default function FinancialPlanner({
                   </select>
                 </div>
                 <div className="form-group">
-                  <label style={labelStyle}>Current Balance ($) *</label>
+                  <label style={{ ...labelStyle, display:"flex", justifyContent:"space-between", gap:8, flexWrap:"wrap" }}>
+                    Current Balance *
+                    <UnitSelect unit={money.unit} onChange={setUnit} getRate={getRate} style={{ textTransform:"none", letterSpacing:0 }} />
+                  </label>
                   <input style={inputStyle} type="number" inputMode="decimal" placeholder="0.00" value={debtForm.current_balance} onChange={e => setDebtForm(p => ({ ...p, current_balance:e.target.value }))} />
                 </div>
                 <div className="form-group">
@@ -600,7 +610,10 @@ export default function FinancialPlanner({
                   <input style={inputStyle} placeholder="e.g. Pay CIBC minimum" value={itemForm.label} onChange={e => setItemForm(p => ({ ...p, label:e.target.value }))} />
                 </div>
                 <div className="form-group">
-                  <label style={labelStyle}>Amount ($)</label>
+                  <label style={{ ...labelStyle, display:"flex", justifyContent:"space-between", gap:8, flexWrap:"wrap" }}>
+                    Amount
+                    <UnitSelect unit={money.unit} onChange={setUnit} getRate={getRate} style={{ textTransform:"none", letterSpacing:0 }} />
+                  </label>
                   <input style={inputStyle} type="number" inputMode="decimal" placeholder="Optional" value={itemForm.amount} onChange={e => setItemForm(p => ({ ...p, amount:e.target.value }))} />
                 </div>
                 <div className="form-group">
@@ -749,6 +762,9 @@ export default function FinancialPlanner({
           deleteRecurring={deleteRecurring}
           fmt={fmt}
           showMsg={showMsg}
+          unit={money.unit}
+          setUnit={setUnit}
+          getRate={getRate}
         />
       )}
 
@@ -761,7 +777,7 @@ export default function FinancialPlanner({
             <div className="card">
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20, flexWrap:"wrap", gap:10 }}>
                 <div className="card-title"><IconLabel name="shield" size={16}>Emergency Fund</IconLabel></div>
-                <button className="btn-primary" style={{ padding:"7px 16px", fontSize:12, display:"inline-flex", alignItems:"center", gap:5 }} onClick={() => { setFundBalance(emergencyFund.current_balance); setEditingFund(true); }}>
+                <button className="btn-primary" style={{ padding:"7px 16px", fontSize:12, display:"inline-flex", alignItems:"center", gap:5 }} onClick={() => { setFundBalance(money.fromCAD(emergencyFund.current_balance)); setEditingFund(true); }}>
                   <Icon name="pencil" size={12} /> Update Balance
                 </button>
               </div>
@@ -817,7 +833,10 @@ export default function FinancialPlanner({
 
               {editingFund && (
                 <div style={{ background:"var(--bg)", borderRadius:10, padding:14, border:"1px solid var(--border)", marginTop:8 }}>
-                  <div style={{ fontWeight:700, fontSize:13, marginBottom:10 }}>Update Balance</div>
+                  <div style={{ fontWeight:700, fontSize:13, marginBottom:10, display:"flex", justifyContent:"space-between", gap:8, flexWrap:"wrap" }}>
+                    Update Balance
+                    <UnitSelect unit={money.unit} onChange={setUnit} getRate={getRate} />
+                  </div>
                   <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
                     <input style={{ ...inputStyle, flex:1, minWidth:120 }} type="number" inputMode="decimal" placeholder="New balance..." value={fundBalance} onChange={e => setFundBalance(e.target.value)} />
                     <button className="btn-primary" onClick={handleUpdateFund} style={{ padding:"10px 20px" }}>Save</button>
