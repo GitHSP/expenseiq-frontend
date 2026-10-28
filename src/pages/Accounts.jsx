@@ -856,6 +856,90 @@ function CardsTab({ accounts, debts, fmt, onChanged }) {
 }
 
 // ─────────────────────────────────────────────
+// Rules (the same ones Aurora can set): rename, recategorise, or say what
+// a transfer really is — e.g. a roommate paying their share of the bills.
+// ─────────────────────────────────────────────
+
+const RULE_TYPES = [
+  { id: "shared",   label: "Pays their share of my bills (not income)" },
+  { id: "transfer", label: "My own account (not spending or income)" },
+  { id: "spending", label: "Real spending / income" },
+  { id: "",         label: "Just rename / recategorise" },
+];
+
+function RulesPanel({ onChanged }) {
+  const [rules, setRules] = useState([]);
+  const [form, setForm] = useState({ match: "", treat_as: "shared", rename_to: "" });
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+  const [err, setErr] = useState("");
+
+  const load = useCallback(() => accountsAPI.rules().then(d => setRules(d.rules || [])).catch(() => {}), []);
+  useEffect(() => { load(); }, [load]);
+
+  async function add(e) {
+    e.preventDefault();
+    setBusy(true); setErr(""); setMsg("");
+    try {
+      const r = await accountsAPI.addRule({ match: form.match.trim(), treat_as: form.treat_as, rename_to: form.rename_to.trim() });
+      setMsg(r.message || "Saved.");
+      setForm(f => ({ ...f, match: "", rename_to: "" }));
+      await load();
+      onChanged?.();
+    } catch (e2) { setErr(e2.message || "Couldn't save the rule"); }
+    finally { setBusy(false); }
+  }
+
+  async function remove(id) {
+    setBusy(true); setErr("");
+    try { await accountsAPI.deleteRule(id); await load(); onChanged?.(); }
+    catch (e2) { setErr(e2.message || "Couldn't delete"); }
+    finally { setBusy(false); }
+  }
+
+  const label = t => (RULE_TYPES.find(x => x.id === t) || RULE_TYPES[3]).label;
+  return (
+    <div className="card" style={{ marginBottom: 20 }}>
+      <div className="card-title" style={{ marginBottom: 4, display: "flex", alignItems: "center", gap: 8 }}>
+        <Icon name="list-checks" size={16} /> Rules
+      </div>
+      <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 12, lineHeight: 1.5 }}>
+        Anything whose description mentions the text follows the rule — what's already imported and every future
+        upload. E.g. a roommate's name as it appears on their e-transfers → "Pays their share of my bills".
+      </div>
+      <form onSubmit={add} style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+        <input value={form.match} onChange={e => setForm(f => ({ ...f, match: e.target.value }))}
+          placeholder="Text to match, e.g. rahul" aria-label="Text to match" style={{ ...selectStyle, flex: "1 1 160px" }} />
+        <select value={form.treat_as} onChange={e => setForm(f => ({ ...f, treat_as: e.target.value }))}
+          aria-label="What it is" style={{ ...selectStyle, flex: "1 1 220px" }}>
+          {RULE_TYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+        </select>
+        <input value={form.rename_to} onChange={e => setForm(f => ({ ...f, rename_to: e.target.value }))}
+          placeholder="Rename to (optional)" aria-label="Rename to" style={{ ...selectStyle, flex: "1 1 140px" }} />
+        <button className="btn-primary" disabled={busy || form.match.trim().length < 3} style={{ padding: "8px 14px" }}>
+          {busy ? "Saving..." : "Add rule"}
+        </button>
+      </form>
+      {msg && <div style={{ fontSize: 12, color: "#059669", marginBottom: 8 }}>{msg}</div>}
+      {err && <div style={{ fontSize: 12, color: "#e11d48", marginBottom: 8 }}>{err}</div>}
+      {rules.map(r => (
+        <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0",
+                                 borderTop: "1px solid var(--subtle2)", fontSize: 13, flexWrap: "wrap" }}>
+          <strong style={{ minWidth: 90 }}>"{r.match}"</strong>
+          <span style={{ color: "var(--muted2)", flex: 1, minWidth: 160 }}>
+            {label(r.treat_as)}{r.rename_to ? ` · shown as "${r.rename_to}"` : ""}{r.category ? ` · ${r.category}` : ""}
+          </span>
+          <button className="btn-ghost" style={{ padding: "4px 8px", color: "#e11d48" }} disabled={busy}
+            aria-label={`Delete rule ${r.match}`} onClick={() => remove(r.id)}>
+            <Icon name="trash" size={13} />
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
 
 export default function Accounts({ formatAmount, onImport, refreshKey, onEntriesDeleted, onDebtsChanged }) {
   const [tab, setTab] = useState("overview");
@@ -951,6 +1035,7 @@ export default function Accounts({ formatAmount, onImport, refreshKey, onEntries
                 ))}
               </div>
               <MonthlySummary summary={summary} fmt={fmt} />
+              <RulesPanel onChanged={() => { load(); onEntriesDeleted?.({ deleted_expenses: 0, deleted_income: 0, silent: true }); }} />
               <CoverageGrid accounts={accounts} months={months} onOpen={openTransactions} />
               {accounts.map(a => (
                 <AccountCard key={`${a.id}-${a.name}-${a.kind}`} account={a} accounts={accounts} months={months} fmt={fmt}

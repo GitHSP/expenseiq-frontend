@@ -425,10 +425,10 @@ async function handleLogout() {
             refreshKey={accountsKey}
             onImport={() => setShowImport(true)}
             onDebtsChanged={() => reloadPlanner({ silent: true })}
-            onEntriesDeleted={({ deleted_expenses, deleted_income }) => {
+            onEntriesDeleted={({ deleted_expenses, deleted_income, silent }) => {
               reloadExpenses({ silent: true });
               reloadIncome({ silent: true });
-              showToast(`Deleted ${deleted_expenses} expense${deleted_expenses === 1 ? "" : "s"} and ${deleted_income} income`, "error");
+              if (!silent) showToast(`Deleted ${deleted_expenses} expense${deleted_expenses === 1 ? "" : "s"} and ${deleted_income} income`, "error");
             }}
           />
         );

@@ -327,6 +327,13 @@ export const accountsAPI = {
   },
   recurring: async () => handleResponse(await authFetch(`${BASE_URL}/statements/recurring/`, { headers: getHeaders(true) })),
   summary: async () => handleResponse(await authFetch(`${BASE_URL}/statements/summary/`, { headers: getHeaders(true) })),
+  rules: async () => handleResponse(await authFetch(`${BASE_URL}/statements/rules/`, { headers: getHeaders(true) })),
+  addRule: async (rule) => handleResponse(await authFetch(`${BASE_URL}/statements/rules/`, {
+    method: "POST", headers: getHeaders(true), body: JSON.stringify(rule),
+  })),
+  deleteRule: async (id) => handleResponse(await authFetch(`${BASE_URL}/statements/rules/${id}/`, {
+    method: "DELETE", headers: getHeaders(true),
+  })),
 };
 
 const FP_URL = `${BASE_URL}/fp`;
