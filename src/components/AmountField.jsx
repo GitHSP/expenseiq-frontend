@@ -7,9 +7,12 @@ import { SUPPORTED_CURRENCIES } from "../hooks/useCurrency";
 
 const ENTERED_RE = /\s*·?\s*Entered as [^·]*$/;
 
-export function startingEntry(amountInCAD, displayCurrency, getRate, notes = "") {
+export function startingEntry(amountInCAD, displayCurrency, getRate, item = null) {
   // Entered in another currency before: reopen with exactly what was typed.
-  const typed = String(notes || "").match(/Entered as \D*([\d,]+(?:\.\d+)?) ([A-Z]{3})/);
+  if (item && item.original_currency && item.original_amount !== null && item.original_amount !== undefined) {
+    return { amount: String(parseFloat(item.original_amount)), currency: item.original_currency };
+  }
+  const typed = String(item?.notes || "").match(/Entered as \D*([\d,]+(?:\.\d+)?) ([A-Z]{3})/);   // older entries
   if (typed && amountInCAD !== "" && amountInCAD !== undefined && amountInCAD !== null) {
     return { amount: String(parseFloat(typed[1].replace(/,/g, ""))), currency: typed[2] };
   }
@@ -20,17 +23,16 @@ export function startingEntry(amountInCAD, displayCurrency, getRate, notes = "")
   return { amount: Number.isFinite(value) ? String(Math.round(value * 100) / 100) : "", currency };
 }
 
-// { amount: CAD string for the API, notes: with an "Entered as ₹…" note when converted }
+// Fields for the API: CAD amount plus what was typed (when not CAD).
 export function toStored(entry, notes, getRate) {
   const typed = parseFloat(entry.amount);
-  const cleanNotes = String(notes || "").replace(ENTERED_RE, "").trim();
-  if (!Number.isFinite(typed) || entry.currency === "CAD") return { amount: entry.amount, notes: cleanNotes };
+  const cleanNotes = String(notes || "").replace(ENTERED_RE, "").trim();   // drop older "Entered as" notes
+  const plain = { amount: entry.amount, notes: cleanNotes, original_amount: null, original_currency: "" };
+  if (!Number.isFinite(typed) || entry.currency === "CAD") return plain;
   const rate = getRate(entry.currency);
-  if (!rate) return { amount: entry.amount, notes: cleanNotes };
-  const cad = Math.round((typed / rate) * 100) / 100;
-  const shown = new Intl.NumberFormat("en-US", { style: "currency", currency: entry.currency }).format(typed);
-  const note = `Entered as ${shown} ${entry.currency} at 1 CAD = ${rate.toFixed(4)} ${entry.currency}`;
-  return { amount: cad.toFixed(2), notes: cleanNotes ? `${cleanNotes} · ${note}` : note };
+  if (!rate) return plain;
+  return { amount: (Math.round((typed / rate) * 100) / 100).toFixed(2), notes: cleanNotes,
+           original_amount: typed.toFixed(2), original_currency: entry.currency };
 }
 
 export default function AmountField({ entry, onChange, getRate, labelStyle, labelClassName, inputStyle, inputClassName }) {

@@ -108,7 +108,16 @@ export function useCurrency() {
   }
 
   // ── Format amount in selected currency ──
-  function formatAmount(amountInCAD) {
+  // `item` (optional): an entry with original_amount/original_currency —
+  // if it was typed in the currency being shown, show exactly that.
+  function formatAmount(amountInCAD, item) {
+    if (item && item.original_currency && item.original_currency === currency
+        && item.original_amount !== null && item.original_amount !== undefined) {
+      const v = parseFloat(item.original_amount);
+      return new Intl.NumberFormat("en-US", {
+        style: "currency", currency, minimumFractionDigits: Number.isInteger(v) ? 0 : 2, maximumFractionDigits: 2,
+      }).format(v);
+    }
     // Without a rate, show CAD rather than CAD numbers with another symbol.
     const shown = currency === "CAD" || rates[currency] ? currency : "CAD";
     const converted = shown === "CAD" ? (parseFloat(amountInCAD) || 0) : convert(amountInCAD);

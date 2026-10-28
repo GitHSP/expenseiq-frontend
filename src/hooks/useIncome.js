@@ -53,6 +53,8 @@ export function useIncome(userId) {
       const newIncome = await incomeAPI.create({
         title:    formData.title,
         amount:   parseFloat(formData.amount),
+        original_amount:   formData.original_amount,     // what was typed, when not CAD
+        original_currency: formData.original_currency,
         category: formData.category,
         date:     formData.date,
         notes:    formData.notes || "",
@@ -68,6 +70,8 @@ export function useIncome(userId) {
       const updated = await incomeAPI.update(id, {
         title:    formData.title,
         amount:   parseFloat(formData.amount),
+        original_amount:   formData.original_amount,     // what was typed, when not CAD
+        original_currency: formData.original_currency,
         category: formData.category,
         date:     formData.date,
         notes:    formData.notes || "",

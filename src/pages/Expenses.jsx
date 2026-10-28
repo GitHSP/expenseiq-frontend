@@ -15,8 +15,8 @@ export default function Expenses({ expenses, onEdit, onDelete, formatAmount, onI
   const [sortDir,     setSortDir]     = useState("desc");
   const [search,      setSearch]      = useState("");
 
-  const fmt = v => formatAmount
-    ? formatAmount(parseFloat(v) || 0)
+  const fmt = (v, item) => formatAmount
+    ? formatAmount(parseFloat(v) || 0, item)
     : `$${(parseFloat(v) || 0).toFixed(2)}`;
 
   const currentYear = new Date().getFullYear();
@@ -189,7 +189,7 @@ export default function Expenses({ expenses, onEdit, onDelete, formatAmount, onI
                       </td>
                       <td style={{ ...tdStyle, textAlign:"right" }}>
                         <span style={{ fontWeight:700, fontSize:14, color:"#e11d48", letterSpacing:"-0.3px" }}>
-                          -{fmt(exp.amount)}
+                          -{fmt(exp.amount, exp)}
                         </span>
                       </td>
                       <td style={{ ...tdStyle, textAlign:"center" }}>

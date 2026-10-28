@@ -42,7 +42,7 @@ export default function AddExpenseModal({ editingExpense, onSave, onClose, curre
   const [entry, setEntry] = useState(() => startingEntry("", currency, getRate));
 
   useEffect(() => {
-    setEntry(startingEntry(editingExpense ? editingExpense.amount : "", currency, getRate, editingExpense?.notes));
+    setEntry(startingEntry(editingExpense ? editingExpense.amount : "", currency, getRate, editingExpense));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editingExpense]);
 

@@ -75,7 +75,7 @@ export default function RecurringTab({
   function openEdit(item) {
     setForm({
       label:         item.label,
-      amount:        money.fromCAD(item.amount),
+      amount:        money.fromItem(item),
       due_day:       item.due_day ?? "",
       category:      item.category,
       is_auto_debit: item.is_auto_debit,
@@ -92,6 +92,7 @@ export default function RecurringTab({
     const data = {
       label:         form.label.trim(),
       amount:        money.toCAD(form.amount).toFixed(2),
+      ...money.original(form.amount),
       due_day:       form.due_day === "" ? null : parseInt(form.due_day, 10),
       category:      form.category,
       is_auto_debit: form.category === "auto_debit" || form.is_auto_debit,
@@ -271,7 +272,7 @@ export default function RecurringTab({
                   </div>
                 </div>
                 <div style={{ fontWeight: 700, fontSize: 14, color: item.category === "income" ? "#059669" : "var(--text)", flexShrink: 0 }}>
-                  {fmt(item.amount)}
+                  {fmt(item.amount, item)}
                 </div>
                 <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
                   <button style={iconBtn} onClick={() => openEdit(item)} aria-label={`Edit ${item.label}`} title="Edit">

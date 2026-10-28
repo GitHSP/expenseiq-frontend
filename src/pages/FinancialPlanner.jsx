@@ -109,8 +109,8 @@ export default function FinancialPlanner({
   const [fundBalance, setFundBalance] = useState("");
   const [editingFund, setEditingFund] = useState(false);
 
-  const fmt = v => formatAmount
-    ? formatAmount(parseFloat(v) || 0)
+  const fmt = (v, item) => formatAmount
+    ? formatAmount(parseFloat(v) || 0, item)
     : `$${(parseFloat(v) || 0).toFixed(2)}`;
 
   function showMsg(msg) {
@@ -134,10 +134,10 @@ export default function FinancialPlanner({
     setDebtForm({
       name:                debt.name,
       debt_type:           debt.debt_type,
-      current_balance:     money.fromCAD(debt.current_balance),
+      current_balance:     money.fromItem(debt, "current_balance"),
       annual_interest_rate:debt.annual_interest_rate,
-      minimum_payment:     money.fromCAD(debt.minimum_payment),
-      credit_limit:        debt.credit_limit ? money.fromCAD(debt.credit_limit) : "",
+      minimum_payment:     money.fromItem(debt, "minimum_payment"),
+      credit_limit:        debt.credit_limit ? money.fromItem(debt, "credit_limit") : "",
       due_day:             debt.due_day || "",
       avalanche_order:     debt.avalanche_order,
       notes:               debt.notes || "",
@@ -158,6 +158,7 @@ export default function FinancialPlanner({
         annual_interest_rate: parseFloat(debtForm.annual_interest_rate) || 0,
         minimum_payment:      money.toCAD(debtForm.minimum_payment)     || 0,
         credit_limit:         debtForm.credit_limit ? money.toCAD(debtForm.credit_limit) : null,
+        ...money.debtOriginals(debtForm),
         due_day:              debtForm.due_day ? parseInt(debtForm.due_day) : null,
         avalanche_order:      parseInt(debtForm.avalanche_order) || 1,
       };
@@ -260,6 +261,7 @@ export default function FinancialPlanner({
       await addChecklistItem({
         ...itemForm,
         amount:  itemForm.amount  ? money.toCAD(itemForm.amount)  : null,
+        ...(itemForm.amount ? money.original(itemForm.amount) : {}),
         due_day: itemForm.due_day ? parseInt(itemForm.due_day)   : null,
       });
       setItemForm({ label:"", amount:"", category:"debt_min", due_day:"", is_auto_debit:false, sort_order:0 });
@@ -535,10 +537,10 @@ export default function FinancialPlanner({
 
                 <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(120px,1fr))", gap:10, marginBottom:utilPct!==null?14:0 }}>
                   {[
-                    { label:"Balance",    value:fmt(debt.current_balance),         color:C.red   },
-                    { label:"Min Pay",    value:fmt(debt.minimum_payment),         color:C.text  },
+                    { label:"Balance",    value:fmt(debt.current_balance, { original_currency: debt.original_currency, original_amount: debt.original_current_balance }), color:C.red },
+                    { label:"Min Pay",    value:fmt(debt.minimum_payment, { original_currency: debt.original_currency, original_amount: debt.original_minimum_payment }), color:C.text },
                     { label:"Monthly %", value:fmt(debt.monthly_interest_amount), color:C.amber },
-                    debt.credit_limit ? { label:"Limit", value:fmt(debt.credit_limit), color:C.muted } : null,
+                    debt.credit_limit ? { label:"Limit", value:fmt(debt.credit_limit, { original_currency: debt.original_currency, original_amount: debt.original_credit_limit }), color:C.muted } : null,
                   ].filter(Boolean).map(stat => (
                     <div key={stat.label} style={{ background:"var(--subtle)", borderRadius:8, padding:"10px 12px", border:"1px solid var(--subtle2)" }}>
                       <div style={{ fontSize:10, color:C.muted, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:3 }}>{stat.label}</div>
@@ -727,7 +729,7 @@ export default function FinancialPlanner({
                         {/* Amount */}
                         {item.amount && (
                           <div style={{ fontWeight:700, fontSize:14, color:item.is_completed?C.muted:C.text, flexShrink:0, letterSpacing:"-0.3px" }}>
-                            {fmt(item.amount)}
+                            {fmt(item.amount, item)}
                           </div>
                         )}
 

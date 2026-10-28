@@ -20,7 +20,7 @@ export default function AddIncomeModal({ editingIncome, onSave, onClose, currenc
   const [entry, setEntry] = useState(() => startingEntry("", currency, getRate));
 
   useEffect(() => {
-    setEntry(startingEntry(editingIncome ? editingIncome.amount : "", currency, getRate, editingIncome?.notes));
+    setEntry(startingEntry(editingIncome ? editingIncome.amount : "", currency, getRate, editingIncome));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editingIncome]);
 

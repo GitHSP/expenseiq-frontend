@@ -43,6 +43,8 @@ export function useExpenses(userId) {
       const newExpense = await expensesAPI.create({
         title:    formData.title,
         amount:   parseFloat(formData.amount),
+        original_amount:   formData.original_amount,     // what was typed, when not CAD
+        original_currency: formData.original_currency,
         category: formData.category,
         date:     formData.date,
         tags:     typeof formData.tags === "string"
@@ -61,6 +63,8 @@ export function useExpenses(userId) {
       const updated = await expensesAPI.update(id, {
         title:    formData.title,
         amount:   parseFloat(formData.amount),
+        original_amount:   formData.original_amount,     // what was typed, when not CAD
+        original_currency: formData.original_currency,
         category: formData.category,
         date:     formData.date,
         tags:     typeof formData.tags === "string"

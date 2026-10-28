@@ -50,7 +50,7 @@ function TransactionList({ items, kind, fmt, onEdit, onDelete, empty }) {
               <div style={{ fontSize:11, color:"var(--faint2)", marginTop:1 }}>{item.category} · {item.date}</div>
             </div>
             <div style={{ fontWeight:700, fontSize:14, color: isIncome ? "#059669" : "#e11d48", whiteSpace:"nowrap" }}>
-              {isIncome ? "+" : "-"}{fmt(item.amount)}
+              {isIncome ? "+" : "-"}{fmt(item.amount, item)}
             </div>
             <div style={{ display:"flex", gap:4, flexShrink:0 }}>
               {onEdit && (
@@ -150,8 +150,8 @@ export default function Dashboard({
     };
   });
 
-  const fmt = v => formatAmount
-    ? formatAmount(parseFloat(v) || 0)
+  const fmt = (v, item) => formatAmount
+    ? formatAmount(parseFloat(v) || 0, item)
     : `$${(parseFloat(v) || 0).toFixed(2)}`;
 
   function handleCardClick(cardId) {
@@ -381,7 +381,7 @@ export default function Dashboard({
                         <div style={{ fontWeight:600, fontSize:13, color:"var(--text)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{inc.title}</div>
                         <div style={{ fontSize:11, color:"var(--faint2)", marginTop:1 }}>{inc.category} · {inc.date}</div>
                       </div>
-                      <div style={{ fontWeight:700, fontSize:14, color:"#059669" }}>+{fmt(inc.amount)}</div>
+                      <div style={{ fontWeight:700, fontSize:14, color:"#059669" }}>+{fmt(inc.amount, inc)}</div>
                     </div>
                   );
                 })}
