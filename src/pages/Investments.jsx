@@ -403,6 +403,58 @@ function ChitLog({ inv, onAdd, onDelete, m, display }) {
   );
 }
 
+// Where each payment goes, and what the fund could be worth later at a low,
+// expected and high return (index-linked returns aren't guaranteed).
+function ExpectedValue({ s, m }) {
+  const cell = { padding: "6px 4px", textAlign: "right", whiteSpace: "nowrap" };
+  return (
+    <div style={{ marginTop: 12, borderTop: "1px solid var(--subtle2)", paddingTop: 12 }}>
+      {s.monthly_split && (
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12, fontSize: 12 }}>
+          {[["Each month you pay", s.monthly_split.premium, "var(--text)"],
+            ["Insurance, fee & tax", s.monthly_split.cost, "#e11d48"],
+            ["Goes into the fund", s.monthly_split.invested, "#059669"]].map(([label, v, color]) => (
+            <div key={label} style={{ flex: "1 1 120px", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 8, padding: "8px 10px" }}>
+              <div style={{ fontSize: 10, color: "var(--muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.4px" }}>{label}</div>
+              <div style={{ fontWeight: 700, fontSize: 14, color }}>{m(v)}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      <div style={{ overflowX: "auto" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+          <thead>
+            <tr style={{ color: "var(--muted)", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.4px" }}>
+              <th style={{ ...cell, textAlign: "left" }}>By</th>
+              <th style={cell}>Paid in</th>
+              {s.expected_rates.map((r, i) => (
+                <th key={r} style={{ ...cell, color: i === 1 || s.expected_rates.length === 1 ? "var(--text)" : undefined }}>
+                  {r}%{s.expected_rates.length === 3 ? ["  low", "  expected", "  high"][i] : ""}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {s.expected.map(row => (
+              <tr key={row.date} style={{ borderTop: "1px solid var(--subtle2)" }}>
+                <td style={{ ...cell, textAlign: "left", color: "var(--muted)" }}>{dateLabel(row.date)}</td>
+                <td style={{ ...cell, color: "var(--muted)" }}>{m(row.paid)}</td>
+                {row.values.map((v, i) => (
+                  <td key={i} style={{ ...cell, fontWeight: i === 1 ? 700 : 500, color: i === 1 ? "#059669" : "var(--text)" }}>{m(v)}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div style={{ fontSize: 11, color: "var(--faint2)", marginTop: 8 }}>
+        Fund value before any surrender charge. Uses this year's cost every year — the insurance cost usually rises
+        with age, so later values are on the high side. Update the yearly cost from each statement.
+      </div>
+    </div>
+  );
+}
+
 function InvestmentCard({ inv, recurring, onEdit, onDelete, onAddPayment, onDeletePayment, show, display }) {
   const [open, setOpen] = useState(false);
   const kind = KINDS[inv.kind];
@@ -490,6 +542,14 @@ function InvestmentCard({ inv, recurring, onEdit, onDelete, onAddPayment, onDele
       </div>
       {inv.notes && <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 10 }}>{inv.notes}</div>}
 
+      {inv.kind === "insurance" && s.expected?.length > 0 && (
+        <>
+          <button className="btn-secondary" style={{ marginTop: 12, padding: "6px 12px", fontSize: 12 }} onClick={() => setOpen(o => !o)}>
+            {open ? "Hide expected value" : "Expected value"}
+          </button>
+          {open && <ExpectedValue s={s} m={m} />}
+        </>
+      )}
       {inv.kind === "chit" && (
         <>
           <button className="btn-secondary" style={{ marginTop: 12, padding: "6px 12px", fontSize: 12 }} onClick={() => setOpen(o => !o)}>
