@@ -186,12 +186,10 @@ export default function RecurringTab({
                 onChange={e => setForm(p => ({ ...p, label: e.target.value }))} />
             </div>
             <div className="form-group">
-              <label style={{ ...labelStyle, display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
-                Amount per month *
-                <UnitSelect unit={money.unit} onChange={setUnit} getRate={getRate} style={{ textTransform: "none", letterSpacing: 0 }} />
-              </label>
+              <label style={labelStyle}>Amount per month *</label>
               <input style={inputStyle} type="number" inputMode="decimal" placeholder="0.00" value={form.amount}
                 onChange={e => setForm(p => ({ ...p, amount: e.target.value }))} />
+              <UnitSelect unit={money.unit} onChange={setUnit} getRate={getRate} style={{ marginTop: 6 }} />
             </div>
             <div className="form-group">
               <label style={labelStyle}>Type</label>

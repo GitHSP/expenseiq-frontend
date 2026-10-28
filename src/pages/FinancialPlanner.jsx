@@ -463,11 +463,9 @@ export default function FinancialPlanner({
                   </select>
                 </div>
                 <div className="form-group">
-                  <label style={{ ...labelStyle, display:"flex", justifyContent:"space-between", gap:8, flexWrap:"wrap" }}>
-                    Current Balance *
-                    <UnitSelect unit={money.unit} onChange={setUnit} getRate={getRate} style={{ textTransform:"none", letterSpacing:0 }} />
-                  </label>
+                  <label style={labelStyle}>Current Balance *</label>
                   <input style={inputStyle} type="number" inputMode="decimal" placeholder="0.00" value={debtForm.current_balance} onChange={e => setDebtForm(p => ({ ...p, current_balance:e.target.value }))} />
+                  <UnitSelect unit={money.unit} onChange={setUnit} getRate={getRate} style={{ marginTop: 6 }} />
                 </div>
                 <div className="form-group">
                   <label style={labelStyle}>Annual Interest Rate (%)</label>
@@ -610,11 +608,9 @@ export default function FinancialPlanner({
                   <input style={inputStyle} placeholder="e.g. Pay CIBC minimum" value={itemForm.label} onChange={e => setItemForm(p => ({ ...p, label:e.target.value }))} />
                 </div>
                 <div className="form-group">
-                  <label style={{ ...labelStyle, display:"flex", justifyContent:"space-between", gap:8, flexWrap:"wrap" }}>
-                    Amount
-                    <UnitSelect unit={money.unit} onChange={setUnit} getRate={getRate} style={{ textTransform:"none", letterSpacing:0 }} />
-                  </label>
+                  <label style={labelStyle}>Amount</label>
                   <input style={inputStyle} type="number" inputMode="decimal" placeholder="Optional" value={itemForm.amount} onChange={e => setItemForm(p => ({ ...p, amount:e.target.value }))} />
+                  <UnitSelect unit={money.unit} onChange={setUnit} getRate={getRate} style={{ marginTop: 6 }} />
                 </div>
                 <div className="form-group">
                   <label style={labelStyle}>Category</label>
