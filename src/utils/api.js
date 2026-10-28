@@ -396,6 +396,44 @@ export const financialPlannerAPI = {
     return handleResponse(res);
   },
 
+  // ── Investments (insurance, chits, RDs) and net worth ──
+  getInvestments: async () => {
+    const res = await authFetch(`${FP_URL}/investments/`, { method: "GET", headers: getHeaders(true) });
+    return handleResponse(res);
+  },
+  createInvestment: async (data) => {
+    const res = await authFetch(`${FP_URL}/investments/`, {
+      method: "POST", headers: getHeaders(true), body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+  },
+  updateInvestment: async (id, data) => {
+    const res = await authFetch(`${FP_URL}/investments/${id}/`, {
+      method: "PATCH", headers: getHeaders(true), body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+  },
+  deleteInvestment: async (id) => {
+    const res = await authFetch(`${FP_URL}/investments/${id}/`, { method: "DELETE", headers: getHeaders(true) });
+    return handleResponse(res);
+  },
+  addInvestmentPayment: async (id, data) => {
+    const res = await authFetch(`${FP_URL}/investments/${id}/payments/`, {
+      method: "POST", headers: getHeaders(true), body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+  },
+  deleteInvestmentPayment: async (id, paymentId) => {
+    const res = await authFetch(`${FP_URL}/investments/${id}/payments/${paymentId}/`, {
+      method: "DELETE", headers: getHeaders(true),
+    });
+    return handleResponse(res);
+  },
+  getNetWorth: async () => {
+    const res = await authFetch(`${FP_URL}/net-worth/`, { method: "GET", headers: getHeaders(true) });
+    return handleResponse(res);
+  },
+
   // ── Emergency Fund ──
   getEmergencyFund: async () => {
     const res = await authFetch(`${FP_URL}/emergency-fund/`, {

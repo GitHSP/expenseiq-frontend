@@ -38,6 +38,7 @@ import FinancialPlanner   from "./pages/FinancialPlanner";
 import AssistantWidget    from "./components/AssistantWidget";
 import Activity           from "./pages/Activity";
 import Accounts           from "./pages/Accounts";
+import Investments        from "./pages/Investments";
 import Icon               from "./components/Icon";
 
 export default function App() {
@@ -434,6 +435,8 @@ async function handleLogout() {
             }}
           />
         );
+      case "investments":
+        return <Investments getRate={getRate} showToast={showToast} recurring={recurring} />;
       case "profile":
         return (
           <Profile

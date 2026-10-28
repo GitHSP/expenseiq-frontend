@@ -17,7 +17,7 @@ export const RECURRING_CATEGORIES = {
 
 const EMPTY_FORM = {
   label: "", amount: "", due_day: "", category: "fixed_expense",
-  frequency: "monthly", anchor_date: "", is_auto_debit: false, notes: "",
+  frequency: "monthly", anchor_date: "", average_from: "", is_auto_debit: false, notes: "",
 };
 
 export const FREQUENCIES = {
@@ -128,6 +128,7 @@ export default function RecurringTab({
       category:      item.category,
       frequency:     item.frequency || "monthly",
       anchor_date:   item.anchor_date || "",
+      average_from:  item.average_from || "",
       is_auto_debit: item.is_auto_debit,
       notes:         item.notes || "",
     });
@@ -151,6 +152,7 @@ export default function RecurringTab({
       category:      form.category,
       frequency:     form.frequency,
       anchor_date:   byPayday ? form.anchor_date : null,
+      average_from:  form.category === "income" ? form.average_from.trim() : "",
       is_auto_debit: form.category === "auto_debit" || form.is_auto_debit,
       notes:         form.notes,
     };
@@ -278,6 +280,17 @@ export default function RecurringTab({
               </div>
             )}
           </div>
+          {form.category === "income" && (
+            <div className="form-group">
+              <label style={labelStyle}>Use my average pay (optional)</label>
+              <input style={inputStyle} placeholder="A word from the deposit on your statement, e.g. PAYROLL or the employer's name"
+                value={form.average_from} onChange={e => setForm(p => ({ ...p, average_from: e.target.value }))} />
+              <div style={{ fontSize: 11, color: "var(--faint2)", marginTop: 4 }}>
+                For pay that changes every time: the amount becomes the average of your last 4 matching deposits,
+                and updates whenever you upload statements.
+              </div>
+            </div>
+          )}
           <div className="form-group">
             <label style={labelStyle}>Notes</label>
             <input style={inputStyle} placeholder="e.g. Pay by 26th to be safe" value={form.notes}
@@ -344,6 +357,9 @@ export default function RecurringTab({
                       ? ` · ${FREQUENCIES[item.frequency]}${nextPayday(item) ? ` · next ${shortDate(nextPayday(item))}` : ""}`
                       : item.frequency === "varies" ? " · Varies · estimate"
                       : item.due_day ? ` · ${item.category === "income" ? "Received" : "Due"} ${ordinal(item.due_day)}` : ""}
+                    {item.average_from ? (item.average_of
+                      ? ` · average of last ${item.average_of} pay${item.average_of === 1 ? "" : "s"}`
+                      : ` · no deposits matching "${item.average_from}" yet`) : ""}
                     {item.notes ? ` · ${item.notes}` : ""}
                   </div>
                 </div>
