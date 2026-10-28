@@ -15,7 +15,7 @@ const CATEGORY_MAP = {
 };
 
 export default function ChecklistConfirmModal({
-  item, debt, onConfirm, onCancel
+  item, debt, onConfirm, onCancel, fmt = (v) => `$${(parseFloat(v) || 0).toFixed(2)}`,
 }) {
   const [addAsExpense,     setAddAsExpense]     = useState(false);
   const [expenseCategory,  setExpenseCategory]  = useState(
@@ -69,7 +69,7 @@ export default function ChecklistConfirmModal({
               Amount
             </span>
             <span style={{ fontSize:18, fontWeight:800, color:"var(--text)", letterSpacing:"-0.5px" }}>
-              ${amount.toFixed(2)}
+              {fmt(amount, item)}
             </span>
           </div>
         )}
@@ -87,10 +87,10 @@ export default function ChecklistConfirmModal({
             fontWeight:   500,
           }}>
             <Icon name="credit-card" size={13} style={{ marginRight:6, verticalAlign:"-2px" }} />This will reduce <strong>{debt.name}</strong> balance by{" "}
-            <strong>${amount.toFixed(2)}</strong>
+            <strong>{fmt(amount, item)}</strong>
             {" "}<Icon name="arrow-right" size={12} style={{ verticalAlign:"-2px" }} /> New balance:{" "}
             <strong>
-              ${Math.max(0, parseFloat(debt.current_balance) - amount).toFixed(2)}
+              {fmt(Math.max(0, parseFloat(debt.current_balance) - amount))}
             </strong>
           </div>
         )}
@@ -107,7 +107,7 @@ export default function ChecklistConfirmModal({
             color:        "#059669",
             fontWeight:   500,
           }}>
-            <Icon name="shield" size={13} style={{ marginRight:6, verticalAlign:"-2px" }} />This will add <strong>${amount.toFixed(2)}</strong> to your Emergency Fund
+            <Icon name="shield" size={13} style={{ marginRight:6, verticalAlign:"-2px" }} />This will add <strong>{fmt(amount, item)}</strong> to your Emergency Fund
           </div>
         )}
 

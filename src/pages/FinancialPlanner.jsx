@@ -243,9 +243,9 @@ export default function FinancialPlanner({
         });
         showMsg("Marked complete + added as expense!");
       } else if (result?.debt_updated) {
-        showMsg(`Balance updated! New: $${parseFloat(result.debt_updated.current_balance).toFixed(2)}`);
+        showMsg(`Balance updated! New: ${fmt(result.debt_updated.current_balance, { original_currency: result.debt_updated.original_currency, original_amount: result.debt_updated.original_current_balance })}`);
       } else if (result?.fund_updated) {
-        showMsg(`Emergency fund: $${parseFloat(result.fund_updated.current_balance).toFixed(2)}`);
+        showMsg(`Emergency fund: ${fmt(result.fund_updated.current_balance)}`);
       } else {
         showMsg("Marked complete!");
       }
@@ -379,8 +379,8 @@ export default function FinancialPlanner({
         {[
           { label:"Total Debt",       value:fmt(totalDebt),      sub:`${debts.filter(d=>d.is_active).length} active debts`, gradient:"linear-gradient(135deg, #e11d48, #be123c)" },
           { label:"Monthly Minimums", value:fmt(totalMinimums),  sub:"total minimum payments",                              gradient:"linear-gradient(135deg, #0070f3, #0050b3)" },
-          { label:"Emergency Fund",   value:emergencyFund?fmt(emergencyFund.current_balance):"$0",
-            sub:emergencyFund?`${emergencyFund.progress_percent}% of $${emergencyFund.target_amount}`:"Not set up",
+          { label:"Emergency Fund",   value:fmt(emergencyFund ? emergencyFund.current_balance : 0),
+            sub:emergencyFund?`${emergencyFund.progress_percent}% of ${fmt(emergencyFund.target_amount)}`:"Not set up",
             gradient:emergencyFund?.is_funded?"linear-gradient(135deg, #059669, #047857)":"linear-gradient(135deg, #f59e0b, #d97706)" },
           { label:"Checklist",        value:`${completedItems}/${checklist.length}`, sub:"items completed this month",
             gradient:completedItems===checklist.length&&checklist.length>0?"linear-gradient(135deg, #059669, #047857)":"linear-gradient(135deg, #7c3aed, #6d28d9)" },
@@ -857,6 +857,7 @@ export default function FinancialPlanner({
         <ChecklistConfirmModal
           item={confirmItem}
           debt={debts.find(d => d.id === confirmItem.linked_debt)}
+          fmt={fmt}
           onConfirm={handleConfirm}
           onCancel={() => setConfirmItem(null)}
         />

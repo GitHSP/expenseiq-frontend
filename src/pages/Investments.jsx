@@ -74,7 +74,7 @@ function money(v, currency) {
   if (v === null || v === undefined || v === "") return "—";
   const n = parseFloat(v);
   const whole = currency === "INR" || Math.abs(n) >= 100000;
-  return new Intl.NumberFormat(currency === "INR" ? "en-IN" : "en-US", {
+  return new Intl.NumberFormat("en-US", {      // same grouping as the rest of the app
     style: "currency", currency, minimumFractionDigits: whole ? 0 : 2, maximumFractionDigits: whole ? 0 : 2,
   }).format(n);
 }
@@ -103,7 +103,7 @@ function Stat({ label, value, sub, color }) {
 
 // One line of the breakdown: name, detail, CAD amount (and the original
 // amount when it isn't CAD).
-function BreakdownRow({ name, detail, cad, original, currency, negative }) {
+function BreakdownRow({ name, detail, cad, original, currency, negative, show, display }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 0", borderBottom: "1px solid var(--subtle2)", fontSize: 13 }}>
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -112,9 +112,9 @@ function BreakdownRow({ name, detail, cad, original, currency, negative }) {
       </div>
       <div style={{ textAlign: "right", flexShrink: 0 }}>
         <div style={{ fontWeight: 700, color: negative ? "#e11d48" : cad < 0 ? "#e11d48" : "var(--text)" }}>
-          {cad === null ? "—" : money(negative ? -cad : cad, "CAD")}
+          {cad === null ? "—" : show(negative ? -cad : cad)}
         </div>
-        {currency && currency !== "CAD" && original !== null && (
+        {currency && currency !== display && original !== null && (
           <div style={{ fontSize: 11, color: "var(--faint2)" }}>{money(original, currency)}</div>
         )}
       </div>
@@ -124,7 +124,7 @@ function BreakdownRow({ name, detail, cad, original, currency, negative }) {
 
 const WORTH_BASIS = { insurance: "cash value", rd: "value now", chit: "paid in, or deposit − still to pay" };
 
-function NetWorth({ data, getRate }) {
+function NetWorth({ data, getRate, show, display }) {
   const [open, setOpen] = useState(false);
   if (!data) return null;
   // To CAD (getRate gives units of a currency per 1 CAD).
@@ -139,7 +139,9 @@ function NetWorth({ data, getRate }) {
   const other = data.investments.filter(i => i.currency !== "INR").reduce((s, i) => s + toCAD(i.worth, i.currency), 0);
   const debts = data.debts.reduce((s, d) => s + num(d.balance), 0);
   const total = banks + india + other - debts;
-  const inr = getRate("INR");
+  // The other of CAD / INR underneath the total.
+  const alt = display === "INR" ? "CAD" : "INR";
+  const altRate = alt === "CAD" ? 1 : getRate(alt);
   const noBalance = data.banks.filter(b => b.balance === null);
 
   const rows = [
@@ -154,9 +156,9 @@ function NetWorth({ data, getRate }) {
         <div>
           <div style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>Net worth</div>
           <div style={{ fontWeight: 800, fontSize: 28, letterSpacing: "-0.8px", color: total >= 0 ? "var(--text)" : "#e11d48" }}>
-            {money(total, "CAD")}
+            {show(total)}
           </div>
-          {inr && <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600 }}>{money(total * inr, "INR")}</div>}
+          {altRate && <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600 }}>{money(total * altRate, alt)}</div>}
         </div>
         <div style={{ fontSize: 11, color: "var(--faint2)", maxWidth: 280, textAlign: "right" }}>
           What you own minus what you owe, at today's exchange rate.
@@ -164,7 +166,7 @@ function NetWorth({ data, getRate }) {
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12 }}>
         {rows.map(r => (
-          <Stat key={r.label} label={r.label} value={money(r.value, "CAD")} sub={r.sub} color={r.color} />
+          <Stat key={r.label} label={r.label} value={show(r.value)} sub={r.sub} color={r.color} />
         ))}
       </div>
       {(noBalance.length > 0 || missingRate) && (
@@ -204,14 +206,14 @@ function NetWorth({ data, getRate }) {
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, fontWeight: 700, textTransform: "uppercase",
                             letterSpacing: "0.5px", color: g.color, paddingBottom: 4, borderBottom: `2px solid ${g.color}33` }}>
                 <span>{g.title}</span>
-                <span>{money(g.total, "CAD")}</span>
+                <span>{show(g.total)}</span>
               </div>
-              {g.rows.map(({ key, ...r }) => <BreakdownRow key={key} {...r} />)}
+              {g.rows.map(({ key, ...r }) => <BreakdownRow key={key} {...r} show={show} display={display} />)}
             </div>
           ))}
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: 14, fontWeight: 800, fontSize: 14 }}>
             <span>Net worth</span>
-            <span style={{ color: total >= 0 ? "var(--text)" : "#e11d48" }}>{money(total, "CAD")}</span>
+            <span style={{ color: total >= 0 ? "var(--text)" : "#e11d48" }}>{show(total)}</span>
           </div>
         </div>
       )}
@@ -352,7 +354,7 @@ function InvestmentForm({ initial, recurring, onSave, onCancel, saving }) {
 
 // ── Cards ──
 
-function ChitLog({ inv, onAdd, onDelete }) {
+function ChitLog({ inv, onAdd, onDelete, m, display }) {
   const next = inv.start_date ? addMonthsISO(inv.start_date, inv.payments.length) : todayISO();
   const [date, setDate] = useState(next);
   const [amount, setAmount] = useState("");
@@ -379,7 +381,10 @@ function ChitLog({ inv, onAdd, onDelete }) {
                                      borderBottom: "1px solid var(--subtle2)" }}>
               <span style={{ color: "var(--faint2)", width: 28, fontSize: 11 }}>#{inv.payments.length - i}</span>
               <span style={{ flex: 1, color: "var(--muted)" }}>{dateLabel(p.date)}</span>
-              <span style={{ fontWeight: 600 }}>{money(p.amount, inv.currency)}</span>
+              <span style={{ fontWeight: 600, textAlign: "right" }}>
+                {m(p.amount)}
+                {inv.currency !== display && <span style={{ fontWeight: 500, color: "var(--faint2)", fontSize: 11 }}> · {money(p.amount, inv.currency)}</span>}
+              </span>
               <button style={{ ...iconBtn, padding: "3px 5px", color: "#e11d48" }} title="Remove"
                 aria-label={`Remove payment of ${p.date}`} onClick={() => onDelete(inv, p)}>
                 <Icon name="trash" size={11} />
@@ -392,11 +397,11 @@ function ChitLog({ inv, onAdd, onDelete }) {
   );
 }
 
-function InvestmentCard({ inv, recurring, onEdit, onDelete, onAddPayment, onDeletePayment }) {
+function InvestmentCard({ inv, recurring, onEdit, onDelete, onAddPayment, onDeletePayment, show, display }) {
   const [open, setOpen] = useState(false);
   const kind = KINDS[inv.kind];
   const s = inv.summary || {};
-  const m = v => money(v, inv.currency);
+  const m = v => show(v, inv.currency);
   const linked = recurring.find(r => r.id === inv.recurring_item);
 
   let stats = [], sub = [];
@@ -479,7 +484,7 @@ function InvestmentCard({ inv, recurring, onEdit, onDelete, onAddPayment, onDele
           <button className="btn-secondary" style={{ marginTop: 12, padding: "6px 12px", fontSize: 12 }} onClick={() => setOpen(o => !o)}>
             {open ? "Hide payments" : "Monthly payments"}
           </button>
-          {open && <ChitLog inv={inv} onAdd={onAddPayment} onDelete={onDeletePayment} />}
+          {open && <ChitLog inv={inv} onAdd={onAddPayment} onDelete={onDeletePayment} m={m} display={display} />}
         </>
       )}
     </div>
@@ -488,7 +493,18 @@ function InvestmentCard({ inv, recurring, onEdit, onDelete, onAddPayment, onDele
 
 // ── Page ──
 
-export default function Investments({ getRate = c => (c === "CAD" ? 1 : null), showToast = () => {}, recurring = [] }) {
+export default function Investments({
+  getRate = c => (c === "CAD" ? 1 : null), currency = "CAD", formatAmount, showToast = () => {}, recurring = [],
+}) {
+  // An amount in `cur`, shown in the currency picked in the app: exact when
+  // they're the same (₹7,000 stays ₹7,000), else converted at today's rate.
+  const display = formatAmount && (currency === "CAD" || getRate(currency)) ? currency : "CAD";
+  const show = (v, cur = "CAD") => {
+    if (v === null || v === undefined || v === "") return "—";
+    if (cur === display || !formatAmount) return money(v, cur);
+    const rate = cur === "CAD" ? 1 : getRate(cur);
+    return rate ? formatAmount(num(v) / rate) : money(v, cur);
+  };
   const [items,    setItems]    = useState([]);
   const [worth,    setWorth]    = useState(null);
   const [loading,  setLoading]  = useState(true);
@@ -593,7 +609,7 @@ export default function Investments({ getRate = c => (c === "CAD" ? 1 : null), s
         </button>
       </div>
 
-      <NetWorth data={worth} getRate={getRate} />
+      <NetWorth data={worth} getRate={getRate} show={show} display={display} />
 
       {form && (
         <InvestmentForm key={form.id || form.kind} initial={form} recurring={recurring} saving={saving}
@@ -627,7 +643,7 @@ export default function Investments({ getRate = c => (c === "CAD" ? 1 : null), s
             </div>
             {group.map(inv => (
               <InvestmentCard key={inv.id} inv={inv} recurring={recurring} onEdit={openEdit} onDelete={remove}
-                onAddPayment={addPayment} onDeletePayment={deletePayment} />
+                onAddPayment={addPayment} onDeletePayment={deletePayment} show={show} display={display} />
             ))}
           </div>
         );

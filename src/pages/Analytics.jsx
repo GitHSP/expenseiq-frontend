@@ -142,7 +142,7 @@ export default function Analytics({ expenses, formatAmount }) {
             <BarChart data={monthlyData} onClick={d => d?.activePayload && handleBarClick(d.activePayload[0]?.payload)} style={{ cursor:"pointer" }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
               <XAxis dataKey="name" tick={{ fill:"var(--faint2)", fontSize:11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill:"var(--faint2)", fontSize:10 }} axisLine={false} tickLine={false} width={42} tickFormatter={v => `$${v}`} />
+              <YAxis tick={{ fill:"var(--faint2)", fontSize:10 }} axisLine={false} tickLine={false} width={64} tickFormatter={v => fmt(v).replace(/\.\d+$/, "")} />
               <Tooltip formatter={v => [fmt(v), "Expenses"]} contentStyle={TOOLTIP_STYLE} />
               <Bar dataKey="amount" radius={[5,5,0,0]}>
                 {monthlyData.map((entry, i) => (

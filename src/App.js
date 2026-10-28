@@ -436,7 +436,8 @@ async function handleLogout() {
           />
         );
       case "investments":
-        return <Investments getRate={getRate} showToast={showToast} recurring={recurring} />;
+        return <Investments getRate={getRate} currency={currency} formatAmount={formatAmount}
+                            showToast={showToast} recurring={recurring} />;
       case "profile":
         return (
           <Profile
