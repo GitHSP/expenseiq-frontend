@@ -112,10 +112,15 @@ export function useCurrency() {
     // Without a rate, show CAD rather than CAD numbers with another symbol.
     const shown = currency === "CAD" || rates[currency] ? currency : "CAD";
     const converted = shown === "CAD" ? (parseFloat(amountInCAD) || 0) : convert(amountInCAD);
+    // Amounts are stored in CAD to the cent, so currencies with many units
+    // per dollar (INR ~68) can't hit an exact rupee/paisa after converting
+    // (₹7,000 -> CA$103.29 -> ₹7,000.25). Show those as whole units.
+    const whole = shown !== "CAD" && rates[shown] >= 10;
     return new Intl.NumberFormat("en-US", {
       style:    "currency",
       currency: shown,
-      minimumFractionDigits: 2,
+      minimumFractionDigits: whole ? 0 : 2,
+      maximumFractionDigits: whole ? 0 : 2,
     }).format(converted);
   }
 
