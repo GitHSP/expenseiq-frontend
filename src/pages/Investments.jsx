@@ -101,7 +101,31 @@ function Stat({ label, value, sub, color }) {
 
 // ── Net worth ──
 
+// One line of the breakdown: name, detail, CAD amount (and the original
+// amount when it isn't CAD).
+function BreakdownRow({ name, detail, cad, original, currency, negative }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 0", borderBottom: "1px solid var(--subtle2)", fontSize: 13 }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontWeight: 600, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</div>
+        {detail && <div style={{ fontSize: 11, color: "var(--faint2)" }}>{detail}</div>}
+      </div>
+      <div style={{ textAlign: "right", flexShrink: 0 }}>
+        <div style={{ fontWeight: 700, color: negative ? "#e11d48" : cad < 0 ? "#e11d48" : "var(--text)" }}>
+          {cad === null ? "—" : money(negative ? -cad : cad, "CAD")}
+        </div>
+        {currency && currency !== "CAD" && original !== null && (
+          <div style={{ fontSize: 11, color: "var(--faint2)" }}>{money(original, currency)}</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const WORTH_BASIS = { insurance: "cash value", rd: "value now", chit: "paid in, or deposit − still to pay" };
+
 function NetWorth({ data, getRate }) {
+  const [open, setOpen] = useState(false);
   if (!data) return null;
   // To CAD (getRate gives units of a currency per 1 CAD).
   const toCAD = (v, cur) => {
@@ -147,6 +171,48 @@ function NetWorth({ data, getRate }) {
         <div style={{ fontSize: 11, color: "#d97706", marginTop: 12 }}>
           {noBalance.length > 0 && `No closing balance found for ${noBalance.map(b => b.name).join(", ")}. `}
           {missingRate && "Exchange rates aren't loaded, so some investments aren't counted yet."}
+        </div>
+      )}
+
+      <button className="btn-secondary" style={{ marginTop: 14, padding: "6px 12px", fontSize: 12 }} onClick={() => setOpen(o => !o)}>
+        {open ? "Hide breakdown" : "Show breakdown"}
+      </button>
+      {open && (
+        <div style={{ marginTop: 6 }}>
+          {[
+            {
+              title: "Bank accounts", total: banks, color: "#0070f3",
+              rows: data.banks.map(b => ({ key: `b${b.id}`, name: b.name, cad: b.balance === null ? null : num(b.balance),
+                                           detail: b.as_of ? `Statement ending ${dateLabel(b.as_of)}` : "No closing balance found" })),
+            },
+            ...[["Investments · Canada", i => i.currency !== "INR", other], ["Investments · India", i => i.currency === "INR", india]]
+              .map(([title, keep, total]) => ({
+                title, total, color: "#059669",
+                rows: data.investments.filter(keep).map(i => ({
+                  key: `i${i.id}`, name: i.name, cad: toCAD(i.worth, i.currency), original: i.worth, currency: i.currency,
+                  detail: `${KINDS[i.kind]?.label || i.kind} · ${WORTH_BASIS[i.kind] || ""}`,
+                })),
+              })),
+            {
+              title: "Debts", total: -debts, color: "#e11d48", negative: true,
+              rows: data.debts.map(d => ({ key: `d${d.id}`, name: d.name, cad: num(d.balance), negative: true })),
+            },
+          ].filter(g => g.rows.length)
+           .map(g => ({ ...g, rows: [...g.rows].sort((a, b) => (b.cad ?? -Infinity) - (a.cad ?? -Infinity)) }))   // biggest first
+           .map(g => (
+            <div key={g.title} style={{ marginTop: 14 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, fontWeight: 700, textTransform: "uppercase",
+                            letterSpacing: "0.5px", color: g.color, paddingBottom: 4, borderBottom: `2px solid ${g.color}33` }}>
+                <span>{g.title}</span>
+                <span>{money(g.total, "CAD")}</span>
+              </div>
+              {g.rows.map(({ key, ...r }) => <BreakdownRow key={key} {...r} />)}
+            </div>
+          ))}
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 14, fontWeight: 800, fontSize: 14 }}>
+            <span>Net worth</span>
+            <span style={{ color: total >= 0 ? "var(--text)" : "#e11d48" }}>{money(total, "CAD")}</span>
+          </div>
         </div>
       )}
     </div>
