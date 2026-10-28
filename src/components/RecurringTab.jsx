@@ -17,8 +17,51 @@ export const RECURRING_CATEGORIES = {
 
 const EMPTY_FORM = {
   label: "", amount: "", due_day: "", category: "fixed_expense",
-  is_auto_debit: false, notes: "",
+  frequency: "monthly", anchor_date: "", is_auto_debit: false, notes: "",
 };
+
+export const FREQUENCIES = {
+  monthly:  "Monthly",
+  biweekly: "Every 2 weeks",
+  weekly:   "Weekly",
+  varies:   "Varies (estimate)",
+};
+
+const STEP_DAYS = { weekly: 7, biweekly: 14 };
+const DAY_MS = 86400000;
+
+function parseDay(iso) {
+  const [y, m, d] = String(iso || "").split("-").map(Number);
+  return y && m && d ? new Date(y, m - 1, d) : null;
+}
+
+// Paydays in a month for a weekly/biweekly item, counted from its anchor
+// date (same rule the backend uses to build the plan).
+function paydaysIn(item, year, month) {
+  const step = STEP_DAYS[item.frequency];
+  const anchor = parseDay(item.anchor_date);
+  if (!step || !anchor) return [];
+  const first = new Date(year, month, 1), last = new Date(year, month + 1, 0);
+  const gap = Math.round((first - anchor) / DAY_MS);
+  let d = new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate() + Math.ceil(gap / step) * step);
+  const out = [];
+  while (d <= last) {
+    out.push(d);
+    d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + step);
+  }
+  return out;
+}
+
+function nextPayday(item) {
+  const step = STEP_DAYS[item.frequency];
+  const anchor = parseDay(item.anchor_date);
+  if (!step || !anchor) return null;
+  const now = new Date(), today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const gap = Math.round((today - anchor) / DAY_MS);
+  return new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate() + Math.max(0, Math.ceil(gap / step)) * step);
+}
+
+const shortDate = d => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
 const inputStyle = {
   width: "100%", background: "var(--card)", border: "1px solid var(--border)",
@@ -54,9 +97,14 @@ export default function RecurringTab({
   const [saving,    setSaving]    = useState(false);
 
   const num = v => parseFloat(v) || 0;
+  const now = new Date();
+  // What an item comes to this month: per pay × paydays for weekly/biweekly.
+  const monthly = r => STEP_DAYS[r.frequency]
+    ? num(r.amount) * paydaysIn(r, now.getFullYear(), now.getMonth()).length
+    : num(r.amount);
   const active  = recurring.filter(r => r.is_active);
-  const income  = active.filter(r => r.category === "income").reduce((s, r) => s + num(r.amount), 0);
-  const outgoing= active.filter(r => r.category !== "income").reduce((s, r) => s + num(r.amount), 0);
+  const income  = active.filter(r => r.category === "income").reduce((s, r) => s + monthly(r), 0);
+  const outgoing= active.filter(r => r.category !== "income").reduce((s, r) => s + monthly(r), 0);
 
   const activeDebts = debts.filter(d => d.is_active && num(d.current_balance) > 0);
   const debtPayments= activeDebts.reduce((s, d) => s + Math.min(num(d.minimum_payment), num(d.current_balance)), 0);
@@ -78,6 +126,8 @@ export default function RecurringTab({
       amount:        money.fromItem(item),
       due_day:       item.due_day ?? "",
       category:      item.category,
+      frequency:     item.frequency || "monthly",
+      anchor_date:   item.anchor_date || "",
       is_auto_debit: item.is_auto_debit,
       notes:         item.notes || "",
     });
@@ -89,12 +139,18 @@ export default function RecurringTab({
     if (!form.label.trim() || !form.amount || isNaN(num(form.amount))) {
       showMsg("Please enter a name and amount"); return;
     }
+    const byPayday = !!STEP_DAYS[form.frequency];
+    if (byPayday && !form.anchor_date) {
+      showMsg("Pick one recent payday so the next ones can be worked out"); return;
+    }
     const data = {
       label:         form.label.trim(),
       amount:        money.toCAD(form.amount).toFixed(2),
       ...money.original(form.amount),
-      due_day:       form.due_day === "" ? null : parseInt(form.due_day, 10),
+      due_day:       byPayday || form.due_day === "" ? null : parseInt(form.due_day, 10),
       category:      form.category,
+      frequency:     form.frequency,
+      anchor_date:   byPayday ? form.anchor_date : null,
       is_auto_debit: form.category === "auto_debit" || form.is_auto_debit,
       notes:         form.notes,
     };
@@ -167,7 +223,7 @@ export default function RecurringTab({
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
         <div style={{ fontSize: 13, color: "var(--muted)" }}>
-          These repeat every month and build each month's checklist.
+          Payments here build each month's checklist; income counts toward the totals only.
         </div>
         <button className="btn-primary" onClick={() => openAdd()} style={{ padding: "9px 20px", fontSize: 13, display: "inline-flex", alignItems: "center", gap: 6 }}>
           <Icon name="plus" size={14} /> Add Recurring
@@ -187,7 +243,9 @@ export default function RecurringTab({
                 onChange={e => setForm(p => ({ ...p, label: e.target.value }))} />
             </div>
             <div className="form-group">
-              <label style={labelStyle}>Amount per month *</label>
+              <label style={labelStyle}>
+                {STEP_DAYS[form.frequency] ? "Amount per pay *" : form.frequency === "varies" ? "Amount per month (estimate) *" : "Amount per month *"}
+              </label>
               <input style={inputStyle} type="number" inputMode="decimal" placeholder="0.00" value={form.amount}
                 onChange={e => setForm(p => ({ ...p, amount: e.target.value }))} />
               <UnitSelect unit={money.unit} onChange={setUnit} getRate={getRate} style={{ marginTop: 6 }} />
@@ -200,10 +258,25 @@ export default function RecurringTab({
               </select>
             </div>
             <div className="form-group">
-              <label style={labelStyle}>Due day (1–31)</label>
-              <input style={inputStyle} type="number" min={1} max={31} placeholder="Optional" value={form.due_day}
-                onChange={e => setForm(p => ({ ...p, due_day: e.target.value }))} />
+              <label style={labelStyle}>How often</label>
+              <select style={inputStyle} value={form.frequency}
+                onChange={e => setForm(p => ({ ...p, frequency: e.target.value }))}>
+                {Object.entries(FREQUENCIES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select>
             </div>
+            {STEP_DAYS[form.frequency] ? (
+              <div className="form-group">
+                <label style={labelStyle}>A recent payday *</label>
+                <input style={inputStyle} type="date" value={form.anchor_date}
+                  onChange={e => setForm(p => ({ ...p, anchor_date: e.target.value }))} />
+              </div>
+            ) : (
+              <div className="form-group">
+                <label style={labelStyle}>{form.category === "income" ? "Day received (1–31)" : "Due day (1–31)"}</label>
+                <input style={inputStyle} type="number" min={1} max={31} placeholder="Optional" value={form.due_day}
+                  onChange={e => setForm(p => ({ ...p, due_day: e.target.value }))} />
+              </div>
+            )}
           </div>
           <div className="form-group">
             <label style={labelStyle}>Notes</label>
@@ -238,7 +311,7 @@ export default function RecurringTab({
           <div style={{ padding: "12px 18px", borderBottom: "1px solid var(--subtle2)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div style={{ fontWeight: 700, fontSize: 13, color: "var(--text)" }}>{group.title}</div>
             <div style={{ fontWeight: 700, fontSize: 13, color: group.title === "Income" ? "#059669" : "var(--text)" }}>
-              {fmt(group.items.filter(r => r.is_active).reduce((s, r) => s + num(r.amount), 0))}/mo
+              {fmt(group.items.filter(r => r.is_active).reduce((s, r) => s + monthly(r), 0))} this month
             </div>
           </div>
           {group.items.map((item, idx) => {
@@ -267,12 +340,16 @@ export default function RecurringTab({
                   </div>
                   <div style={{ fontSize: 11, color: "var(--faint2)", marginTop: 2 }}>
                     {cat.label}
-                    {item.due_day ? ` · ${item.category === "income" ? "Received" : "Due"} ${ordinal(item.due_day)}` : ""}
+                    {STEP_DAYS[item.frequency]
+                      ? ` · ${FREQUENCIES[item.frequency]}${nextPayday(item) ? ` · next ${shortDate(nextPayday(item))}` : ""}`
+                      : item.frequency === "varies" ? " · Varies · estimate"
+                      : item.due_day ? ` · ${item.category === "income" ? "Received" : "Due"} ${ordinal(item.due_day)}` : ""}
                     {item.notes ? ` · ${item.notes}` : ""}
                   </div>
                 </div>
                 <div style={{ fontWeight: 700, fontSize: 14, color: item.category === "income" ? "#059669" : "var(--text)", flexShrink: 0 }}>
                   {fmt(item.amount, item)}
+                  {STEP_DAYS[item.frequency] && <span style={{ fontSize: 11, fontWeight: 600, color: "var(--muted)" }}>/pay</span>}
                 </div>
                 <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
                   <button style={iconBtn} onClick={() => openEdit(item)} aria-label={`Edit ${item.label}`} title="Edit">
