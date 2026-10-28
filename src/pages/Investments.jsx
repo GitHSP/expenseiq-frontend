@@ -22,13 +22,13 @@ const EMPTY = {
   kind: "insurance", name: "", provider: "", currency: "INR", start_date: "", recurring_item: "",
   payment: "", payment_frequency: "monthly", rate: "",
   policy_type: "", paying_years: "", term_years: "", sum_assured: "",
-  current_value: "", current_value_date: "", maturity_value: "",
+  current_value: "", current_value_date: "", maturity_value: "", yearly_cost: "", surrender_charge: "",
   months: "", chit_value: "", prized: false, prized_date: "", prize_amount: "",
   deposit_where: "", deposit_amount: "", deposit_rate: "", deposit_start: "",
   compounding: "quarterly", notes: "",
 };
 const NUMBER_FIELDS = ["payment", "rate", "paying_years", "term_years", "sum_assured", "current_value",
-                       "maturity_value", "months", "chit_value", "prize_amount", "deposit_amount", "deposit_rate"];
+                       "maturity_value", "yearly_cost", "surrender_charge", "months", "chit_value", "prize_amount", "deposit_amount", "deposit_rate"];
 const DATE_FIELDS = ["current_value_date", "prized_date", "deposit_start"];
 
 const inputStyle = {
@@ -122,7 +122,7 @@ function BreakdownRow({ name, detail, cad, original, currency, negative, show, d
   );
 }
 
-const WORTH_BASIS = { insurance: "cash value", rd: "value now", chit: "paid in, or deposit − still to pay" };
+const WORTH_BASIS = { insurance: "cash value − surrender charge", rd: "value now", chit: "paid in, or deposit − still to pay" };
 
 function NetWorth({ data, getRate, show, display }) {
   const [open, setOpen] = useState(false);
@@ -281,6 +281,12 @@ function InvestmentForm({ initial, recurring, onSave, onCancel, saving }) {
           <Field label="Maturity value (as quoted)">{amount("maturity_value", { placeholder: "Optional" })}</Field>
           <Field label="Cash value now" hint="From your latest policy statement — the projection starts from it">{amount("current_value", { placeholder: "Optional" })}</Field>
           <Field label="Cash value as of">{input("current_value_date", { type: "date" })}</Field>
+          <Field label="Yearly cost" hint="Insurance cost + policy fee + premium tax from the statement — taken off the projection">
+            {amount("yearly_cost", { placeholder: "Optional" })}
+          </Field>
+          <Field label="Surrender charge now" hint="From the statement; update it each year, 0 once it ends — taken off net worth">
+            {amount("surrender_charge", { placeholder: "Optional" })}
+          </Field>
         </div>
       )}
 
@@ -410,15 +416,20 @@ function InvestmentCard({ inv, recurring, onEdit, onDelete, onAddPayment, onDele
     stats = [
       { label: s.value_basis === "statement" ? "Cash value" : "Est. value now", value: m(s.value_now),
         sub: s.value_basis === "statement" ? `as of ${dateLabel(inv.current_value_date)}` : "estimate — add your cash value", color: "#059669" },
+      ...(s.surrender_charge !== null && s.surrender_charge !== undefined ? [{
+        label: "If cancelled now", value: m(s.surrender_value), sub: `after ${m(s.surrender_charge)} surrender charge`,
+        color: num(s.surrender_value) > 0 ? "var(--text)" : "#e11d48",
+      }] : []),
       { label: "Paid so far", value: m(s.paid_so_far), sub: `${s.payments_made} premiums` },
-      { label: "Still to pay", value: s.still_to_pay !== null ? m(s.still_to_pay) : "—",
-        sub: s.premiums_end ? `${s.payments_left} more, until ${dateLabel(s.premiums_end)}` : "Add paying years" },
+      { label: "Still to pay", value: s.still_to_pay !== null ? m(s.still_to_pay) : `${m(inv.payment)}/${inv.payment_frequency === "monthly" ? "mo" : PAY_FREQ[inv.payment_frequency].toLowerCase()}`,
+        sub: s.premiums_end ? `${s.payments_left} more, until ${dateLabel(s.premiums_end)}` : "Ongoing — no set end" },
       { label: "At maturity", value: s.quoted_maturity ? m(s.quoted_maturity) : s.projected_maturity ? m(s.projected_maturity) : "—",
         sub: s.maturity_date ? `${dateLabel(s.maturity_date)} · ${monthsLabel(s.months_left)} left` : "Add the policy term",
         color: "#7c3aed" },
     ];
     if (s.quoted_maturity && s.projected_maturity) stats[3].sub += ` · projected ${m(s.projected_maturity)}`;
     if (inv.sum_assured) stats.push({ label: "Sum assured", value: m(inv.sum_assured) });
+    if (inv.yearly_cost) stats.push({ label: "Yearly cost", value: m(inv.yearly_cost), sub: `~${m(num(inv.yearly_cost) / 12)}/month out of the fund` });
   } else if (inv.kind === "rd") {
     sub = [`${m(inv.payment)}/month`, `${num(inv.rate)}%`, `${inv.months} months`];
     stats = [
