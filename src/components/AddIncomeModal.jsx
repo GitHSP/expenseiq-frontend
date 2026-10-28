@@ -5,6 +5,7 @@
 import { useState, useEffect } from "react";
 import { INCOME_CATEGORIES }  from "../hooks/useIncome";
 import { IconLabel } from "./Icon";
+import AmountField, { startingEntry, toStored } from "./AmountField";
 
 const EMPTY_FORM = {
   title:    "",
@@ -14,8 +15,14 @@ const EMPTY_FORM = {
   notes:    "",
 };
 
-export default function AddIncomeModal({ editingIncome, onSave, onClose }) {
+export default function AddIncomeModal({ editingIncome, onSave, onClose, currency = "CAD", getRate = c => (c === "CAD" ? 1 : null) }) {
   const [form, setForm] = useState(EMPTY_FORM);
+  const [entry, setEntry] = useState(() => startingEntry("", currency, getRate));
+
+  useEffect(() => {
+    setEntry(startingEntry(editingIncome ? editingIncome.amount : "", currency, getRate, editingIncome?.notes));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editingIncome]);
 
   // Pre-fill form if editing
   useEffect(() => {
@@ -61,17 +68,8 @@ export default function AddIncomeModal({ editingIncome, onSave, onClose }) {
 
         {/* Amount + Date */}
         <div className="form-grid-2">
-          <div className="form-group">
-            <label className="label">Amount ($) *</label>
-            <input
-              className="input"
-              type="number"
-              inputMode="decimal"
-              placeholder="0.00"
-              value={form.amount}
-              onChange={e => update("amount", e.target.value)}
-            />
-          </div>
+          <AmountField entry={entry} onChange={setEntry} getRate={getRate}
+            labelClassName="label" inputClassName="input" />
           <div className="form-group">
             <label className="label">Date</label>
             <input
@@ -121,7 +119,7 @@ export default function AddIncomeModal({ editingIncome, onSave, onClose }) {
         <div className="modal-footer">
           <button
             className="btn-primary"
-            onClick={() => onSave(form)}
+            onClick={() => onSave({ ...form, ...toStored(entry, form.notes, getRate) })}
             style={{ flex: 1, background: "linear-gradient(135deg,#55EFC4,#00B894)" }}
           >
             {editingIncome ? "Update Income" : "Add Income"}

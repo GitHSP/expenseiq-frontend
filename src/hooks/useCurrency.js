@@ -47,15 +47,25 @@ export function useCurrency() {
         }
       }
 
-      // Fetch fresh rates with CAD as base
-      const res  = await fetch(`${BASE_URL}/latest/CAD`);
-      const data = await res.json();
+      // Fetch fresh rates with CAD as base: the keyed API first, then a
+      // free no-key source (open.er-api.com) if the key is missing or rejected.
+      let fresh = null;
+      if (API_KEY) {
+        try {
+          const data = await (await fetch(`${BASE_URL}/latest/CAD`)).json();
+          if (data.result === "success") fresh = data.conversion_rates;
+        } catch { /* try the backup */ }
+      }
+      if (!fresh) {
+        const data = await (await fetch("https://open.er-api.com/v6/latest/CAD")).json();
+        if (data.result === "success") fresh = data.rates;
+      }
 
-      if (data.result === "success") {
-        setRates(data.conversion_rates);
+      if (fresh) {
+        setRates(fresh);
         setLastUpdated(new Date());
         // Cache rates to avoid hitting API limit
-        localStorage.setItem("expenseiq_rates",      JSON.stringify(data.conversion_rates));
+        localStorage.setItem("expenseiq_rates",      JSON.stringify(fresh));
         localStorage.setItem("expenseiq_rates_time", Date.now().toString());
       } else {
         setError("Failed to fetch rates");
@@ -99,11 +109,12 @@ export function useCurrency() {
 
   // ── Format amount in selected currency ──
   function formatAmount(amountInCAD) {
-    const converted = convert(amountInCAD);
-    // const curr      = SUPPORTED_CURRENCIES.find(c => c.code === currency);
+    // Without a rate, show CAD rather than CAD numbers with another symbol.
+    const shown = currency === "CAD" || rates[currency] ? currency : "CAD";
+    const converted = shown === "CAD" ? (parseFloat(amountInCAD) || 0) : convert(amountInCAD);
     return new Intl.NumberFormat("en-US", {
       style:    "currency",
-      currency: currency,
+      currency: shown,
       minimumFractionDigits: 2,
     }).format(converted);
   }

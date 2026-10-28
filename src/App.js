@@ -495,6 +495,8 @@ async function handleLogout() {
 
       {showModal && (
         <AddExpenseModal
+          currency={currency}
+          getRate={getRate}
           editingExpense={editingExpense}
           onSave={handleSave}
           onClose={() => setShowModal(false)}
@@ -527,6 +529,8 @@ async function handleLogout() {
 
       {showIncomeModal && (
         <AddIncomeModal
+          currency={currency}
+          getRate={getRate}
           editingIncome={editingIncome}
           onSave={handleSaveIncome}
           onClose={() => setShowIncomeModal(false)}

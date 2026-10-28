@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { CATEGORIES }          from "../constants/categories";
 import Icon, { IconLabel } from "./Icon";
+import AmountField, { startingEntry, toStored } from "./AmountField";
 
 const EMPTY_FORM = {
   title:    "",
@@ -36,8 +37,14 @@ const labelStyle = {
   marginBottom:  "5px",
 };
 
-export default function AddExpenseModal({ editingExpense, onSave, onClose }) {
+export default function AddExpenseModal({ editingExpense, onSave, onClose, currency = "CAD", getRate = c => (c === "CAD" ? 1 : null) }) {
   const [form, setForm] = useState(EMPTY_FORM);
+  const [entry, setEntry] = useState(() => startingEntry("", currency, getRate));
+
+  useEffect(() => {
+    setEntry(startingEntry(editingExpense ? editingExpense.amount : "", currency, getRate, editingExpense?.notes));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editingExpense]);
 
   useEffect(() => {
     if (editingExpense) {
@@ -86,17 +93,8 @@ export default function AddExpenseModal({ editingExpense, onSave, onClose }) {
 
         {/* Amount + Date */}
         <div className="form-grid-2">
-          <div className="form-group">
-            <label style={labelStyle}>Amount ($) *</label>
-            <input
-              style={inputStyle}
-              type="number"
-              inputMode="decimal"
-              placeholder="0.00"
-              value={form.amount}
-              onChange={e => update("amount", e.target.value)}
-            />
-          </div>
+          <AmountField entry={entry} onChange={setEntry} getRate={getRate}
+            labelStyle={labelStyle} inputStyle={inputStyle} />
           <div className="form-group">
             <label style={labelStyle}>Date *</label>
             <input
@@ -176,7 +174,7 @@ export default function AddExpenseModal({ editingExpense, onSave, onClose }) {
         <div className="modal-footer">
           <button
             className="btn-primary"
-            onClick={() => onSave(form)}
+            onClick={() => onSave({ ...form, ...toStored(entry, form.notes, getRate) })}
             style={{ flex:1 }}
           >
             {editingExpense ? "Update Expense" : "Add Expense"}
