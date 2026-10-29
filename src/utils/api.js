@@ -325,6 +325,9 @@ export const accountsAPI = {
     if (q) params.set("q", q);
     return handleResponse(await authFetch(`${BASE_URL}/statements/transactions/?${params}`, { headers: getHeaders(true) }));
   },
+  setTransactionKind: async (id, kind, category) => handleResponse(await authFetch(`${BASE_URL}/statements/transactions/${id}/`, {
+    method: "PATCH", headers: getHeaders(true), body: JSON.stringify({ kind, ...(category ? { category } : {}) }),
+  })),
   recurring: async () => handleResponse(await authFetch(`${BASE_URL}/statements/recurring/`, { headers: getHeaders(true) })),
   summary: async () => handleResponse(await authFetch(`${BASE_URL}/statements/summary/`, { headers: getHeaders(true) })),
   rules: async () => handleResponse(await authFetch(`${BASE_URL}/statements/rules/`, { headers: getHeaders(true) })),

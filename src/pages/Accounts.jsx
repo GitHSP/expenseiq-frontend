@@ -511,7 +511,10 @@ function RecurringTab({ recurring, accounts, months, fmt }) {
 // Transactions
 // ─────────────────────────────────────────────
 
-function TransactionsTab({ accounts, months, filter, setFilter, fmt }) {
+// What a row can be changed to (a "duplicate" stays as it is unless changed).
+const KIND_CHOICES = ["expense", "income", "transfer", "skipped"];
+
+function TransactionsTab({ accounts, months, filter, setFilter, fmt, onChanged }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -527,6 +530,20 @@ function TransactionsTab({ accounts, months, filter, setFilter, fmt }) {
       .finally(() => !cancelled && setLoading(false));
     return () => { cancelled = true; };
   }, [account, month, q, setFilter]);
+
+  async function changeKind(t, kind) {
+    if (kind === t.kind) return;
+    const before = data;
+    setData(d => ({ ...d, transactions: d.transactions.map(x => (x.id === t.id ? { ...x, kind } : x)) }));
+    try {
+      const res = await accountsAPI.setTransactionKind(t.id, kind);
+      setData(d => ({ ...d, transactions: d.transactions.map(x => (x.id === t.id ? { ...x, ...res } : x)) }));
+      onChanged && onChanged();
+    } catch (e) {
+      setData(before);
+      setError(e.message || "Couldn't change it");
+    }
+  }
 
   const shownMonth = month || data?.month;
   const idx = months.indexOf(shownMonth);
@@ -599,7 +616,14 @@ function TransactionsTab({ accounts, months, filter, setFilter, fmt }) {
                   </td>
                   {!account && <td style={{ padding: "9px 12px", fontSize: 12, color: "var(--muted2)", whiteSpace: "nowrap" }}>{t.account}</td>}
                   <td style={{ padding: "9px 12px" }}>
-                    <Badge color={k.color}>{k.label}</Badge>
+                    <select value={t.kind} onChange={e => changeKind(t, e.target.value)} aria-label={`Type of ${t.title}`}
+                      title="Change what this is — an expense or income entry is added or removed to match"
+                      style={{ fontSize: 11, fontWeight: 700, color: k.color, background: `${k.color}14`,
+                               border: `1px solid ${k.color}40`, borderRadius: 4, padding: "1px 4px", cursor: "pointer" }}>
+                      {(KIND_CHOICES.includes(t.kind) ? KIND_CHOICES : [t.kind, ...KIND_CHOICES]).map(x => (
+                        <option key={x} value={x}>{(TX_KINDS[x] || TX_KINDS.skipped).label}</option>
+                      ))}
+                    </select>
                     {t.category && t.kind !== "income" && t.kind !== "transfer" && (
                       <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{t.category}</div>
                     )}
@@ -1053,7 +1077,8 @@ export default function Accounts({ formatAmount, onImport, refreshKey, onEntries
           {tab === "recurring" && <RecurringTab recurring={recurring} accounts={accounts} months={months} fmt={fmt} />}
 
           {tab === "transactions" && (
-            <TransactionsTab accounts={accounts} months={months} filter={filter} setFilter={setFilter} fmt={fmt} />
+            <TransactionsTab accounts={accounts} months={months} filter={filter} setFilter={setFilter} fmt={fmt}
+              onChanged={() => onEntriesDeleted && onEntriesDeleted({ deleted_expenses: 0, deleted_income: 0, silent: true })} />
           )}
         </>
       )}
