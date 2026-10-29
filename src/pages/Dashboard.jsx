@@ -154,12 +154,18 @@ export default function Dashboard({
   }
   const monthBills = sharing.months[ym]?.shared_bills || {};
   const billsTotal = Object.values(monthBills).reduce((s, v) => s + (parseFloat(v) || 0), 0);
+  // With "My share" set on the bills, their expenses are already your share;
+  // roommates' money just pays you back (not subtracted again).
+  const atShare    = !!sharing.months[ym]?.bills_at_share;
+  const myShares   = sharing.months[ym]?.my_shares || {};
+  const myShare    = Object.values(myShares).reduce((s, v) => s + (parseFloat(v) || 0), 0);
+  const owedToYou  = billsTotal - myShare;                     // what roommates should cover
   // e-transfers counted as income while no shared rule is set up yet
   const transferIncome = sharing.matchers.length === 0 && thisMonthInc.some(i => /e-?transfer|interac/i.test(`${i.title} ${i.notes || ""}`));
 
   // ── Totals ──
   const grossExpenses = thisMonthExp.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
-  const totalExpenses = Math.max(grossExpenses - sharedTotal, 0);    // your own share
+  const totalExpenses = atShare ? grossExpenses : Math.max(grossExpenses - sharedTotal, 0);    // your own share
   const totalIncome   = thisMonthInc.reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
   const netBalance    = totalIncome - totalExpenses;
   const savingsRate   = totalIncome > 0 ? ((netBalance / totalIncome) * 100).toFixed(1) : 0;
@@ -201,7 +207,7 @@ export default function Dashboard({
       id:       "expenses",
       label:    isCurrent ? "This Month" : `${MONTHS[currentMonth].slice(0, 3)} Spending`,
       value:    fmt(totalExpenses),
-      sub:      sharedTotal > 0
+      sub:      sharedTotal > 0 && !atShare
         ? `your share · ${fmt(sharedTotal)} paid by roommates`
         : `${thisMonthExp.length} expenses · avg ${fmt(dailyAvg)}/day`,
       gradient: "linear-gradient(135deg, #e11d48, #be123c)",
@@ -311,7 +317,7 @@ export default function Dashboard({
             <div className="card-title" style={{ margin:0 }}>Shared bills · {monthLabel}</div>
             {billsTotal > 0 && (
               <div style={{ fontSize:13, color:"var(--muted)" }}>
-                Your share <strong style={{ color:"var(--text)", fontSize:15 }}>{fmt(Math.max(billsTotal - sharedTotal, 0))}</strong>
+                Your share <strong style={{ color:"var(--text)", fontSize:15 }}>{fmt(atShare ? myShare : Math.max(billsTotal - sharedTotal, 0))}</strong>
               </div>
             )}
           </div>
@@ -352,9 +358,19 @@ export default function Dashboard({
               )}
             </div>
           </div>
+          {atShare && billsTotal > 0 && (
+            <div style={{ fontSize:13, marginTop:12, paddingTop:10, borderTop:"1px solid var(--subtle2)", display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:6 }}>
+              <span>Roommates' part {fmt(owedToYou)} · they paid {fmt(sharedTotal)}</span>
+              <strong style={{ color: owedToYou - sharedTotal > 0.5 ? "#d97706" : "#059669" }}>
+                {owedToYou - sharedTotal > 0.5 ? `${fmt(owedToYou - sharedTotal)} still to come`
+                  : sharedTotal - owedToYou > 0.5 ? `${fmt(sharedTotal - owedToYou)} more than their part` : "All square"}
+              </strong>
+            </div>
+          )}
           <div style={{ fontSize:11, color:"var(--faint2)", marginTop:10 }}>
-            Not counted as income — it lowers your spending. If a roommate keeps back your share of a bill they pay (e.g. WiFi),
-            that difference is already part of your share.
+            {atShare
+              ? "Bills count as your share in expenses. Roommates' payments aren't income — they pay you back. A roommate keeping back your share of a bill they pay (e.g. WiFi) shows here as a small gap."
+              : "Not counted as income — it lowers your spending. Set \"My share\" on each bill in Accounts → Rules to count rent as your part (e.g. 625)."}
           </div>
         </div>
       )}
@@ -380,7 +396,7 @@ export default function Dashboard({
                   </div>
                   <div style={{ fontSize:12, color:"var(--muted)", marginTop:2 }}>
                     {thisMonthExp.length} transactions · Total {fmt(grossExpenses)}
-                    {sharedTotal > 0 && ` − ${fmt(sharedTotal)} shared by roommates = ${fmt(totalExpenses)} yours`}
+                    {sharedTotal > 0 && !atShare && ` − ${fmt(sharedTotal)} shared by roommates = ${fmt(totalExpenses)} yours`}
                   </div>
                 </div>
                 <button className="btn-ghost" onClick={onViewAll} style={{ display:"inline-flex", alignItems:"center", gap:4 }}>View all <Icon name="arrow-right" size={13} /></button>

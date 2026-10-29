@@ -116,7 +116,8 @@ export default function ImportStatementModal({ onClose, onImported, formatAmount
         : (kind === "expense" ? r.expense_category : r.income_category);
       // Money in that isn't pay, a benefit or an ATM deposit starts unticked (tick it to keep it as income).
       const notIncome = kind === "income" && r.not_income;
-      const include = e.include ?? (!r.is_transfer && !r.transfer_match && !duplicate && !notIncome);
+      const charge = kind === "expense" && r.not_expense;      // interest or a fee
+      const include = e.include ?? (!r.is_transfer && !r.transfer_match && !duplicate && !notIncome && !charge);
       const title = e.title ?? r.title;
       const tick = !!r.checklist_match && (e.tick ?? true);
       return { ...r, kind, duplicate, category, include, title, tick };
@@ -366,6 +367,9 @@ export default function ImportStatementModal({ onClose, onImported, formatAmount
                           {r.is_transfer && !r.transfer_match && <Badge color="#7c3aed">Transfer</Badge>}
                           {r.kind === "income" && r.not_income === "refund" && (
                             <span title="A refund or reversal — it lowers your spending instead of counting as income"><Badge color="#0891b2">Refund</Badge></span>
+                          )}
+                          {r.kind === "expense" && r.not_expense && (
+                            <span title="Interest or a fee — not counted as an expense (tick it to keep it)"><Badge color="#64748b">Interest / fee</Badge></span>
                           )}
                           {r.kind === "income" && r.not_income === "other" && (
                             <span title="Not pay, a government benefit or an ATM deposit — tick it if it is income"><Badge color="#64748b">Not income</Badge></span>

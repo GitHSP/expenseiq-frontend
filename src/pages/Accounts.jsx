@@ -892,9 +892,9 @@ const RULE_TYPES = [
   { id: "",         label: "Just rename / recategorise" },
 ];
 
-function RulesPanel({ onChanged }) {
+function RulesPanel({ onChanged, fmt = v => `$${v}` }) {
   const [rules, setRules] = useState([]);
-  const [form, setForm] = useState({ match: "", treat_as: "shared", rename_to: "" });
+  const [form, setForm] = useState({ match: "", treat_as: "shared", rename_to: "", my_share: "" });
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
@@ -906,9 +906,10 @@ function RulesPanel({ onChanged }) {
     e.preventDefault();
     setBusy(true); setErr(""); setMsg("");
     try {
-      const r = await accountsAPI.addRule({ match: form.match.trim(), treat_as: form.treat_as, rename_to: form.rename_to.trim() });
+      const r = await accountsAPI.addRule({ match: form.match.trim(), treat_as: form.treat_as, rename_to: form.rename_to.trim(),
+                                            my_share: form.treat_as === "bill" ? form.my_share.trim() : "" });
       setMsg(r.message || "Saved.");
-      setForm(f => ({ ...f, match: "", rename_to: "" }));
+      setForm(f => ({ ...f, match: "", rename_to: "", my_share: "" }));
       await load();
       onChanged?.();
     } catch (e2) { setErr(e2.message || "Couldn't save the rule"); }
@@ -930,7 +931,8 @@ function RulesPanel({ onChanged }) {
       </div>
       <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 12, lineHeight: 1.5 }}>
         Anything whose description mentions the text follows the rule — what's already imported and every future
-        upload. E.g. a roommate's name as it appears on their e-transfers → "Pays their share of my bills".
+        upload. E.g. a roommate's name as it appears on their e-transfers → "Pays their share of my bills";
+        your landlord → "A shared bill I pay in full" with your share (add it again to change the share).
       </div>
       <form onSubmit={add} style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
         <input value={form.match} onChange={e => setForm(f => ({ ...f, match: e.target.value }))}
@@ -939,6 +941,10 @@ function RulesPanel({ onChanged }) {
           aria-label="What it is" style={{ ...selectStyle, flex: "1 1 220px" }}>
           {RULE_TYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
         </select>
+        {form.treat_as === "bill" && (
+          <input value={form.my_share} onChange={e => setForm(f => ({ ...f, my_share: e.target.value }))}
+            placeholder="My share, e.g. 625 or 25%" aria-label="My share" style={{ ...selectStyle, flex: "1 1 150px" }} />
+        )}
         <input value={form.rename_to} onChange={e => setForm(f => ({ ...f, rename_to: e.target.value }))}
           placeholder="Rename to (optional)" aria-label="Rename to" style={{ ...selectStyle, flex: "1 1 140px" }} />
         <button className="btn-primary" disabled={busy || form.match.trim().length < 3} style={{ padding: "8px 14px" }}>
@@ -952,7 +958,8 @@ function RulesPanel({ onChanged }) {
                                  borderTop: "1px solid var(--subtle2)", fontSize: 13, flexWrap: "wrap" }}>
           <strong style={{ minWidth: 90 }}>"{r.match}"</strong>
           <span style={{ color: "var(--muted2)", flex: 1, minWidth: 160 }}>
-            {label(r.treat_as)}{r.rename_to ? ` · shown as "${r.rename_to}"` : ""}{r.category ? ` · ${r.category}` : ""}
+            {label(r.treat_as)}{r.my_share ? ` · my share ${/%$/.test(r.my_share) ? r.my_share : fmt(r.my_share)}` : ""}
+            {r.rename_to ? ` · shown as "${r.rename_to}"` : ""}{r.category ? ` · ${r.category}` : ""}
           </span>
           <button className="btn-ghost" style={{ padding: "4px 8px", color: "#e11d48" }} disabled={busy}
             aria-label={`Delete rule ${r.match}`} onClick={() => remove(r.id)}>
@@ -1060,7 +1067,7 @@ export default function Accounts({ formatAmount, onImport, refreshKey, onEntries
                 ))}
               </div>
               <MonthlySummary summary={summary} fmt={fmt} />
-              <RulesPanel onChanged={() => { load(); onEntriesDeleted?.({ deleted_expenses: 0, deleted_income: 0, silent: true }); }} />
+              <RulesPanel fmt={fmt} onChanged={() => { load(); onEntriesDeleted?.({ deleted_expenses: 0, deleted_income: 0, silent: true }); }} />
               <CoverageGrid accounts={accounts} months={months} onOpen={openTransactions} />
               {accounts.map(a => (
                 <AccountCard key={`${a.id}-${a.name}-${a.kind}`} account={a} accounts={accounts} months={months} fmt={fmt}
