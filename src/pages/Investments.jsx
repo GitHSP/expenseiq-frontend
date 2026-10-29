@@ -434,6 +434,12 @@ function ExpectedValue({ s, m }) {
   const cell = { padding: "6px 4px", textAlign: "right", whiteSpace: "nowrap" };
   return (
     <div style={{ marginTop: 12, borderTop: "1px solid var(--subtle2)", paddingTop: 12 }}>
+      {s.monthly_split && num(s.monthly_split.invested) === 0 && (
+        <div style={{ fontSize: 12, color: "#d97706", fontWeight: 600, marginBottom: 10 }}>
+          The yearly cost takes your whole premium, so nothing grows. Check it on your statement —
+          a new policy's cost is roughly (premium − first month's cash value) × 12.
+        </div>
+      )}
       {s.monthly_split && (
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12, fontSize: 12 }}>
           {[["Each month you pay", s.monthly_split.premium, "var(--text)"],
@@ -504,7 +510,8 @@ function InvestmentCard({ inv, recurring, onEdit, onDelete, onAddPayment, onDele
         sub: s.maturity_date ? `${dateLabel(s.maturity_date)} · ${monthsLabel(s.months_left)} left` : "Add the policy term",
         color: "#7c3aed" },
     ];
-    if (s.quoted_maturity && s.projected_maturity) stats[3].sub += ` · projected ${m(s.projected_maturity)}`;
+    const atMaturity = stats.find(x => x.label === "At maturity");
+    if (atMaturity && s.quoted_maturity && s.projected_maturity) atMaturity.sub += ` · projected ${m(s.projected_maturity)}`;
     if (inv.sum_assured) stats.push({ label: "Sum assured", value: m(inv.sum_assured) });
     if (inv.yearly_cost) stats.push({ label: "Yearly cost", value: m(inv.yearly_cost), sub: `~${m(num(inv.yearly_cost) / 12)}/month out of the fund` });
   } else if (inv.kind === "rd") {
