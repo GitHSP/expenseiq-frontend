@@ -2,8 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Icon from "../components/Icon";
 import { financialPlannerAPI } from "../utils/api";
 
-// Investments: insurance policies with a cash value, chits and recurring
-// deposits, in India or Canada. Each is kept in its own currency (an Indian
+// Investments: insurance policies with a cash value, chits, recurring and
+// fixed deposits, in India or Canada. Each is kept in its own currency (an Indian
 // RD stays in rupees); the backend works out paid so far, value now and
 // maturity (financial_planner/investments.py). Net worth at the top adds
 // bank balances from the newest statements and takes off debts.
@@ -12,7 +12,9 @@ const KINDS = {
   insurance: { label: "Insurance",          plural: "Insurance",          icon: "shield",     color: "#0070f3" },
   chit:      { label: "Chit",               plural: "Chits",              icon: "coins",      color: "#d97706" },
   rd:        { label: "Recurring deposit",  plural: "Recurring deposits", icon: "piggy-bank", color: "#059669" },
+  fd:        { label: "Fixed deposit",      plural: "Fixed deposits",     icon: "lock",       color: "#7c3aed" },
 };
+const PAYOUTS = { "": "Reinvested — paid at maturity", monthly: "Paid out monthly", quarterly: "Paid out quarterly", yearly: "Paid out yearly" };
 const CURRENCIES = ["INR", "CAD", "USD", "GBP", "EUR", "AUD", "AED"];
 const PAY_FREQ = { monthly: "Monthly", quarterly: "Quarterly", half_yearly: "Half-yearly", yearly: "Yearly" };
 const POLICY_TYPES = ["Universal life", "Whole life", "Endowment", "Money back", "ULIP", "Term", "Other"];
@@ -25,7 +27,7 @@ const EMPTY = {
   current_value: "", current_value_date: "", maturity_value: "", yearly_cost: "", surrender_charge: "",
   months: "", chit_value: "", prized: false, prized_date: "", prize_amount: "",
   deposit_where: "", deposit_amount: "", deposit_rate: "", deposit_start: "",
-  compounding: "quarterly", notes: "",
+  compounding: "quarterly", interest_payout: "", notes: "",
 };
 const NUMBER_FIELDS = ["payment", "rate", "paying_years", "term_years", "sum_assured", "current_value",
                        "maturity_value", "yearly_cost", "surrender_charge", "months", "chit_value", "prize_amount", "deposit_amount", "deposit_rate"];
@@ -122,7 +124,7 @@ function BreakdownRow({ name, detail, cad, original, currency, negative, show, d
   );
 }
 
-const WORTH_BASIS = { insurance: "cash value − surrender charge", rd: "value now", chit: "paid in, or deposit − still to pay" };
+const WORTH_BASIS = { fd: "value now", insurance: "cash value − surrender charge", rd: "value now", chit: "paid in, or deposit − still to pay" };
 
 function NetWorth({ data, getRate, show, display }) {
   const [open, setOpen] = useState(false);
@@ -250,7 +252,7 @@ function InvestmentForm({ initial, recurring, onSave, onCancel, saving }) {
       )}
 
       <div className="form-grid-2">
-        <Field label="Name *">{input("name", { placeholder: k === "insurance" ? "e.g. iA iVARI" : k === "chit" ? "e.g. KSFE 5 lakh" : "e.g. SBI RD" })}</Field>
+        <Field label="Name *">{input("name", { placeholder: { insurance: "e.g. iA iVARI", chit: "e.g. KSFE 5 lakh", rd: "e.g. SBI RD", fd: "e.g. Federal Bank FD" }[k] })}</Field>
         <Field label={k === "insurance" ? "Company" : k === "chit" ? "Organiser" : "Bank"}>{input("provider", { placeholder: "Optional" })}</Field>
         <Field label="Currency">
           <select style={inputStyle} value={f.currency} onChange={e => set("currency", e.target.value)}>
@@ -335,6 +337,29 @@ function InvestmentForm({ initial, recurring, onSave, onCancel, saving }) {
             </select>
           </Field>
           <Field label="Maturity amount (as quoted)" hint="Leave empty to calculate it">{amount("maturity_value", { placeholder: "Optional" })}</Field>
+        </div>
+      )}
+
+      {k === "fd" && (
+        <div className="form-grid-2">
+          <Field label="Amount deposited *">{amount("payment", { placeholder: "e.g. 100000" })}</Field>
+          <Field label="Interest % a year *">{amount("rate", { placeholder: "e.g. 7.25" })}</Field>
+          <Field label="Tenure (months) *">{amount("months", { placeholder: "e.g. 12", step: 1 })}</Field>
+          <Field label="Interest">
+            <select style={inputStyle} value={f.interest_payout} onChange={e => set("interest_payout", e.target.value)}>
+              {Object.entries(PAYOUTS).map(([key, v]) => <option key={key} value={key}>{v}</option>)}
+            </select>
+          </Field>
+          {!f.interest_payout && (
+            <Field label="Compounding">
+              <select style={inputStyle} value={f.compounding} onChange={e => set("compounding", e.target.value)}>
+                <option value="quarterly">Quarterly (Indian banks)</option>
+                <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly</option>
+              </select>
+            </Field>
+          )}
+          <Field label="Maturity amount (as quoted)" hint="From the FD receipt — leave empty to calculate it">{amount("maturity_value", { placeholder: "Optional" })}</Field>
         </div>
       )}
 
@@ -491,6 +516,17 @@ function InvestmentCard({ inv, recurring, onEdit, onDelete, onAddPayment, onDele
       { label: "Maturity", value: m(s.maturity), sub: `${dateLabel(s.maturity_date)} · ${monthsLabel(s.months_left)} left`, color: "#7c3aed" },
       { label: "Interest earned", value: m(s.interest), sub: inv.maturity_value ? `calculated ${m(s.calculated_maturity)}` : null },
     ];
+  } else if (inv.kind === "fd") {
+    sub = [`${m(inv.payment)} deposited`, `${num(inv.rate)}%`, `${inv.months} months`, PAYOUTS[inv.interest_payout || ""]];
+    stats = [
+      { label: s.matured ? "Matured" : "Value now", value: m(s.value_now), color: "#059669",
+        sub: inv.interest_payout ? "deposit stays the same" : `+${m(s.interest_so_far)} interest so far` },
+      { label: "Maturity", value: m(s.maturity), sub: `${dateLabel(s.maturity_date)} · ${monthsLabel(s.months_left)} left`, color: "#7c3aed" },
+      { label: "Total interest", value: m(s.interest), sub: inv.maturity_value && !inv.interest_payout ? `calculated ${m(s.calculated_maturity)}` : null },
+    ];
+    if (inv.interest_payout) stats.push({
+      label: "Interest received", value: m(s.interest_received),
+      sub: `${s.payouts_received} of ${s.payouts_total} · ${m(s.interest_per_payout)} each` });
   } else {
     sub = [`${m(inv.chit_value)} chit`, `${inv.months} months`, inv.prized ? "Prized" : "Not prized yet"];
     stats = [
@@ -693,7 +729,7 @@ export default function Investments({
         <div className="empty-state">
           <div className="empty-icon"><Icon name="piggy-bank" size={40} strokeWidth={1.5} /></div>
           <div style={{ fontWeight: 600, color: "var(--faint)", fontSize: 15, marginBottom: 6 }}>No investments yet</div>
-          <div style={{ fontSize: 13, color: "var(--faint)", marginBottom: 14 }}>Add an insurance policy, a chit or an RD.</div>
+          <div style={{ fontSize: 13, color: "var(--faint)", marginBottom: 14 }}>Add an insurance policy, a chit, an RD or an FD.</div>
           <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
             {Object.entries(KINDS).map(([key, v]) => (
               <button key={key} className="btn-secondary" onClick={() => openAdd(key)}
