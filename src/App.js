@@ -336,6 +336,8 @@ async function handleLogout() {
         }
         return (
           <Dashboard
+            refreshKey={accountsKey}
+            onOpenRules={() => setView("accounts")}
             expenses={expenses}
             onEdit={openEditModal}
             onDelete={handleDelete}

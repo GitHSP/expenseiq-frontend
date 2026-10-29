@@ -526,6 +526,10 @@ export default function FinancialPlanner({
                       <div style={{ fontSize:11, color:C.muted, marginTop:1 }}>
                         {DEBT_TYPE_LABELS[debt.debt_type]} · {debt.annual_interest_rate}% APR
                         {debt.due_day && ` · Due day ${debt.due_day}`}
+                        {(() => {
+                          const payers = recurring.filter(r => r.is_active && r.debt === debt.id && r.category !== "income");
+                          return payers.length ? ` · paid by "${payers.map(r => r.label).join('", "')}" in Recurring` : "";
+                        })()}
                       </div>
                     </div>
                   </div>

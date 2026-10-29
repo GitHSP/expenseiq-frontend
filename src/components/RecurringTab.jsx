@@ -17,7 +17,7 @@ export const RECURRING_CATEGORIES = {
 
 const EMPTY_FORM = {
   label: "", amount: "", due_day: "", category: "fixed_expense",
-  frequency: "monthly", anchor_date: "", average_from: "", is_auto_debit: false, notes: "",
+  frequency: "monthly", anchor_date: "", average_from: "", debt: "", is_auto_debit: false, notes: "",
 };
 
 export const FREQUENCIES = {
@@ -103,11 +103,15 @@ export default function RecurringTab({
     ? num(r.amount) * paydaysIn(r, now.getFullYear(), now.getMonth()).length
     : num(r.amount);
   const active  = recurring.filter(r => r.is_active);
-  const income  = active.filter(r => r.category === "income").reduce((s, r) => s + monthly(r), 0);
-  const outgoing= active.filter(r => r.category !== "income").reduce((s, r) => s + monthly(r), 0);
-
   const activeDebts = debts.filter(d => d.is_active && num(d.current_balance) > 0);
-  const debtPayments= activeDebts.reduce((s, d) => s + Math.min(num(d.minimum_payment), num(d.current_balance)), 0);
+  // A recurring payment linked to a debt *is* that debt's payment (counted once, under debts).
+  const debtOf  = r => r.category !== "income" && r.debt ? activeDebts.find(d => d.id === r.debt) : null;
+  const paysDebt = active.filter(debtOf);
+  const income  = active.filter(r => r.category === "income").reduce((s, r) => s + monthly(r), 0);
+  const outgoing= active.filter(r => r.category !== "income" && !debtOf(r)).reduce((s, r) => s + monthly(r), 0);
+  const debtPayments = activeDebts.filter(d => !paysDebt.some(r => r.debt === d.id))
+    .reduce((s, d) => s + Math.min(num(d.minimum_payment), num(d.current_balance)), 0)
+    + paysDebt.reduce((s, r) => s + Math.min(monthly(r), num(debtOf(r).current_balance)), 0);
   const savings     = emergencyFund && !emergencyFund.is_funded ? num(emergencyFund.monthly_contribution) : 0;
   const leftOver    = income - outgoing - debtPayments - savings;
   const target      = [...activeDebts]
@@ -129,6 +133,7 @@ export default function RecurringTab({
       frequency:     item.frequency || "monthly",
       anchor_date:   item.anchor_date || "",
       average_from:  item.average_from || "",
+      debt:          item.debt ?? "",
       is_auto_debit: item.is_auto_debit,
       notes:         item.notes || "",
     });
@@ -153,6 +158,7 @@ export default function RecurringTab({
       frequency:     form.frequency,
       anchor_date:   byPayday ? form.anchor_date : null,
       average_from:  form.category === "income" ? form.average_from.trim() : "",
+      debt:          form.category !== "income" && form.debt ? parseInt(form.debt, 10) : null,
       is_auto_debit: form.category === "auto_debit" || form.is_auto_debit,
       notes:         form.notes,
     };
@@ -259,6 +265,19 @@ export default function RecurringTab({
                 {Object.entries(RECURRING_CATEGORIES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
               </select>
             </div>
+            {form.category !== "income" && debts.some(d => d.is_active) && (
+              <div className="form-group">
+                <label style={labelStyle}>Pays this debt</label>
+                <select style={inputStyle} value={form.debt}
+                  onChange={e => setForm(p => ({ ...p, debt: e.target.value }))}>
+                  <option value="">None</option>
+                  {debts.filter(d => d.is_active).map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                </select>
+                <div style={{ fontSize: 11, color: "var(--faint2)", marginTop: 4 }}>
+                  E.g. a loan EMI: ticking it lowers the debt, and it replaces the debt's own payment so nothing is counted twice.
+                </div>
+              </div>
+            )}
             <div className="form-group">
               <label style={labelStyle}>How often</label>
               <select style={inputStyle} value={form.frequency}
@@ -353,6 +372,7 @@ export default function RecurringTab({
                   </div>
                   <div style={{ fontSize: 11, color: "var(--faint2)", marginTop: 2 }}>
                     {cat.label}
+                    {debtOf(item) ? ` · pays ${debtOf(item).name}` : item.debt && item.category !== "income" ? " · debt paid off" : ""}
                     {STEP_DAYS[item.frequency]
                       ? ` · ${FREQUENCIES[item.frequency]}${nextPayday(item) ? ` · next ${shortDate(nextPayday(item))}` : ""}`
                       : item.frequency === "varies" ? " · Varies · estimate"

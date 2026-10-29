@@ -862,6 +862,7 @@ function CardsTab({ accounts, debts, fmt, onChanged }) {
 
 const RULE_TYPES = [
   { id: "shared",   label: "Pays their share of my bills (not income)" },
+  { id: "bill",     label: "A shared bill I pay in full (rent, utilities)" },
   { id: "transfer", label: "My own account (not spending or income)" },
   { id: "spending", label: "Real spending / income" },
   { id: "",         label: "Just rename / recategorise" },
@@ -897,7 +898,7 @@ function RulesPanel({ onChanged }) {
     finally { setBusy(false); }
   }
 
-  const label = t => (RULE_TYPES.find(x => x.id === t) || RULE_TYPES[3]).label;
+  const label = t => (RULE_TYPES.find(x => x.id === t) || RULE_TYPES.find(x => x.id === "")).label;
   return (
     <div className="card" style={{ marginBottom: 20 }}>
       <div className="card-title" style={{ marginBottom: 4, display: "flex", alignItems: "center", gap: 8 }}>

@@ -1,4 +1,4 @@
-import { useState }    from "react";
+import { useEffect, useState } from "react";
 import {
   PieChart, Pie, Cell, BarChart, Bar,
   XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
@@ -9,6 +9,7 @@ import Icon, { CategoryIcon } from "../components/Icon";
 import { CATEGORIES, MONTHS } from "../constants/categories";
 import { INCOME_CATEGORIES }  from "../hooks/useIncome";
 import { isSameMonth }        from "../utils/helpers";
+import { accountsAPI }        from "../utils/api";
 
 const TOOLTIP_STYLE = {
   background:   "var(--card)",
@@ -89,9 +90,26 @@ export default function Dashboard({
   incomes, onEditIncome, onDeleteIncome, onAddIncome, onBulkDeleteIncome,
   currency, rates, getRate, formatAmount,
   getLastUpdatedText, ratesLoading, ratesError, refreshRates,
-  debts,
+  debts, refreshKey, onOpenRules,
 }) {
   const now = new Date();
+  // Roommates' shares of rent and bills (Accounts → Rules, "pays their share
+  // of my bills") aren't income: they lower what the user really spent.
+  const [sharing, setSharing] = useState({ matchers: [], billRules: 0, byMonth: {}, months: {} });
+  useEffect(() => {
+    let live = true;
+    Promise.all([accountsAPI.rules().catch(() => ({ rules: [] })), accountsAPI.summary().catch(() => ({ months: [] }))])
+      .then(([r, s]) => {
+        if (!live) return;
+        setSharing({
+          matchers:  (r.rules || []).filter(x => x.treat_as === "shared").map(x => x.match.toLowerCase()),
+          billRules: (r.rules || []).filter(x => x.treat_as === "bill").length,
+          byMonth:   Object.fromEntries((s.months || []).map(m => [m.month, parseFloat(m.shared_by_others) || 0])),
+          months:    Object.fromEntries((s.months || []).map(m => [m.month, m])),
+        });
+      });
+    return () => { live = false; };
+  }, [refreshKey]);
   const [activeCard, setActiveCard] = useState(null);
   // Month being viewed — defaults to this month; past months matter once
   // last month's statements are imported.
@@ -116,12 +134,32 @@ export default function Dashboard({
     isSameMonth(e.date, currentMonth, currentYear)
   );
 
-  const thisMonthInc = incomes.filter(i =>
+  const monthInc = incomes.filter(i =>
     isSameMonth(i.date, currentMonth, currentYear)
   );
+  const sharedBy = i => sharing.matchers.filter(m => `${i.title} ${i.notes || ""}`.toLowerCase().includes(m))
+    .sort((a, b) => b.length - a.length)[0];
+  const thisMonthInc   = monthInc.filter(i => !sharedBy(i));
+  const sharedInc      = monthInc.filter(i => sharedBy(i));
+  // Entries saved from statements are already in the statement figures below;
+  // only typed-in ones are added on top.
+  const typedShared    = sharedInc.filter(i => !/^Imported from/.test(i.notes || ""));
+  const ym             = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}`;
+  const sharedTotal    = typedShared.reduce((s, i) => s + (parseFloat(i.amount) || 0), 0) + (sharing.byMonth[ym] || 0);
+  // Who paid what toward the shared bills, and the bills themselves.
+  const monthShares = { ...(sharing.months[ym]?.shared_by || {}) };
+  for (const i of typedShared) {
+    const who = sharedBy(i).replace(/\b\w/g, c => c.toUpperCase());
+    monthShares[who] = ((parseFloat(monthShares[who]) || 0) + (parseFloat(i.amount) || 0)).toFixed(2);
+  }
+  const monthBills = sharing.months[ym]?.shared_bills || {};
+  const billsTotal = Object.values(monthBills).reduce((s, v) => s + (parseFloat(v) || 0), 0);
+  // e-transfers counted as income while no shared rule is set up yet
+  const transferIncome = sharing.matchers.length === 0 && thisMonthInc.some(i => /e-?transfer|interac/i.test(`${i.title} ${i.notes || ""}`));
 
   // ── Totals ──
-  const totalExpenses = thisMonthExp.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+  const grossExpenses = thisMonthExp.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
+  const totalExpenses = Math.max(grossExpenses - sharedTotal, 0);    // your own share
   const totalIncome   = thisMonthInc.reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
   const netBalance    = totalIncome - totalExpenses;
   const savingsRate   = totalIncome > 0 ? ((netBalance / totalIncome) * 100).toFixed(1) : 0;
@@ -163,7 +201,9 @@ export default function Dashboard({
       id:       "expenses",
       label:    isCurrent ? "This Month" : `${MONTHS[currentMonth].slice(0, 3)} Spending`,
       value:    fmt(totalExpenses),
-      sub:      `${thisMonthExp.length} expenses · avg ${fmt(dailyAvg)}/day`,
+      sub:      sharedTotal > 0
+        ? `your share · ${fmt(sharedTotal)} paid by roommates`
+        : `${thisMonthExp.length} expenses · avg ${fmt(dailyAvg)}/day`,
       gradient: "linear-gradient(135deg, #e11d48, #be123c)",
     },
     {
@@ -214,6 +254,17 @@ export default function Dashboard({
         year={currentYear}
       />
 
+      {transferIncome && (
+        <div className="card" style={{ padding:"12px 16px", marginBottom:12, border:"1px solid #fcd34d", background:"#fffbeb", color:"#92400e", fontSize:13, display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
+          <Icon name="alert" size={15} />
+          <span style={{ flex:1, minWidth:200 }}>
+            E-transfers are counted as income. If they're roommates paying their share of rent and bills,
+            add each name in Accounts → Rules as "Pays their share of my bills".
+          </span>
+          {onOpenRules && <button className="btn-secondary" style={{ padding:"5px 12px", fontSize:12 }} onClick={onOpenRules}>Open Accounts</button>}
+        </div>
+      )}
+
       {/* ── Clickable stat cards ── */}
       <div className="stat-grid" style={{ marginBottom:16 }}>
         {statCards.map(card => (
@@ -253,6 +304,61 @@ export default function Dashboard({
         ))}
       </div>
 
+      {/* ── Shared bills: rent and bills paid in full, roommates paying back ── */}
+      {(sharedTotal > 0 || billsTotal > 0) && (
+        <div className="card" style={{ marginBottom:16 }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", flexWrap:"wrap", gap:6, marginBottom:12 }}>
+            <div className="card-title" style={{ margin:0 }}>Shared bills · {monthLabel}</div>
+            {billsTotal > 0 && (
+              <div style={{ fontSize:13, color:"var(--muted)" }}>
+                Your share <strong style={{ color:"var(--text)", fontSize:15 }}>{fmt(Math.max(billsTotal - sharedTotal, 0))}</strong>
+              </div>
+            )}
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(220px, 1fr))", gap:16 }}>
+            <div>
+              <div style={{ fontSize:11, color:"var(--muted)", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:6 }}>
+                Bills you paid
+              </div>
+              {billsTotal > 0 ? Object.entries(monthBills).map(([bill, amt]) => (
+                <div key={bill} style={{ display:"flex", justifyContent:"space-between", fontSize:13, padding:"5px 0", borderBottom:"1px solid var(--subtle2)" }}>
+                  <span>{bill}</span><span style={{ fontWeight:600, color:"#e11d48" }}>-{fmt(amt)}</span>
+                </div>
+              )) : (
+                <div style={{ fontSize:12, color:"var(--faint2)" }}>
+                  {sharing.billRules ? "None on this month's statements yet." :
+                    "Add each shared bill (e.g. your rent and utilities) in Accounts → Rules as \"A shared bill I pay in full\" to see them here."}
+                </div>
+              )}
+              {billsTotal > 0 && (
+                <div style={{ display:"flex", justifyContent:"space-between", fontSize:13, fontWeight:700, paddingTop:6 }}>
+                  <span>Total</span><span>{fmt(billsTotal)}</span>
+                </div>
+              )}
+            </div>
+            <div>
+              <div style={{ fontSize:11, color:"var(--muted)", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:6 }}>
+                Roommates paid you
+              </div>
+              {Object.keys(monthShares).length ? Object.entries(monthShares).map(([who, amt]) => (
+                <div key={who} style={{ display:"flex", justifyContent:"space-between", fontSize:13, padding:"5px 0", borderBottom:"1px solid var(--subtle2)" }}>
+                  <span>{who}</span><span style={{ fontWeight:600, color:"#059669" }}>+{fmt(amt)}</span>
+                </div>
+              )) : <div style={{ fontSize:12, color:"var(--faint2)" }}>Nothing received yet this month.</div>}
+              {sharedTotal > 0 && (
+                <div style={{ display:"flex", justifyContent:"space-between", fontSize:13, fontWeight:700, paddingTop:6 }}>
+                  <span>Total</span><span>{fmt(sharedTotal)}</span>
+                </div>
+              )}
+            </div>
+          </div>
+          <div style={{ fontSize:11, color:"var(--faint2)", marginTop:10 }}>
+            Not counted as income — it lowers your spending. If a roommate keeps back your share of a bill they pay (e.g. WiFi),
+            that difference is already part of your share.
+          </div>
+        </div>
+      )}
+
       {/* ── Active card detail panel ── */}
       {activeCard && (
         <div style={{
@@ -273,7 +379,8 @@ export default function Dashboard({
                     This Month's Expenses
                   </div>
                   <div style={{ fontSize:12, color:"var(--muted)", marginTop:2 }}>
-                    {thisMonthExp.length} transactions · Total {fmt(totalExpenses)}
+                    {thisMonthExp.length} transactions · Total {fmt(grossExpenses)}
+                    {sharedTotal > 0 && ` − ${fmt(sharedTotal)} shared by roommates = ${fmt(totalExpenses)} yours`}
                   </div>
                 </div>
                 <button className="btn-ghost" onClick={onViewAll} style={{ display:"inline-flex", alignItems:"center", gap:4 }}>View all <Icon name="arrow-right" size={13} /></button>
@@ -289,7 +396,7 @@ export default function Dashboard({
                     .filter(e => e.category === cat.name)
                     .reduce((s, e) => s + (parseFloat(e.amount) || 0), 0);
                   if (spent === 0) return null;
-                  const pct = totalExpenses > 0 ? (spent / totalExpenses) * 100 : 0;
+                  const pct = grossExpenses > 0 ? (spent / grossExpenses) * 100 : 0;
                   return (
                     <div key={cat.name} style={{ marginBottom:10 }}>
                       <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, marginBottom:4 }}>
@@ -385,6 +492,23 @@ export default function Dashboard({
                     </div>
                   );
                 })}
+                {sharedInc.length > 0 && (
+                  <>
+                    <div style={{ fontSize:11, color:"var(--muted)", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px", margin:"16px 0 8px" }}>
+                      Shared bills — not counted as income
+                    </div>
+                    {sharedInc.map(inc => (
+                      <div key={inc.id} style={{ ...rowStyle, opacity:0.65 }}>
+                        <CategoryIcon cat={null} fallback={"house"} />
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ fontWeight:600, fontSize:13, color:"var(--text)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{inc.title}</div>
+                          <div style={{ fontSize:11, color:"var(--faint2)", marginTop:1 }}>Their share of rent & bills · {inc.date}</div>
+                        </div>
+                        <div style={{ fontWeight:700, fontSize:14, color:"var(--muted)" }}>{fmt(inc.amount, inc)}</div>
+                      </div>
+                    ))}
+                  </>
+                )}
               </div>
             </>
           )}
