@@ -1,6 +1,7 @@
 import { useEffect, useState }     from "react";
 import ChecklistConfirmModal       from "../components/ChecklistConfirmModal";
 import RecurringTab                from "../components/RecurringTab";
+import NextMonthPlan               from "../components/NextMonthPlan";
 import Icon, { IconLabel, stripEmoji } from "../components/Icon";
 import UnitSelect from "../components/UnitSelect";
 import { moneyUnit } from "../utils/money";
@@ -87,6 +88,7 @@ export default function FinancialPlanner({
   useEffect(() => { setUnit(currency); }, [currency]);      // follow the app's currency
   const money = moneyUnit(unit, getRate);
   const [activeTab,    setActiveTab]    = useState("debts");
+  const [planMonth,    setPlanMonth]    = useState("this");
   const [showDebtForm, setShowDebtForm] = useState(false);
   const [editingDebt,  setEditingDebt]  = useState(null);
   const [showItemForm, setShowItemForm] = useState(false);
@@ -576,6 +578,21 @@ export default function FinancialPlanner({
           TAB 2 — MONTHLY CHECKLIST
       ════════════════════════════════════ */}
       {activeTab === "checklist" && (
+        <div style={{ display:"inline-flex", gap:4, marginBottom:14, background:"var(--bg)", border:"1px solid var(--border)", borderRadius:8, padding:3 }}>
+          {[["this", "This month"], ["next", "Next month"]].map(([id, label]) => (
+            <button key={id} onClick={() => setPlanMonth(id)} style={{
+              background: planMonth === id ? C.blue : "transparent", color: planMonth === id ? "#fff" : C.muted,
+              border:"none", borderRadius:6, padding:"6px 12px", fontWeight:600, fontSize:12, cursor:"pointer", fontFamily:"inherit",
+            }}>{label}</button>
+          ))}
+        </div>
+      )}
+
+      {activeTab === "checklist" && planMonth === "next" && (
+        <NextMonthPlan fmt={fmt} recurring={recurring} debts={debts} labels={CATEGORY_LABELS} icons={CATEGORY_ICONS} />
+      )}
+
+      {activeTab === "checklist" && planMonth === "this" && (
         <>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16, flexWrap:"wrap", gap:10 }}>
             <div>

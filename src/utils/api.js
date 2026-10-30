@@ -459,6 +459,12 @@ export const financialPlannerAPI = {
     });
     return handleResponse(res);
   },
+  getNextMonthPlan: async () => {
+    const res = await authFetch(`${FP_URL}/plans/next/`, {
+      method: "GET", headers: getHeaders(true),
+    });
+    return handleResponse(res);
+  },
   updatePlan: async (id, data) => {
     const res = await authFetch(`${FP_URL}/plans/${id}/`, {
       method: "PATCH", headers: getHeaders(true),
