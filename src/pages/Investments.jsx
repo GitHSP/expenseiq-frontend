@@ -17,6 +17,8 @@ const KINDS = {
 const PAYOUTS = { "": "Reinvested — paid at maturity", monthly: "Paid out monthly", quarterly: "Paid out quarterly", yearly: "Paid out yearly" };
 const CURRENCIES = ["INR", "CAD", "USD", "GBP", "EUR", "AUD", "AED"];
 const PAY_FREQ = { monthly: "Monthly", quarterly: "Quarterly", half_yearly: "Half-yearly", yearly: "Yearly" };
+const RD_FREQ  = { monthly: "Monthly", biweekly: "Every 2 weeks", weekly: "Weekly" };
+const RD_PER   = { monthly: "month", biweekly: "2 weeks", weekly: "week" };
 const POLICY_TYPES = ["Universal life", "Whole life", "Endowment", "Money back", "ULIP", "Term", "Other"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -252,8 +254,8 @@ function InvestmentForm({ initial, recurring, onSave, onCancel, saving }) {
       )}
 
       <div className="form-grid-2">
-        <Field label="Name *">{input("name", { placeholder: { insurance: "e.g. iA iVARI", chit: "e.g. KSFE 5 lakh", rd: "e.g. SBI RD", fd: "e.g. Federal Bank FD" }[k] })}</Field>
-        <Field label={k === "insurance" ? "Company" : k === "chit" ? "Organiser" : "Bank"}>{input("provider", { placeholder: "Optional" })}</Field>
+        <Field label="Name *">{input("name", { placeholder: { insurance: "e.g. iA iVARI", chit: "e.g. KSFE 5 lakh", rd: "e.g. SBI RD or Wealthsimple TFSA", fd: "e.g. Federal Bank FD" }[k] })}</Field>
+        <Field label={k === "insurance" ? "Company" : k === "chit" ? "Organiser" : k === "rd" ? "Bank or platform" : "Bank"}>{input("provider", { placeholder: "Optional" })}</Field>
         <Field label="Currency">
           <select style={inputStyle} value={f.currency} onChange={e => set("currency", e.target.value)}>
             {CURRENCIES.map(c => <option key={c}>{c}</option>)}
@@ -326,9 +328,14 @@ function InvestmentForm({ initial, recurring, onSave, onCancel, saving }) {
 
       {k === "rd" && (
         <div className="form-grid-2">
-          <Field label="Monthly instalment *">{amount("payment")}</Field>
-          <Field label="Interest % a year *">{amount("rate", { placeholder: "e.g. 7" })}</Field>
-          <Field label="Tenure (months) *">{amount("months", { placeholder: "e.g. 60", step: 1 })}</Field>
+          <Field label="Deposit amount *">{amount("payment")}</Field>
+          <Field label="Deposited">
+            <select style={inputStyle} value={f.payment_frequency} onChange={e => set("payment_frequency", e.target.value)}>
+              {Object.entries(RD_FREQ).map(([key, v]) => <option key={key} value={key}>{v}</option>)}
+            </select>
+          </Field>
+          <Field label="Interest or expected return % a year *" hint="An estimate for market investments like Wealthsimple">{amount("rate", { placeholder: "e.g. 7" })}</Field>
+          <Field label="Tenure (months)" hint="Leave empty if it has no end date">{amount("months", { placeholder: "e.g. 60", step: 1 })}</Field>
           <Field label="Compounding">
             <select style={inputStyle} value={f.compounding} onChange={e => set("compounding", e.target.value)}>
               <option value="quarterly">Quarterly (Indian banks)</option>
@@ -337,6 +344,8 @@ function InvestmentForm({ initial, recurring, onSave, onCancel, saving }) {
             </select>
           </Field>
           <Field label="Maturity amount (as quoted)" hint="Leave empty to calculate it">{amount("maturity_value", { placeholder: "Optional" })}</Field>
+          <Field label="Balance now" hint="From your statement or app — replaces the estimate">{amount("current_value", { placeholder: "Optional" })}</Field>
+          <Field label="Balance as of">{input("current_value_date", { type: "date" })}</Field>
         </div>
       )}
 
@@ -515,14 +524,17 @@ function InvestmentCard({ inv, recurring, onEdit, onDelete, onAddPayment, onDele
     if (inv.sum_assured) stats.push({ label: "Sum assured", value: m(inv.sum_assured) });
     if (inv.yearly_cost) stats.push({ label: "Yearly cost", value: m(inv.yearly_cost), sub: `~${m(num(inv.yearly_cost) / 12)}/month out of the fund` });
   } else if (inv.kind === "rd") {
-    sub = [`${m(inv.payment)}/month`, `${num(inv.rate)}%`, `${inv.months} months`];
+    sub = [`${m(inv.payment)}/${RD_PER[inv.payment_frequency] || "month"}`, `${num(inv.rate)}%`, inv.months ? `${inv.months} months` : "No end date"];
     stats = [
-      { label: s.matured ? "Matured" : "Value now", value: m(s.value_now), color: "#059669" },
-      { label: "Paid so far", value: m(s.paid_so_far), sub: `${s.payments_made} of ${inv.months}` },
-      { label: "Still to pay", value: m(s.still_to_pay), sub: `${s.payments_left} instalments` },
-      { label: "Maturity", value: m(s.maturity), sub: `${dateLabel(s.maturity_date)} · ${monthsLabel(s.months_left)} left`, color: "#7c3aed" },
-      { label: "Interest earned", value: m(s.interest), sub: inv.maturity_value ? `calculated ${m(s.calculated_maturity)}` : null },
+      { label: s.matured ? "Matured" : "Value now", value: m(s.value_now), color: "#059669",
+        sub: s.value_basis === "statement" ? "from your balance" : null },
+      { label: "Paid so far", value: m(s.paid_so_far), sub: inv.months ? `${s.payments_made} of ${s.payments_total}` : `${s.payments_made} deposits` },
     ];
+    if (inv.months) stats.push(
+      { label: "Still to pay", value: m(s.still_to_pay), sub: `${s.payments_left} deposits` },
+      { label: "Maturity", value: m(s.maturity), sub: `${dateLabel(s.maturity_date)} · ${monthsLabel(s.months_left)} left`, color: "#7c3aed" },
+    );
+    stats.push({ label: inv.months ? "Interest earned" : "Growth so far", value: m(s.interest), sub: inv.maturity_value ? `calculated ${m(s.calculated_maturity)}` : null });
   } else if (inv.kind === "fd") {
     sub = [`${m(inv.payment)} deposited`, `${num(inv.rate)}%`, `${inv.months} months`, PAYOUTS[inv.interest_payout || ""]];
     stats = [
