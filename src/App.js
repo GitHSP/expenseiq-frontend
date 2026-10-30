@@ -52,7 +52,14 @@ export default function App() {
   }
 
   // ── Navigation ────────────────────────────
-  const [view, setView] = useState("dashboard");
+  // Remembered for this tab, so reloading stays on the same page.
+  const [view, setView] = useState(() => {
+    try { return sessionStorage.getItem("expenseiq_view") || "dashboard"; }
+    catch { return "dashboard"; }
+  });
+  useEffect(() => {
+    try { sessionStorage.setItem("expenseiq_view", view); } catch {}
+  }, [view]);
   const [accountsKey, setAccountsKey] = useState(0);   // bumped after an import to refresh Accounts
 
   // ── Dark mode ─────────────────────────────
@@ -308,6 +315,7 @@ useEffect(() => {
 // ─────────────────────────────────────────────
 async function handleLogout() {
   await logout();
+  setView("dashboard");
   setAuthView("landing");
   showToast("Logged out!");
 }
