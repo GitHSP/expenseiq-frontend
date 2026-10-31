@@ -56,6 +56,7 @@ export default function YourPlan({ formatAmount, getRate = c => (c === "CAD" ? 1
   const [budgetText, setBudgetText] = useState("");
   const [hourlyText, setHourlyText] = useState("");
   const [chosen, setChosen] = useState(null);       // the scenario the tables show
+  const [debtIds, setDebtIds] = useState(() => load("glacier_plan_debts") || "");   // "" = all
   const [plan, setPlan] = useState(null);
   const [worth, setWorth] = useState(null);
   const [error, setError] = useState("");
@@ -79,12 +80,12 @@ export default function YourPlan({ formatAmount, getRate = c => (c === "CAD" ? 1
   useEffect(() => {
     let live = true;
     const timer = setTimeout(() => {
-      financialPlannerAPI.getOutlook({ targetMonths: years * 12, budget: budgetCad })
+      financialPlannerAPI.getOutlook({ targetMonths: years * 12, budget: budgetCad, debts: debtIds })
         .then(p => { if (live) { setPlan(p); setError(""); } })
         .catch(() => { if (live) setError("Couldn't load your plan. Try again in a moment."); });
     }, 350);
     return () => { live = false; clearTimeout(timer); };
-  }, [years, budgetCad]);
+  }, [years, budgetCad, debtIds]);
 
   useEffect(() => {
     let live = true;
@@ -101,6 +102,12 @@ export default function YourPlan({ formatAmount, getRate = c => (c === "CAD" ? 1
   if (error) return <>{note}<div className="card" style={{ color: "#dc2626", fontSize: 13 }}>{error}</div></>;
   if (!plan) return <>{note}<div className="card" style={{ color: "var(--muted2)", fontSize: 13 }}>Working out your plan...</div></>;
 
+  function chooseDebts(ids) {
+    if (ids.length === 0) return;                   // always at least one
+    const value = ids.length === plan.all_debts.length ? "" : ids.join(",");
+    setDebtIds(value);
+    save("glacier_plan_debts", value);
+  }
   const { pace, goal } = plan.scenarios;
   const basis = plan.basis;
   const tabs = Object.keys(SCENARIOS).filter(id => id !== "pace" || basis.entered);
@@ -157,7 +164,7 @@ export default function YourPlan({ formatAmount, getRate = c => (c === "CAD" ? 1
               </select>
             </div>
             <div style={{ flex: "1 1 170px" }}>
-              <label style={labelStyle} htmlFor="plan-budget">I can pay toward debts ({currency}/month)</label>
+              <label style={labelStyle} htmlFor="plan-budget">Total I can pay toward all debts ({currency}/month)</label>
               <input id="plan-budget" type="number" min="0" style={fieldStyle} value={budgetText}
                 placeholder={`Estimated: ${Math.round(Math.max(basis.estimated_budget, 0) * rate)}`}
                 onChange={e => changeMoney(e.target.value, setBudgetText, setBudgetCad, "glacier_plan_budget")} />
@@ -168,6 +175,9 @@ export default function YourPlan({ formatAmount, getRate = c => (c === "CAD" ? 1
                 onChange={e => changeMoney(e.target.value, setHourlyText, setHourlyCad, "glacier_plan_hourly")} />
             </div>
           </div>
+
+          {/* Which debts to look at */}
+          <DebtPicker debts={plan.all_debts} other={plan.other_payments} fmt={fmt} onChange={chooseDebts} />
 
           {/* Scenario switch drives everything below it */}
           <div style={{ ...sectionGap, display: "flex", flexWrap: "wrap", gap: 4, background: "var(--card)", border: "1px solid var(--border)", borderRadius: 10, padding: 4 }}>
@@ -300,13 +310,13 @@ export default function YourPlan({ formatAmount, getRate = c => (c === "CAD" ? 1
             <div style={eyebrow}>Income needed to finish by {monthYear(goal.date)}</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 24, marginTop: 10 }}>
               <IncomeNeeded title="With your actual spending" fmt={fmt} hourly={hourlyCad} needed={plan.goal.income_needed} gap={plan.goal.income_gap}
-                pay={basis.pay} toDebts={plan.goal.budget} cost={basis.living} costLabel="everyday spending" />
+                pay={basis.pay} toDebts={plan.goal.budget} other={plan.goal.other_payments} cost={basis.living} costLabel="everyday spending" />
               <IncomeNeeded title="With your Planner" fmt={fmt} hourly={hourlyCad} needed={plan.goal.planner_income_needed} gap={plan.goal.planner_income_gap}
-                pay={basis.planner_pay} toDebts={plan.goal.budget} cost={num(basis.planner_bills) + num(basis.planner_savings)}
+                pay={basis.planner_pay} toDebts={plan.goal.budget} other={plan.goal.other_payments} cost={num(basis.planner_bills) + num(basis.planner_savings)}
                 costLabel={num(basis.planner_savings) > 0 ? "recurring bills and fund savings" : "recurring bills"} />
             </div>
             <div style={{ fontSize: 11, color: "var(--muted2)", marginTop: 12 }}>
-              Toward debts includes the minimums. Everyday spending comes from {source}. Spending less lowers these by the same amount.
+              {`Toward these debts: ${fmt(plan.goal.minimums)} minimums + ${fmt(Math.max(plan.goal.extra, 0))} extra. `}Everyday spending comes from {source}. Spending less lowers these by the same amount.
             </div>
           </div>
         </>
@@ -336,7 +346,44 @@ export default function YourPlan({ formatAmount, getRate = c => (c === "CAD" ? 1
   );
 }
 
-function IncomeNeeded({ title, fmt, hourly, needed, gap, pay, toDebts, cost, costLabel }) {
+function DebtPicker({ debts, other, fmt, onChange }) {
+  const ids = debts.filter(d => d.chosen).map(d => d.id);
+  const cards = debts.filter(d => d.is_card).map(d => d.id);
+  const loans = debts.filter(d => !d.is_card).map(d => d.id);
+  const same = list => list.length === ids.length && list.every(id => ids.includes(id));
+  const presets = [["All debts", debts.map(d => d.id)], ["Credit cards", cards], ["Loans and EMIs", loans]].filter(([, list]) => list.length > 0);
+  return (
+    <div className="card" style={sectionGap}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
+        <div className="card-title">Debts to include</div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {presets.map(([label, list]) => (
+            <button key={label} onClick={() => onChange(list)} aria-pressed={same(list)} style={{
+              background: same(list) ? "#0070f3" : "var(--bg)", color: same(list) ? "#fff" : "var(--muted2)",
+              border: "1px solid var(--border)", borderRadius: 6, padding: "5px 10px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+            }}>{label}</button>
+          ))}
+        </div>
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 16px" }}>
+        {debts.map(d => (
+          <label key={d.id} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--text)", cursor: "pointer" }}>
+            <input type="checkbox" checked={d.chosen} disabled={d.chosen && ids.length === 1}
+              onChange={() => onChange(d.chosen ? ids.filter(id => id !== d.id) : [...ids, d.id])} />
+            {d.name} <span style={{ color: "var(--muted2)", fontSize: 12 }}>{fmt(d.balance)}</span>
+          </label>
+        ))}
+      </div>
+      {num(other) > 0 && (
+        <div style={{ fontSize: 12, color: "var(--muted2)", marginTop: 10, lineHeight: 1.5 }}>
+          The debts you left out keep getting their {fmt(other)} a month, so that comes out first. Everything below is for the debts you chose.
+        </div>
+      )}
+    </div>
+  );
+}
+
+function IncomeNeeded({ title, fmt, hourly, needed, gap, pay, toDebts, other, cost, costLabel }) {
   const more = num(gap);
   const hours = hourly && num(hourly) > 0 && more > 0 ? more / num(hourly) : null;
   return (
@@ -346,7 +393,7 @@ function IncomeNeeded({ title, fmt, hourly, needed, gap, pay, toDebts, cost, cos
         {fmt(needed)}<span style={{ fontSize: 13, fontWeight: 600, color: "var(--muted2)", letterSpacing: 0 }}> /month after tax</span>
       </div>
       <div style={{ fontSize: 13, color: "var(--muted2)", marginTop: 6, lineHeight: 1.6 }}>
-        {fmt(toDebts)} toward debts + {fmt(cost)} {costLabel}.{" "}
+        {fmt(toDebts)} toward {num(other) > 0 ? "these debts" : "debts"}{num(other) > 0 ? ` + ${fmt(other)} other debt payments` : ""} + {fmt(cost)} {costLabel}.{" "}
         {more > 0
           ? <>Your pay is {fmt(pay)}, so that's <strong style={{ color: "var(--text)" }}>{fmt(more)} more a month</strong>{hours !== null && <>, or about <strong style={{ color: "var(--text)" }}>{Math.ceil(hours)} extra hours a month</strong> ({Math.ceil(hours / (52 / 12))} a week)</>}.</>
           : <>Your pay of {fmt(pay)} already covers it, with {fmt(-more)} to spare.</>}
@@ -397,8 +444,8 @@ function Projection({ title, s, fmt, rows }) {
       </div>
       <div style={{ fontSize: 13, color: "var(--muted2)", marginTop: 6, paddingTop: 10, borderTop: "1px solid var(--border)", lineHeight: 1.6 }}>
         {s.months
-          ? <>Debt-free <strong style={{ color: "var(--text)" }}>{monthYear(s.date)}</strong> ({duration(s.months)}), with {fmt(s.interest)} more in interest, if the minimums and what's left over all go to debts: {fmt(s.budget)} a month.</>
-          : <>Debts <strong style={{ color: "var(--text)" }}>don't get paid off</strong> this way, because there isn't enough left to cover the interest and minimums.</>}
+          ? <>Debt-free <strong style={{ color: "var(--text)" }}>{monthYear(s.date)}</strong> ({duration(s.months)}), with {fmt(s.interest)} more in interest, if {fmt(s.budget)} a month goes to the debts you chose (their minimums and everything left over).</>
+          : <>These debts <strong style={{ color: "var(--text)" }}>don't get paid off</strong> this way, because there isn't enough left to cover the interest and minimums.</>}
       </div>
     </div>
   );

@@ -439,8 +439,9 @@ export const financialPlannerAPI = {
     const res = await authFetch(`${FP_URL}/cash-flow/?${q}`, { method: "GET", headers: getHeaders(true) });
     return handleResponse(res);
   },
-  getOutlook: async ({ targetMonths, budget } = {}) => {
+  getOutlook: async ({ targetMonths, budget, debts } = {}) => {
     const q = new URLSearchParams();
+    if (debts) q.set("debts", debts);
     if (targetMonths) q.set("target_months", targetMonths);
     if (budget !== null && budget !== undefined) q.set("budget", budget);
     const res = await authFetch(`${FP_URL}/outlook/?${q}`, { method: "GET", headers: getHeaders(true) });
