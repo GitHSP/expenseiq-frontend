@@ -2,6 +2,7 @@ import { useEffect, useState }     from "react";
 import ChecklistConfirmModal       from "../components/ChecklistConfirmModal";
 import RecurringTab                from "../components/RecurringTab";
 import NextMonthPlan               from "../components/NextMonthPlan";
+import CashFlow                    from "../components/CashFlow";
 import Icon, { IconLabel, stripEmoji } from "../components/Icon";
 import UnitSelect from "../components/UnitSelect";
 import { moneyUnit } from "../utils/money";
@@ -406,6 +407,7 @@ export default function FinancialPlanner({
           { id:"debts",     label:"Debts",     icon:"credit-card" },
           { id:"recurring", label:"Recurring", icon:"refresh"     },
           { id:"checklist", label:"Checklist", icon:"list-checks" },
+          { id:"cashflow",  label:"Cash flow", icon:"calendar"    },
           { id:"fund",      label:"Fund",      icon:"shield"      },
         ].map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
@@ -577,6 +579,11 @@ export default function FinancialPlanner({
       {/* ════════════════════════════════════
           TAB 2 — MONTHLY CHECKLIST
       ════════════════════════════════════ */}
+      {activeTab === "cashflow" && (
+        <CashFlow fmt={v => fmt(Math.round(parseFloat(v) || 0)).replace(/\.00$/, "")} recurring={recurring} debts={debts} checklist={checklist}
+          currency={currency} getRate={getRate} />
+      )}
+
       {activeTab === "checklist" && (
         <div style={{ display:"inline-flex", gap:4, marginBottom:14, background:"var(--bg)", border:"1px solid var(--border)", borderRadius:8, padding:3 }}>
           {[["this", "This month"], ["next", "Next month"]].map(([id, label]) => (

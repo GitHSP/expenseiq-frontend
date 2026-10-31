@@ -17,7 +17,7 @@ export const RECURRING_CATEGORIES = {
 
 const EMPTY_FORM = {
   label: "", amount: "", due_day: "", category: "fixed_expense",
-  frequency: "monthly", anchor_date: "", average_from: "", debt: "", is_auto_debit: false, notes: "",
+  frequency: "monthly", anchor_date: "", average_from: "", debt: "", is_auto_debit: false, paid_by_card: false, notes: "",
 };
 
 export const FREQUENCIES = {
@@ -135,6 +135,7 @@ export default function RecurringTab({
       average_from:  item.average_from || "",
       debt:          item.debt ?? "",
       is_auto_debit: item.is_auto_debit,
+      paid_by_card:  item.paid_by_card,
       notes:         item.notes || "",
     });
     setEditingId(item.id);
@@ -157,9 +158,10 @@ export default function RecurringTab({
       category:      form.category,
       frequency:     form.frequency,
       anchor_date:   byPayday ? form.anchor_date : null,
-      average_from:  form.category === "income" ? form.average_from.trim() : "",
+      average_from:  form.average_from.trim(),
       debt:          form.category !== "income" && form.debt ? parseInt(form.debt, 10) : null,
       is_auto_debit: form.category === "auto_debit" || form.is_auto_debit,
+      paid_by_card:  form.category !== "income" && form.paid_by_card,
       notes:         form.notes,
     };
     setSaving(true);
@@ -299,17 +301,17 @@ export default function RecurringTab({
               </div>
             )}
           </div>
-          {form.category === "income" && (
-            <div className="form-group">
-              <label style={labelStyle}>Use my average pay (optional)</label>
-              <input style={inputStyle} placeholder="A word from the deposit on your statement, e.g. PAYROLL or the employer's name"
-                value={form.average_from} onChange={e => setForm(p => ({ ...p, average_from: e.target.value }))} />
-              <div style={{ fontSize: 11, color: "var(--faint2)", marginTop: 4 }}>
-                For pay that changes every time: the amount becomes the average of your last 4 matching deposits,
-                and updates whenever you upload statements.
-              </div>
+          <div className="form-group">
+            <label style={labelStyle}>{form.category === "income" ? "Use my average pay (optional)" : "Use my average for this bill (optional)"}</label>
+            <input style={inputStyle}
+              placeholder={form.category === "income" ? "A word from the deposit on your statement, e.g. PAYROLL or the employer's name" : "A word from the bill on your statement, e.g. the company's name"}
+              value={form.average_from} onChange={e => setForm(p => ({ ...p, average_from: e.target.value }))} />
+            <div style={{ fontSize: 11, color: "var(--faint2)", marginTop: 4 }}>
+              {form.category === "income"
+                ? "For pay that changes every time: the amount becomes the average of your last 4 matching deposits, and updates whenever you upload statements."
+                : "For bills that change every month: the amount becomes the average of your last 4 matching payments, and updates whenever you upload statements. A shared bill uses your share."}
             </div>
-          )}
+          </div>
           <div className="form-group">
             <label style={labelStyle}>Notes</label>
             <input style={inputStyle} placeholder="e.g. Pay by 26th to be safe" value={form.notes}
@@ -320,6 +322,13 @@ export default function RecurringTab({
               <input type="checkbox" checked={form.is_auto_debit}
                 onChange={e => setForm(p => ({ ...p, is_auto_debit: e.target.checked }))} />
               Withdrawn automatically (auto debit)
+            </label>
+          )}
+          {form.category !== "income" && (
+            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, marginBottom: 12, cursor: "pointer" }}>
+              <input type="checkbox" checked={form.paid_by_card}
+                onChange={e => setForm(p => ({ ...p, paid_by_card: e.target.checked }))} />
+              Paid by credit card (doesn't leave my bank on this date)
             </label>
           )}
           <div style={{ display: "flex", gap: 8 }}>
@@ -378,8 +387,9 @@ export default function RecurringTab({
                       : item.frequency === "varies" ? " · Varies · estimate"
                       : item.due_day ? ` · ${item.category === "income" ? "Received" : "Due"} ${ordinal(item.due_day)}` : ""}
                     {item.average_from ? (item.average_of
-                      ? ` · average of last ${item.average_of} pay${item.average_of === 1 ? "" : "s"}`
-                      : ` · no deposits matching "${item.average_from}" yet`) : ""}
+                      ? ` · average of last ${item.average_of} ${item.category === "income" ? (item.average_of === 1 ? "pay" : "pays") : (item.average_of === 1 ? "payment" : "payments")}`
+                      : ` · nothing matching "${item.average_from}" yet`) : ""}
+                    {item.paid_by_card ? " · on a card" : ""}
                     {item.notes ? ` · ${item.notes}` : ""}
                   </div>
                 </div>

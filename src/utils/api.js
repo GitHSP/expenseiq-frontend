@@ -432,6 +432,13 @@ export const financialPlannerAPI = {
     });
     return handleResponse(res);
   },
+  getCashFlow: async ({ days, balance } = {}) => {
+    const q = new URLSearchParams();
+    if (days) q.set("days", days);
+    if (balance !== null && balance !== undefined) q.set("balance", balance);
+    const res = await authFetch(`${FP_URL}/cash-flow/?${q}`, { method: "GET", headers: getHeaders(true) });
+    return handleResponse(res);
+  },
   getOutlook: async ({ targetMonths, budget } = {}) => {
     const q = new URLSearchParams();
     if (targetMonths) q.set("target_months", targetMonths);
