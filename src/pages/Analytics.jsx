@@ -6,6 +6,7 @@ import {
 import { CATEGORIES, MONTHS } from "../constants/categories";
 import { isSameMonth }         from "../utils/helpers";
 import Icon, { CategoryIcon } from "../components/Icon";
+import YourPlan from "../components/YourPlan";
 
 const TOOLTIP_STYLE = {
   background:   "var(--card)",
@@ -28,11 +29,12 @@ const tdStyle = {
   borderBottom:"1px solid var(--subtle2)", verticalAlign:"middle",
 };
 
-export default function Analytics({ expenses, formatAmount }) {
+export default function Analytics({ expenses, formatAmount, getRate, currency }) {
   const now          = new Date();
   const currentMonth = now.getMonth();
   const currentYear  = now.getFullYear();
 
+  const [page,          setPage]          = useState("plan");
   const [selectedCat,   setSelectedCat]   = useState(null);
   const [selectedMonth, setSelectedMonth] = useState(null);
 
@@ -97,9 +99,21 @@ export default function Analytics({ expenses, formatAmount }) {
     <>
       <div style={{ marginBottom:28 }}>
         <div className="page-title">Analytics</div>
-        <div className="page-sub">Click on any chart to see the transactions</div>
+        <div className="page-sub">{page === "plan" ? "Where your debts are heading and what it takes" : "Click on any chart to see the transactions"}</div>
       </div>
 
+      <div style={{ display:"inline-flex", gap:4, marginBottom:20, background:"var(--card)", border:"1px solid var(--border)", borderRadius:10, padding:4 }}>
+        {[["plan", "Your plan"], ["spending", "Spending"]].map(([id, label]) => (
+          <button key={id} onClick={() => setPage(id)} style={{
+            background: page === id ? "#0070f3" : "transparent", color: page === id ? "#fff" : "var(--muted)",
+            border:"none", borderRadius:7, padding:"7px 16px", fontWeight:600, fontSize:13, cursor:"pointer", fontFamily:"inherit",
+          }}>{label}</button>
+        ))}
+      </div>
+
+      {page === "plan" && <YourPlan formatAmount={formatAmount} getRate={getRate} currency={currency} />}
+
+      {page === "spending" && <>
       {/* ── Charts ── */}
       <div className="charts-grid">
         {/* Pie */}
@@ -261,6 +275,7 @@ export default function Analytics({ expenses, formatAmount }) {
           ))}
         </div>
       </div>
+      </>}
     </>
   );
 }

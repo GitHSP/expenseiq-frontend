@@ -392,6 +392,8 @@ async function handleLogout() {
           <Analytics
             expenses={expenses}
             formatAmount={formatAmount}
+            getRate={getRate}
+            currency={currency}
           />
         );
       case "payments":

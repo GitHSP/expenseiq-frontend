@@ -432,6 +432,13 @@ export const financialPlannerAPI = {
     });
     return handleResponse(res);
   },
+  getOutlook: async ({ targetMonths, budget } = {}) => {
+    const q = new URLSearchParams();
+    if (targetMonths) q.set("target_months", targetMonths);
+    if (budget !== null && budget !== undefined) q.set("budget", budget);
+    const res = await authFetch(`${FP_URL}/outlook/?${q}`, { method: "GET", headers: getHeaders(true) });
+    return handleResponse(res);
+  },
   getNetWorth: async () => {
     const res = await authFetch(`${FP_URL}/net-worth/`, { method: "GET", headers: getHeaders(true) });
     return handleResponse(res);
