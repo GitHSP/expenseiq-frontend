@@ -109,8 +109,6 @@ export default function YourPlan({ formatAmount, getRate = c => (c === "CAD" ? 1
   const view = tabs.includes(chosen) ? chosen : (pace.months ? first : "goal");
   const s = plan.scenarios[view];
   const spendsMore = basis.estimated_budget <= 0 && !basis.entered;
-  const gap = num(plan.goal.income_gap);
-  const hours = hourlyCad && num(hourlyCad) > 0 && gap > 0 ? gap / num(hourlyCad) : null;
   const source = basis.source === "statements"
     ? `your average over ${basis.months.length} month${basis.months.length === 1 ? "" : "s"} of statements`
     : "the income and payments in your Planner";
@@ -300,17 +298,16 @@ export default function YourPlan({ formatAmount, getRate = c => (c === "CAD" ? 1
           {/* What it takes */}
           <div className="card" style={sectionGap}>
             <div style={eyebrow}>Income needed to finish by {monthYear(goal.date)}</div>
-            <div style={{ fontSize: 24, fontWeight: 800, color: "var(--text)", marginTop: 4, letterSpacing: "-0.4px" }}>
-              {fmt(plan.goal.income_needed)}<span style={{ fontSize: 13, fontWeight: 600, color: "var(--muted2)", letterSpacing: 0 }}> /month after tax</span>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 24, marginTop: 10 }}>
+              <IncomeNeeded title="With your actual spending" fmt={fmt} hourly={hourlyCad} needed={plan.goal.income_needed} gap={plan.goal.income_gap}
+                pay={basis.pay} toDebts={plan.goal.budget} cost={basis.living} costLabel="everyday spending" />
+              <IncomeNeeded title="With your Planner" fmt={fmt} hourly={hourlyCad} needed={plan.goal.planner_income_needed} gap={plan.goal.planner_income_gap}
+                pay={basis.planner_pay} toDebts={plan.goal.budget} cost={num(basis.planner_bills) + num(basis.planner_savings)}
+                costLabel={num(basis.planner_savings) > 0 ? "recurring bills and fund savings" : "recurring bills"} />
             </div>
-            <div style={{ fontSize: 13, color: "var(--muted2)", marginTop: 6, lineHeight: 1.6 }}>
-              {fmt(plan.goal.budget)} toward debts + {fmt(basis.living)} everyday spending.{" "}
-              {gap > 0
-                ? <>Your pay is {fmt(basis.pay)}, so that's <strong style={{ color: "var(--text)" }}>{fmt(gap)} more a month</strong>{hours !== null && <>, or about <strong style={{ color: "var(--text)" }}>{Math.ceil(hours)} extra hours a month</strong> ({Math.ceil(hours / (52 / 12))} a week)</>}.</>
-                : <>Your pay of {fmt(basis.pay)} already covers it.</>}
-              {" "}Spending less lowers this by the same amount.
+            <div style={{ fontSize: 11, color: "var(--muted2)", marginTop: 12 }}>
+              Toward debts includes the minimums. Everyday spending comes from {source}. Spending less lowers these by the same amount.
             </div>
-            <div style={{ fontSize: 11, color: "var(--muted2)", marginTop: 8 }}>Spending comes from {source}.</div>
           </div>
         </>
       )}
@@ -335,6 +332,25 @@ export default function YourPlan({ formatAmount, getRate = c => (c === "CAD" ? 1
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+function IncomeNeeded({ title, fmt, hourly, needed, gap, pay, toDebts, cost, costLabel }) {
+  const more = num(gap);
+  const hours = hourly && num(hourly) > 0 && more > 0 ? more / num(hourly) : null;
+  return (
+    <div style={{ flex: "1 1 240px", minWidth: 0 }}>
+      <div style={{ fontSize: 12, fontWeight: 600, color: "var(--muted2)" }}>{title}</div>
+      <div style={{ fontSize: 24, fontWeight: 800, color: "var(--text)", marginTop: 3, letterSpacing: "-0.4px" }}>
+        {fmt(needed)}<span style={{ fontSize: 13, fontWeight: 600, color: "var(--muted2)", letterSpacing: 0 }}> /month after tax</span>
+      </div>
+      <div style={{ fontSize: 13, color: "var(--muted2)", marginTop: 6, lineHeight: 1.6 }}>
+        {fmt(toDebts)} toward debts + {fmt(cost)} {costLabel}.{" "}
+        {more > 0
+          ? <>Your pay is {fmt(pay)}, so that's <strong style={{ color: "var(--text)" }}>{fmt(more)} more a month</strong>{hours !== null && <>, or about <strong style={{ color: "var(--text)" }}>{Math.ceil(hours)} extra hours a month</strong> ({Math.ceil(hours / (52 / 12))} a week)</>}.</>
+          : <>Your pay of {fmt(pay)} already covers it, with {fmt(-more)} to spare.</>}
+      </div>
     </div>
   );
 }
