@@ -8,7 +8,7 @@ import { financialPlannerAPI } from "../utils/api";
 // The server does the sums, in CAD; this shows them in the app's currency.
 // Typed amounts are in that currency too.
 const YEARS = [1, 2, 3, 4, 5, 7, 10, 15];
-const SCENARIOS = { pay: "Current pay", pace: "Your amount", goal: "Your goal", minimums: "Minimums only" };
+const SCENARIOS = { pay: "Actual spending", planner: "Your Planner", pace: "Your amount", goal: "Your goal", minimums: "Minimums only" };
 const num = v => parseFloat(v) || 0;
 
 function load(key) {
@@ -190,17 +190,14 @@ export default function YourPlan({ formatAmount, getRate = c => (c === "CAD" ? 1
             })}
           </div>
 
-          {/* Current pay */}
-          <div className="card" style={sectionGap}>
-            <div style={eyebrow}>Projection with your current pay</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 18, marginTop: 10 }}>
-              <Kpi label="Pay" value={fmt(basis.pay)} sub={basis.pay_source === "planner" ? "a month, from your Planner" : "a month, from statements"} />
-              <Kpi label="Everyday spending" value={fmt(basis.living)} sub="average a month" />
-              <Kpi label="Left for debts" value={fmt(plan.scenarios.pay.budget)} sub={`minimums need ${fmt(plan.debts_need)}`} />
-              <Kpi label="Debt-free" value={plan.scenarios.pay.months ? monthYear(plan.scenarios.pay.date) : "Not reached"}
-                sub={plan.scenarios.pay.months ? `${duration(plan.scenarios.pay.months)}, ${fmt(plan.scenarios.pay.interest)} interest` : "balances keep growing"} />
-            </div>
-          </div>
+          {/* Current pay, with real spending and with the Planner's bills */}
+          <Projection title="Projection with your current pay and actual spending" s={plan.scenarios.pay} need={plan.debts_need} fmt={fmt}
+            pay={basis.pay} paySub={basis.pay_source === "planner" ? "a month, from your Planner" : "a month, from statements"}
+            cost={basis.living} costLabel="Everyday spending" costSub="average a month, from statements" />
+          <Projection title="Projection with your Planner" s={plan.scenarios.planner} need={plan.debts_need} fmt={fmt}
+            pay={basis.planner_pay} paySub="a month, from Recurring"
+            cost={num(basis.planner_bills) + num(basis.planner_savings)} costLabel="Planned bills"
+            costSub={num(basis.planner_savings) > 0 ? `recurring, plus ${fmt(basis.planner_savings)} fund savings` : "a month, from Recurring"} />
 
           {/* Balance over time */}
           <div className="card" style={sectionGap}>
@@ -334,6 +331,23 @@ export default function YourPlan({ formatAmount, getRate = c => (c === "CAD" ? 1
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+function Projection({ title, s, need, fmt, pay, paySub, cost, costLabel, costSub }) {
+  const spare = num(s.budget) - num(need);
+  return (
+    <div className="card" style={sectionGap}>
+      <div style={eyebrow}>{title}</div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 18, marginTop: 10 }}>
+        <Kpi label="Pay" value={fmt(pay)} sub={paySub} />
+        <Kpi label={costLabel} value={fmt(cost)} sub={costSub} />
+        <Kpi label="Left for debts" value={fmt(s.budget)}
+          sub={spare >= 0 ? `${fmt(need)} minimums + ${fmt(spare)} extra` : `minimums need ${fmt(need)}`} />
+        <Kpi label="Debt-free" value={s.months ? monthYear(s.date) : "Not reached"}
+          sub={s.months ? `${duration(s.months)}, ${fmt(s.interest)} interest` : "balances keep growing"} />
+      </div>
     </div>
   );
 }
