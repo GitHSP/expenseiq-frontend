@@ -191,13 +191,17 @@ export default function YourPlan({ formatAmount, getRate = c => (c === "CAD" ? 1
           </div>
 
           {/* Current pay, with real spending and with the Planner's bills */}
-          <Projection title="Projection with your current pay and actual spending" s={plan.scenarios.pay} need={plan.debts_need} fmt={fmt}
-            pay={basis.pay} paySub={basis.pay_source === "planner" ? "a month, from your Planner" : "a month, from statements"}
-            cost={basis.living} costLabel="Everyday spending" costSub="average a month, from statements" />
-          <Projection title="Projection with your Planner" s={plan.scenarios.planner} need={plan.debts_need} fmt={fmt}
-            pay={basis.planner_pay} paySub="a month, from Recurring"
-            cost={num(basis.planner_bills) + num(basis.planner_savings)} costLabel="Planned bills"
-            costSub={num(basis.planner_savings) > 0 ? `recurring, plus ${fmt(basis.planner_savings)} fund savings` : "a month, from Recurring"} />
+          <Projection title="Projection with your current pay and actual spending" s={plan.scenarios.pay} fmt={fmt} rows={[
+            { label: "Pay", sign: 1, amount: basis.pay, items: basis.breakdown.pay },
+            { label: "Everyday spending (average from statements)", sign: -1, amount: basis.living, items: basis.breakdown.spending },
+            { label: "Debt minimums", sign: -1, amount: plan.debts_need, items: basis.breakdown.minimums },
+          ]} />
+          <Projection title="Projection with your Planner" s={plan.scenarios.planner} fmt={fmt} rows={[
+            { label: "Pay", sign: 1, amount: basis.planner_pay, items: basis.breakdown.pay },
+            { label: "Recurring bills", sign: -1, amount: basis.planner_bills, items: basis.breakdown.bills },
+            ...(num(basis.planner_savings) > 0 ? [{ label: "Emergency fund", sign: -1, amount: basis.planner_savings }] : []),
+            { label: "Debt minimums", sign: -1, amount: plan.debts_need, items: basis.breakdown.minimums },
+          ]} />
 
           {/* Balance over time */}
           <div className="card" style={sectionGap}>
@@ -335,18 +339,50 @@ export default function YourPlan({ formatAmount, getRate = c => (c === "CAD" ? 1
   );
 }
 
-function Projection({ title, s, need, fmt, pay, paySub, cost, costLabel, costSub }) {
-  const spare = num(s.budget) - num(need);
+function Projection({ title, s, fmt, rows }) {
+  const [open, setOpen] = useState(null);
+  const left = rows.reduce((t, r) => t + r.sign * num(r.amount), 0);
+  const line = { display: "flex", justifyContent: "space-between", gap: 12, fontSize: 13, padding: "8px 0" };
   return (
     <div className="card" style={sectionGap}>
       <div style={eyebrow}>{title}</div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 18, marginTop: 10 }}>
-        <Kpi label="Pay" value={fmt(pay)} sub={paySub} />
-        <Kpi label={costLabel} value={fmt(cost)} sub={costSub} />
-        <Kpi label="Left for debts" value={fmt(s.budget)}
-          sub={spare >= 0 ? `${fmt(need)} minimums + ${fmt(spare)} extra` : `minimums need ${fmt(need)}`} />
-        <Kpi label="Debt-free" value={s.months ? monthYear(s.date) : "Not reached"}
-          sub={s.months ? `${duration(s.months)}, ${fmt(s.interest)} interest` : "balances keep growing"} />
+      <div style={{ marginTop: 6 }}>
+        {rows.map(r => (
+          <div key={r.label} style={{ borderBottom: "1px solid var(--subtle2)" }}>
+            {r.items?.length ? (
+              <button onClick={() => setOpen(open === r.label ? null : r.label)} aria-expanded={open === r.label}
+                style={{ ...line, width: "100%", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", color: "var(--text)", textAlign: "left" }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                  <Icon name={open === r.label ? "chevron-up" : "chevron-down"} size={13} />{r.label}
+                </span>
+                <strong style={{ whiteSpace: "nowrap" }}>{r.sign < 0 ? "-" : ""}{fmt(r.amount)}</strong>
+              </button>
+            ) : (
+              <div style={{ ...line, color: "var(--text)", paddingLeft: 18 }}>
+                <span>{r.label}</span><strong style={{ whiteSpace: "nowrap" }}>{r.sign < 0 ? "-" : ""}{fmt(r.amount)}</strong>
+              </div>
+            )}
+            {open === r.label && (
+              <div style={{ padding: "0 0 8px 18px" }}>
+                {r.items.map((item, i) => (
+                  <div key={`${item.label}-${i}`} style={{ display: "flex", justifyContent: "space-between", gap: 12, fontSize: 12, color: "var(--muted2)", padding: "3px 0" }}>
+                    <span style={{ minWidth: 0, overflowWrap: "anywhere" }}>{item.label}</span>
+                    <span style={{ whiteSpace: "nowrap" }}>{num(item.amount) < 0 ? `-${fmt(-num(item.amount))}` : fmt(item.amount)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+        <div style={{ ...line, fontWeight: 700, color: "var(--text)", paddingLeft: 18, fontSize: 14 }}>
+          <span>{left >= 0 ? "Left over each month" : "Short each month"}</span>
+          <span style={{ whiteSpace: "nowrap", color: left >= 0 ? "#059669" : "#dc2626" }}>{left < 0 ? "-" : ""}{fmt(Math.abs(left))}</span>
+        </div>
+      </div>
+      <div style={{ fontSize: 13, color: "var(--muted2)", marginTop: 6, paddingTop: 10, borderTop: "1px solid var(--border)", lineHeight: 1.6 }}>
+        {s.months
+          ? <>Debt-free <strong style={{ color: "var(--text)" }}>{monthYear(s.date)}</strong> ({duration(s.months)}), with {fmt(s.interest)} more in interest, if the minimums and what's left over all go to debts: {fmt(s.budget)} a month.</>
+          : <>Debts <strong style={{ color: "var(--text)" }}>don't get paid off</strong> this way, because there isn't enough left to cover the interest and minimums.</>}
       </div>
     </div>
   );
