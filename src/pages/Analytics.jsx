@@ -7,6 +7,7 @@ import { CATEGORIES, MONTHS } from "../constants/categories";
 import { isSameMonth }         from "../utils/helpers";
 import Icon, { CategoryIcon } from "../components/Icon";
 import YourPlan from "../components/YourPlan";
+import MonthRecap from "../components/MonthRecap";
 
 const TOOLTIP_STYLE = {
   background:   "var(--card)",
@@ -99,11 +100,11 @@ export default function Analytics({ expenses, formatAmount, getRate, currency })
     <>
       <div style={{ marginBottom:28 }}>
         <div className="page-title">Analytics</div>
-        <div className="page-sub">{page === "plan" ? "Where your debts are heading and what it takes" : "Click on any chart to see the transactions"}</div>
+        <div className="page-sub">{page === "plan" ? "Where your debts are heading and what it takes" : page === "recap" ? "How a month went, planned against paid" : "Click on any chart to see the transactions"}</div>
       </div>
 
       <div style={{ display:"inline-flex", gap:4, marginBottom:20, background:"var(--card)", border:"1px solid var(--border)", borderRadius:10, padding:4 }}>
-        {[["plan", "Your plan"], ["spending", "Spending"]].map(([id, label]) => (
+        {[["plan", "Your plan"], ["recap", "Recap"], ["spending", "Spending"]].map(([id, label]) => (
           <button key={id} onClick={() => setPage(id)} style={{
             background: page === id ? "var(--accent)" : "transparent", color: page === id ? "var(--accent-ink)" : "var(--muted)",
             border:"none", borderRadius:7, padding:"7px 16px", fontWeight:600, fontSize:13, cursor:"pointer", fontFamily:"inherit",
@@ -112,6 +113,7 @@ export default function Analytics({ expenses, formatAmount, getRate, currency })
       </div>
 
       {page === "plan" && <YourPlan formatAmount={formatAmount} getRate={getRate} currency={currency} />}
+      {page === "recap" && <MonthRecap fmt={v => (formatAmount ? formatAmount(Math.round(parseFloat(v) || 0)) : `$${Math.round(parseFloat(v) || 0)}`).replace(/\.00$/, "")} />}
 
       {page === "spending" && <>
       {/* ── Charts ── */}

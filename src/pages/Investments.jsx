@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import Icon from "../components/Icon";
 import { financialPlannerAPI } from "../utils/api";
 
@@ -128,6 +129,54 @@ function BreakdownRow({ name, detail, cad, original, currency, negative, show, d
 
 const WORTH_BASIS = { fd: "value now", insurance: "cash value − surrender charge", rd: "value now", chit: "paid in, or deposit − still to pay" };
 
+// Net worth month by month: one line, with the change since last month.
+function NetWorthTrend({ history, toCAD, show }) {
+  const points = history.map(h => {
+    const invest = Object.entries(h.investments || {}).reduce((t, [cur, v]) => t + toCAD(v, cur), 0);
+    return { month: h.month, total: num(h.banks) + invest - num(h.debts), estimated: h.estimated };
+  });
+  if (points.length < 2) {
+    return <div style={{ fontSize: 12, color: "var(--muted)", margin: "-4px 0 14px" }}>Your net worth trend appears here from next month.</div>;
+  }
+  const last = points[points.length - 1], prev = points[points.length - 2];
+  const change = last.total - prev.total;
+  const label = ym => new Date(`${ym}-15T12:00:00`).toLocaleDateString("en-US", { month: "short", year: "numeric" });
+  const up = change >= 0;
+  return (
+    <div style={{ margin: "-6px 0 16px" }}>
+      <div style={{ fontSize: 13, fontWeight: 600, color: up ? "var(--pos-text)" : "var(--neg-text)" }}>
+        {up ? "▲" : "▼"} {show(Math.abs(change))} since {label(prev.month)}
+        <span style={{ color: "var(--muted)", fontWeight: 500 }}> · {points.length} months</span>
+      </div>
+      <div style={{ height: 110, marginTop: 6 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={points} margin={{ top: 6, right: 4, bottom: 0, left: 4 }}>
+            <defs>
+              <linearGradient id="worthFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.25} />
+                <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <XAxis dataKey="month" hide />
+            <YAxis hide domain={["dataMin", "dataMax"]} />
+            <Tooltip
+              formatter={(v, _n, p) => [show(v), p?.payload?.estimated ? "Net worth (estimated)" : "Net worth"]}
+              labelFormatter={label}
+              contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12, color: "var(--text)" }} />
+            <Area type="monotone" dataKey="total" stroke="#3b82f6" strokeWidth={2} fill="url(#worthFill)" dot={false}
+              activeDot={{ r: 4 }} isAnimationActive={false} />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+      {points.some(p => p.estimated) && (
+        <div style={{ fontSize: 11, color: "var(--muted)" }}>
+          Earlier months are estimated from your statements, with loans and investments at today's values.
+        </div>
+      )}
+    </div>
+  );
+}
+
 function NetWorth({ data, getRate, show, display }) {
   const [open, setOpen] = useState(false);
   if (!data) return null;
@@ -168,6 +217,7 @@ function NetWorth({ data, getRate, show, display }) {
           What you own minus what you owe, at today's exchange rate.
         </div>
       </div>
+      <NetWorthTrend history={data.history || []} toCAD={toCAD} show={show} />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12 }}>
         {rows.map(r => (
           <Stat key={r.label} label={r.label} value={show(r.value)} sub={r.sub} color={r.color} />

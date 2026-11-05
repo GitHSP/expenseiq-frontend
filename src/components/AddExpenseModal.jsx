@@ -1,16 +1,29 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { CATEGORIES }          from "../constants/categories";
 import Icon, { IconLabel } from "./Icon";
 import AmountField, { startingEntry, toStored } from "./AmountField";
 
-const EMPTY_FORM = {
-  title:    "",
-  amount:   "",
-  category: "Food & Dining",
-  date:     new Date().toISOString().split("T")[0],
-  tags:     "",
-  notes:    "",
+// Today in local time (toISOString would give tomorrow's date late in the evening).
+const today = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
+const emptyForm = () => ({ title: "", amount: "", category: "Food & Dining", date: today(), tags: "", notes: "" });
+
+// The places the user pays most often lately, for one-tap filling.
+function recentPlaces(expenses) {
+  const since = new Date(Date.now() - 90 * 864e5).toISOString().slice(0, 10);
+  const seen = new Map();
+  for (const e of expenses || []) {
+    if (!e.title || String(e.date) < since) continue;
+    const key = e.title.trim().toLowerCase();
+    const hit = seen.get(key) || { title: e.title.trim(), category: e.category, count: 0, last: "" };
+    hit.count += 1;
+    if (String(e.date) >= hit.last) { hit.last = String(e.date); hit.category = e.category; }
+    seen.set(key, hit);
+  }
+  return [...seen.values()].sort((a, b) => b.count - a.count || b.last.localeCompare(a.last)).slice(0, 8);
+}
 
 const inputStyle = {
   width:        "100%",
@@ -37,8 +50,10 @@ const labelStyle = {
   marginBottom:  "5px",
 };
 
-export default function AddExpenseModal({ editingExpense, onSave, onClose, currency = "CAD", getRate = c => (c === "CAD" ? 1 : null) }) {
-  const [form, setForm] = useState(EMPTY_FORM);
+export default function AddExpenseModal({ editingExpense, onSave, onClose, expenses = [], currency = "CAD", getRate = c => (c === "CAD" ? 1 : null) }) {
+  const [form, setForm] = useState(emptyForm);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const recent = useMemo(() => recentPlaces(expenses), [expenses]);
   const [entry, setEntry] = useState(() => startingEntry("", currency, getRate));
 
   useEffect(() => {
@@ -52,14 +67,14 @@ export default function AddExpenseModal({ editingExpense, onSave, onClose, curre
         title:    editingExpense.title    || "",
         amount:   editingExpense.amount   || "",
         category: editingExpense.category || "Food & Dining",
-        date:     editingExpense.date     || new Date().toISOString().split("T")[0],
+        date:     editingExpense.date     || today(),
         tags:     Array.isArray(editingExpense.tags)
                     ? editingExpense.tags.join(", ")
                     : editingExpense.tags || "",
         notes:    editingExpense.notes    || "",
       });
     } else {
-      setForm(EMPTY_FORM);
+      setForm(emptyForm());
     }
   }, [editingExpense]);
 
@@ -79,6 +94,24 @@ export default function AddExpenseModal({ editingExpense, onSave, onClose, curre
             {editingExpense ? "Edit Expense" : "Add Expense"}
           </IconLabel>
         </div>
+
+        {/* Quick picks: tap a recent place to fill the title and category */}
+        {!editingExpense && recent.length > 0 && (
+          <div style={{ display:"flex", gap:6, overflowX:"auto", WebkitOverflowScrolling:"touch", scrollbarWidth:"none", margin:"0 0 14px", paddingBottom:2 }}>
+            {recent.map(r => {
+              const on = form.title === r.title;
+              return (
+                <button key={r.title} type="button" onClick={() => setForm(f => ({ ...f, title: r.title, category: r.category || f.category }))}
+                  style={{ flex:"0 0 auto", minHeight:36, padding:"0 12px", borderRadius:18, fontSize:13, fontWeight:600, fontFamily:"inherit", cursor:"pointer",
+                           maxWidth:180, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap",
+                           background: on ? "var(--accent-bg)" : "var(--subtle)", color:"var(--text)",
+                           border:`1px solid ${on ? "var(--accent)" : "var(--border)"}` }}>
+                  {r.title}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* Title */}
         <div className="form-group">
@@ -148,7 +181,14 @@ export default function AddExpenseModal({ editingExpense, onSave, onClose, curre
           </div>
         </div>
 
-        {/* Tags */}
+        {/* Tags and notes: tucked away for a quick add */}
+        {!editingExpense && !moreOpen && !form.tags && !form.notes && (
+          <button type="button" className="btn-ghost" onClick={() => setMoreOpen(true)}
+            style={{ padding:"4px 0", marginBottom:12, display:"inline-flex", alignItems:"center", gap:4, fontSize:13 }}>
+            <Icon name="plus" size={13} /> Tags or a note
+          </button>
+        )}
+        {(editingExpense || moreOpen || form.tags || form.notes) && <>
         <div className="form-group">
           <label style={labelStyle}>Tags (comma separated)</label>
           <input
@@ -169,6 +209,7 @@ export default function AddExpenseModal({ editingExpense, onSave, onClose, curre
             onChange={e => update("notes", e.target.value)}
           />
         </div>
+        </>}
 
         {/* Buttons */}
         <div className="modal-footer">

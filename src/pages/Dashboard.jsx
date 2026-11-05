@@ -5,6 +5,7 @@ import {
 } from "recharts";
 import ExchangeRatesWidget from "../components/ExchangeRatesWidget";
 import FinancialTips       from "../components/FinancialTips";
+import ComingUp            from "../components/ComingUp";
 import Icon, { CategoryIcon } from "../components/Icon";
 import { CATEGORIES, MONTHS } from "../constants/categories";
 import { INCOME_CATEGORIES }  from "../hooks/useIncome";
@@ -90,7 +91,7 @@ export default function Dashboard({
   incomes, onEditIncome, onDeleteIncome, onAddIncome, onBulkDeleteIncome,
   currency, rates, getRate, formatAmount,
   getLastUpdatedText, ratesLoading, ratesError, refreshRates,
-  debts, refreshKey, onOpenRules,
+  debts, refreshKey, onOpenRules, onOpenPlanner,
 }) {
   const now = new Date();
   // Roommates' shares of rent and bills (Accounts → Rules, "pays their share
@@ -352,6 +353,8 @@ export default function Dashboard({
           );
         })}
       </div>
+
+      {isCurrent && <ComingUp fmt={fmt} refreshKey={refreshKey} onOpenAccounts={onOpenRules} onOpenPlanner={onOpenPlanner} />}
 
       {/* ── Shared bills: rent and bills paid in full, roommates paying back ── */}
       {(sharedTotal > 0 || billsTotal > 0) && (

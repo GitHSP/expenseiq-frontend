@@ -349,6 +349,7 @@ async function handleLogout() {
           <Dashboard
             refreshKey={accountsKey}
             onOpenRules={() => setView("accounts")}
+            onOpenPlanner={() => setView("payments")}
             expenses={expenses}
             onEdit={openEditModal}
             onDelete={handleDelete}
@@ -518,6 +519,7 @@ async function handleLogout() {
 
       {showModal && (
         <AddExpenseModal
+          expenses={expenses}
           currency={currency}
           getRate={getRate}
           editingExpense={editingExpense}

@@ -436,6 +436,30 @@ export const financialPlannerAPI = {
     });
     return handleResponse(res);
   },
+  getDebtHistory: async () => {
+    const res = await authFetch(`${FP_URL}/debts/history/`, { method: "GET", headers: getHeaders(true) });
+    return handleResponse(res);
+  },
+  getReminders: async () => {
+    const res = await authFetch(`${FP_URL}/reminders/`, { method: "GET", headers: getHeaders(true) });
+    return handleResponse(res);
+  },
+  getRecap: async (month) => {
+    const res = await authFetch(`${FP_URL}/recap/${month ? `?month=${month}` : ""}`, { method: "GET", headers: getHeaders(true) });
+    return handleResponse(res);
+  },
+  getBudgets: async () => {
+    const res = await authFetch(`${FP_URL}/budgets/`, { method: "GET", headers: getHeaders(true) });
+    return handleResponse(res);
+  },
+  addBudget: async (data) => {
+    const res = await authFetch(`${FP_URL}/budgets/`, { method: "POST", headers: getHeaders(true), body: JSON.stringify(data) });
+    return handleResponse(res);
+  },
+  deleteBudget: async (id) => {
+    const res = await authFetch(`${FP_URL}/budgets/${id}/`, { method: "DELETE", headers: getHeaders(true) });
+    return res.ok ? null : handleResponse(res);
+  },
   getCashFlow: async ({ days, balance } = {}) => {
     const q = new URLSearchParams();
     if (days) q.set("days", days);

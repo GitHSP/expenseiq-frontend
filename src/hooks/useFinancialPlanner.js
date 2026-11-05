@@ -134,7 +134,16 @@ export function useFinancialPlanner(userId) {
   }
 
   async function toggleChecklistItem(id) {
-    const response = await financialPlannerAPI.toggleChecklist(id);
+    // Tick it straight away; the server's answer (debt or fund updates) follows.
+    const before = checklist.find(i => i.id === id);
+    if (before) setChecklist(prev => prev.map(i => (i.id === id ? { ...i, is_completed: !i.is_completed } : i)));
+    let response;
+    try {
+      response = await financialPlannerAPI.toggleChecklist(id);
+    } catch (e) {
+      if (before) setChecklist(prev => prev.map(i => (i.id === id ? before : i)));
+      throw e;
+    }
 
     // ── Handle both old and new response formats ──
     const item = response?.item || response;

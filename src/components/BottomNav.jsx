@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { NAV_ITEMS } from "../constants/categories";
 import Icon from "./Icon";
 
@@ -18,11 +18,22 @@ function Badge({ count }) {
 
 export default function BottomNav({ view, setView, badges, darkMode, onToggleDark }) {
   const [more, setMore] = useState(false);
+  // The tapped item lights up at once; the page itself renders just after,
+  // without holding up the tap (a big page can take a moment on a phone).
+  const [tapped, setTapped] = useState(null);
+  const [, startTransition] = useTransition();
+  useEffect(() => { setTapped(null); }, [view]);
+  const current = tapped || view;
   const main = NAV_ITEMS.filter(i => MAIN.includes(i.id)).sort((a, b) => MAIN.indexOf(a.id) - MAIN.indexOf(b.id));
   const rest = NAV_ITEMS.filter(i => !MAIN.includes(i.id));
-  const inMore = rest.some(i => i.id === view);
+  const inMore = rest.some(i => i.id === current);
   const moreBadge = rest.reduce((t, i) => t + (badges?.[i.id] || 0), 0);
-  const go = id => { setView(id); setMore(false); };
+  const go = id => {
+    setMore(false);
+    if (id === view) { window.scrollTo({ top: 0, behavior: "smooth" }); return; }   // tap again: back to the top
+    setTapped(id);
+    startTransition(() => setView(id));
+  };
 
   return (
     <>
@@ -30,7 +41,7 @@ export default function BottomNav({ view, setView, badges, darkMode, onToggleDar
         <div className="bottom-sheet-backdrop" onClick={() => setMore(false)}>
           <div className="bottom-sheet" role="dialog" aria-label="More pages" onClick={e => e.stopPropagation()}>
             {rest.map(item => (
-              <button key={item.id} className={`bottom-sheet-item${view === item.id ? " active" : ""}`} onClick={() => go(item.id)}>
+              <button key={item.id} className={`bottom-sheet-item${current === item.id ? " active" : ""}`} onClick={() => go(item.id)}>
                 <span style={{ position: "relative", display: "inline-flex" }}>
                   <Icon name={item.icon} size={20} /><Badge count={badges?.[item.id]} />
                 </span>
@@ -50,7 +61,7 @@ export default function BottomNav({ view, setView, badges, darkMode, onToggleDar
       )}
       <nav className="bottom-nav">
         {main.map(item => (
-          <button key={item.id} className={`bottom-nav-item${view === item.id && !more ? " active" : ""}`} onClick={() => go(item.id)}>
+          <button key={item.id} className={`bottom-nav-item${current === item.id && !more ? " active" : ""}`} onClick={() => go(item.id)}>
             <div style={{ position: "relative", display: "inline-block" }}>
               <span className="bnav-icon"><Icon name={item.icon} size={20} /></span>
               <Badge count={badges?.[item.id]} />

@@ -654,7 +654,7 @@ select.input option { background: var(--card); color: var(--text); }
     background: transparent;
     color: var(--faint);
     gap: 3px;
-    transition: color 0.15s;
+    transition: none;
     font-family: inherit;
   }
   .bottom-nav-item.active { color: var(--accent-text); }
@@ -879,3 +879,20 @@ select.input option { background: var(--card); color: var(--text); }
 
 /* The More sheet covers the chat button while it's open. */
 body:has(.bottom-sheet-backdrop) .assistant-fab { display: none; }
+
+/* ── Taps on phones: instant, with a visible press ──
+   touch-action: manipulation drops the browser's double-tap-to-zoom wait,
+   so a tap registers straight away; :active shows it was pressed. */
+button, [role="button"], a, select, label, input[type="checkbox"], input[type="radio"], .card[onclick] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+button:active:not(:disabled) { transform: scale(0.97); }
+.bottom-nav-item:active, .bottom-sheet-item:active { transform: none; opacity: 0.6; }
+@media (hover: none) {
+  /* Hover styles stick after a tap on touch screens; don't let them. */
+  .btn-primary:hover { transform: none; box-shadow: none; }
+  .btn-secondary:hover { background: var(--card); border-color: var(--border); }
+  .btn-ghost:hover { background: transparent; }
+  button { transition: transform 0.08s ease, opacity 0.08s ease, background-color 0.15s ease; }
+}

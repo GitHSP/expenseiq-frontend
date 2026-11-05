@@ -3,6 +3,9 @@ import ChecklistConfirmModal       from "../components/ChecklistConfirmModal";
 import RecurringTab                from "../components/RecurringTab";
 import NextMonthPlan               from "../components/NextMonthPlan";
 import CashFlow                    from "../components/CashFlow";
+import SpendingLimits              from "../components/SpendingLimits";
+import DebtTrend                   from "../components/DebtTrend";
+import { financialPlannerAPI }     from "../utils/api";
 import Icon, { IconLabel, stripEmoji } from "../components/Icon";
 import UnitSelect from "../components/UnitSelect";
 import { moneyUnit } from "../utils/money";
@@ -90,6 +93,14 @@ export default function FinancialPlanner({
   const money = moneyUnit(unit, getRate);
   const [activeTab,    setActiveTab]    = useState("debts");
   const [planMonth,    setPlanMonth]    = useState("this");
+  // Card balances from statements, for the trend on each card and in total.
+  const [cardHistory,  setCardHistory]  = useState({ cards: {}, total: [] });
+  useEffect(() => {
+    let live = true;
+    financialPlannerAPI.getDebtHistory().then(h => { if (live) setCardHistory(h); }).catch(() => {});
+    return () => { live = false; };
+  }, [debts]);
+  const whole = v => fmt(Math.round(parseFloat(v) || 0)).replace(/\.00$/, "");
   const [showDebtForm, setShowDebtForm] = useState(false);
   const [editingDebt,  setEditingDebt]  = useState(null);
   const [showItemForm, setShowItemForm] = useState(false);
@@ -408,6 +419,7 @@ export default function FinancialPlanner({
           { id:"recurring", label:"Recurring", icon:"refresh"     },
           { id:"checklist", label:"Checklist", icon:"list-checks" },
           { id:"cashflow",  label:"Cash flow", icon:"calendar"    },
+          { id:"limits",    label:"Limits",    icon:"target"      },
           { id:"fund",      label:"Fund",      icon:"shield"      },
         ].map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
@@ -429,6 +441,15 @@ export default function FinancialPlanner({
       ════════════════════════════════════ */}
       {activeTab === "debts" && (
         <>
+          {cardHistory.total.length >= 2 && (
+            <div className="card" style={{ marginBottom:16 }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", gap:8 }}>
+                <span style={{ fontSize:13, fontWeight:600, color:"var(--muted)" }}>All cards</span>
+                <span style={{ fontSize:20, fontWeight:700 }}>{whole(cardHistory.total[cardHistory.total.length - 1].balance)}</span>
+              </div>
+              <DebtTrend points={cardHistory.total} fmt={whole} height={70} endLabel="as of" />
+            </div>
+          )}
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16, flexWrap:"wrap", gap:8 }}>
             <div style={{ fontSize:13, color:C.muted }}>
               Sorted by highest APR — avalanche method
@@ -568,6 +589,8 @@ export default function FinancialPlanner({
                     </div>
                   </div>
                 )}
+
+                <DebtTrend points={cardHistory.cards[debt.id]} fmt={whole} />
 
                 {debt.notes && <div style={{ fontSize:11, color:C.muted, marginTop:10, fontStyle:"italic" }}>{debt.notes}</div>}
               </div>
@@ -797,6 +820,10 @@ export default function FinancialPlanner({
       {/* ════════════════════════════════════
           TAB 3 — EMERGENCY FUND
       ════════════════════════════════════ */}
+      {activeTab === "limits" && (
+        <SpendingLimits fmt={v => fmt(Math.round(parseFloat(v) || 0)).replace(/\.00$/, "")} currency={currency} getRate={getRate} />
+      )}
+
       {activeTab === "fund" && (
         <>
           {emergencyFund ? (
