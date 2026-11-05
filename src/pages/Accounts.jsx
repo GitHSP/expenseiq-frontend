@@ -898,6 +898,12 @@ function RulesPanel({ onChanged, fmt = v => `$${v}` }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
+  // Folded away once set up; remembered in this browser.
+  const [folded, setFolded] = useState(() => { try { return localStorage.getItem("glacier_rules_folded") === "1"; } catch { return false; } });
+  const fold = () => setFolded(f => {
+    try { localStorage.setItem("glacier_rules_folded", f ? "0" : "1"); } catch {}
+    return !f;
+  });
 
   const load = useCallback(() => accountsAPI.rules().then(d => setRules(d.rules || [])).catch(() => {}), []);
   useEffect(() => { load(); }, [load]);
@@ -926,9 +932,20 @@ function RulesPanel({ onChanged, fmt = v => `$${v}` }) {
   const label = t => (RULE_TYPES.find(x => x.id === t) || RULE_TYPES.find(x => x.id === "")).label;
   return (
     <div className="card" style={{ marginBottom: 20 }}>
-      <div className="card-title" style={{ marginBottom: 4, display: "flex", alignItems: "center", gap: 8 }}>
-        <Icon name="list-checks" size={16} /> Rules
-      </div>
+      <button onClick={fold} aria-expanded={!folded} style={{
+        width: "100%", background: "none", border: "none", padding: 0, display: "flex", alignItems: "center", gap: 8,
+        cursor: "pointer", fontFamily: "inherit", color: "var(--text)", textAlign: "left", touchAction: "manipulation",
+        marginBottom: folded ? 0 : 4,
+      }}>
+        <span className="card-title" style={{ margin: 0, display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
+          <Icon name="list-checks" size={16} /> Rules
+          {folded && <span style={{ fontSize: 12, fontWeight: 500, color: "var(--muted)" }}>{rules.length} rule{rules.length === 1 ? "" : "s"}</span>}
+        </span>
+        <span style={{ fontSize: 12, color: "var(--muted)", display: "inline-flex", alignItems: "center", gap: 4 }}>
+          {folded ? "Show" : "Hide"} <Icon name={folded ? "chevron-down" : "chevron-up"} size={15} />
+        </span>
+      </button>
+      {!folded && <>
       <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 12, lineHeight: 1.5 }}>
         Anything whose description mentions the text follows the rule — what's already imported and every future
         upload. E.g. a roommate's name as it appears on their e-transfers → "Pays their share of my bills";
@@ -967,6 +984,7 @@ function RulesPanel({ onChanged, fmt = v => `$${v}` }) {
           </button>
         </div>
       ))}
+      </>}
     </div>
   );
 }

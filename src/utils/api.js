@@ -328,6 +328,10 @@ export const accountsAPI = {
   setTransactionKind: async (id, kind, category) => handleResponse(await authFetch(`${BASE_URL}/statements/transactions/${id}/`, {
     method: "PATCH", headers: getHeaders(true), body: JSON.stringify({ kind, ...(category ? { category } : {}) }),
   })),
+  // month: "YYYY-MM" (the month's bills it pays for) or null for "not for bills".
+  setBillsMonth: async (id, month) => handleResponse(await authFetch(`${BASE_URL}/statements/transactions/${id}/`, {
+    method: "PATCH", headers: getHeaders(true), body: JSON.stringify(month ? { bills_month: month } : { for_bills: false }),
+  })),
   recurring: async () => handleResponse(await authFetch(`${BASE_URL}/statements/recurring/`, { headers: getHeaders(true) })),
   summary: async () => handleResponse(await authFetch(`${BASE_URL}/statements/summary/`, { headers: getHeaders(true) })),
   rules: async () => handleResponse(await authFetch(`${BASE_URL}/statements/rules/`, { headers: getHeaders(true) })),

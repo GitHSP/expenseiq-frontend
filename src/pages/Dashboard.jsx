@@ -95,7 +95,8 @@ export default function Dashboard({
   const now = new Date();
   // Roommates' shares of rent and bills (Accounts → Rules, "pays their share
   // of my bills") aren't income: they lower what the user really spent.
-  const [sharing, setSharing] = useState({ matchers: [], billRules: 0, byMonth: {}, months: {}, roommates: null });
+  const [sharing, setSharing] = useState({ matchers: [], billRules: 0, byMonth: {}, months: {}, transfers: [] });
+  const [sharingKey, setSharingKey] = useState(0);        // bumped after picking which transfers are for bills
   useEffect(() => {
     let live = true;
     Promise.all([accountsAPI.rules().catch(() => ({ rules: [] })), accountsAPI.summary().catch(() => ({ months: [] }))])
@@ -106,11 +107,11 @@ export default function Dashboard({
           billRules: (r.rules || []).filter(x => x.treat_as === "bill").length,
           byMonth:   Object.fromEntries((s.months || []).map(m => [m.month, parseFloat(m.shared_by_others) || 0])),
           months:    Object.fromEntries((s.months || []).map(m => [m.month, m])),
-          roommates: s.roommates || null,
+          transfers: s.shared_transfers || [],
         });
       });
     return () => { live = false; };
-  }, [refreshKey]);
+  }, [refreshKey, sharingKey]);
   const [activeCard, setActiveCard] = useState(null);
   // Month being viewed — defaults to this month; past months matter once
   // last month's statements are imported.
@@ -312,8 +313,6 @@ export default function Dashboard({
       </div>
 
       {/* ── Shared bills: rent and bills paid in full, roommates paying back ── */}
-      {sharing.roommates && <RoommateBalances data={sharing.roommates} fmt={fmt} />}
-
       {(sharedTotal > 0 || billsTotal > 0) && (
         <div className="card" style={{ marginBottom:16 }}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", flexWrap:"wrap", gap:6, marginBottom:12 }}>
@@ -361,6 +360,7 @@ export default function Dashboard({
               )}
             </div>
           </div>
+          <SortTransfers transfers={sharing.transfers || []} ym={ym} fmt={fmt} onChanged={() => setSharingKey(k => k + 1)} />
           {atShare && billsTotal > 0 && (
             <div style={{ fontSize:13, marginTop:12, paddingTop:10, borderTop:"1px solid var(--subtle2)", display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:6 }}>
               <span>Roommates' part {fmt(owedToYou)} · they paid {fmt(sharedTotal)}</span>
@@ -702,38 +702,74 @@ export default function Dashboard({
   );
 }
 
-// Each roommate's running balance since the first shared bill on the
-// statements: a late e-transfer just evens out in the total.
-function RoommateBalances({ data, fmt }) {
-  const month = ym => new Date(`${ym}-15T12:00:00`).toLocaleDateString("en-US", { month: "short", year: "numeric" });
-  const latest = new Date(`${data.latest}-15T12:00:00`).toLocaleDateString("en-US", { month: "short" });
-  const each = parseFloat(data.latest_each) || 0;
+// In a month's Shared bills: roommates' transfers from around that month, each
+// counted toward the month it pays for. One posted on Oct 2 can count for September.
+function SortTransfers({ transfers, ym, fmt, onChanged }) {
+  const [picked, setPicked] = useState({});              // id -> month or "" (not for bills), before the server answers
+  const [open, setOpen] = useState(false);
+  const shift = (key, n) => {
+    const [y, m] = key.split("-").map(Number);
+    const d = new Date(y, m - 1 + n, 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  };
+  const label = key => new Date(`${key}-15T12:00:00`).toLocaleDateString("en-US", { month: "short", year: "numeric" });
+  const near = transfers.filter(t => {
+    const posted = t.date.slice(0, 7), day = parseInt(t.date.slice(8), 10);
+    const counts = picked[t.id] !== undefined ? picked[t.id] : (t.counts_for || "");
+    return counts === ym || posted === ym || (posted === shift(ym, 1) && day <= 12) || (posted === shift(ym, -1) && day >= 20);
+  });
+  if (near.length === 0) return null;
+  const counted = near.filter(t => (picked[t.id] !== undefined ? picked[t.id] : (t.counts_for || "")) === ym);
+
+  async function choose(t, value) {
+    const before = picked[t.id];
+    setPicked(p => ({ ...p, [t.id]: value }));
+    try {
+      await accountsAPI.setBillsMonth(t.id, value || null);
+      onChanged();
+    } catch {
+      setPicked(p => ({ ...p, [t.id]: before }));
+    }
+  }
+
   return (
-    <div className="card" style={{ marginBottom: 16 }}>
-      <div className="card-title" style={{ marginBottom: 2 }}>Roommates' running balance</div>
-      <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 8 }}>
-        Since {month(data.since)}: each owes an equal part of the shared bills beyond your share ({fmt(each)} for {latest}).
-      </div>
-      {data.people.map(p => {
-        const behind = parseFloat(p.balance) || 0;
-        const status = behind <= 0.5
-          ? (behind < -0.5 ? { text: `${fmt(-behind)} ahead`, color: "#059669" } : { text: "Up to date", color: "#059669" })
-          : behind <= each + 0.5
-            ? { text: `${latest} still to come`, color: "#d97706" }
-            : { text: `${fmt(behind)} behind`, color: "#dc2626" };
+    <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid var(--subtle2)" }}>
+      <button onClick={() => setOpen(o => !o)} aria-expanded={open} style={{
+        width: "100%", background: "none", border: "none", padding: "4px 0", display: "flex", justifyContent: "space-between", alignItems: "center",
+        gap: 8, cursor: "pointer", fontFamily: "inherit", color: "var(--text)", textAlign: "left", touchAction: "manipulation",
+      }}>
+        <span style={{ fontSize: 13, fontWeight: 600 }}>
+          Which transfers pay for {label(ym)}?
+          <span style={{ display: "block", fontSize: 12, fontWeight: 400, color: "var(--muted)", marginTop: 1 }}>
+            {counted.length} of {near.length} nearby transfers count for {label(ym)}. Move a late one here, or mark one as not for bills.
+          </span>
+        </span>
+        <Icon name={open ? "chevron-up" : "chevron-down"} size={15} style={{ flexShrink: 0 }} />
+      </button>
+      {open && near.map(t => {
+        const posted = t.date.slice(0, 7);
+        const value = picked[t.id] !== undefined ? picked[t.id] : (t.counts_for || "");
+        const choices = [...new Set([shift(posted, -1), posted, shift(posted, 1), ym])].sort();
+        const here = value === ym;
         return (
-          <div key={p.name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "10px 0", borderTop: "1px solid var(--subtle2)" }}>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text)" }}>{p.name}</div>
-              <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 1 }}>Paid {fmt(p.paid)} of {fmt(p.owed)}</div>
+          <div key={t.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "8px 0", borderTop: "1px solid var(--subtle2)" }}>
+            <div style={{ minWidth: 0, fontSize: 13 }}>
+              <div style={{ fontWeight: 600, color: here ? "var(--text)" : "var(--muted)" }}>{t.who} · {fmt(parseFloat(t.amount) || 0)}</div>
+              <div style={{ fontSize: 12, color: "var(--muted)" }}>
+                posted {new Date(`${t.date}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+              </div>
             </div>
-            <strong style={{ fontSize: 13, color: status.color, whiteSpace: "nowrap" }}>{status.text}</strong>
+            <select value={value} onChange={e => choose(t, e.target.value)} aria-label={`Which month's bills ${t.who}'s transfer pays for`} style={{
+              minHeight: 36, padding: "0 8px", borderRadius: 8, fontSize: 13, fontFamily: "inherit", maxWidth: 170,
+              border: `1px solid ${here ? "#059669" : "var(--border)"}`, background: here ? "rgba(5,150,105,0.08)" : "var(--card)",
+              color: "var(--text)",
+            }}>
+              {choices.map(c => <option key={c} value={c}>For {label(c)} bills</option>)}
+              <option value="">Not for bills</option>
+            </select>
           </div>
         );
       })}
-      <div style={{ fontSize: 11, color: "var(--faint2)", marginTop: 8 }}>
-        A roommate who keeps back your share of a bill they pay (like WiFi) shows a small, steady difference here.
-      </div>
     </div>
   );
 }
