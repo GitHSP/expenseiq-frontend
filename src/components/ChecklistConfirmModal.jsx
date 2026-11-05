@@ -77,8 +77,8 @@ export default function ChecklistConfirmModal({
         {/* Debt balance reduction info */}
         {isDebtPayment && debt && (
           <div style={{
-            background:   "#fff1f2",
-            border:       "1px solid #fecdd3",
+            background:   "var(--neg-bg)",
+            border:       "1px solid var(--neg-border)",
             borderRadius: 8,
             padding:      "10px 14px",
             marginBottom: 16,
@@ -98,8 +98,8 @@ export default function ChecklistConfirmModal({
         {/* Savings info */}
         {isSavings && (
           <div style={{
-            background:   "#f0fdf4",
-            border:       "1px solid #bbf7d0",
+            background:   "var(--pos-bg)",
+            border:       "1px solid var(--pos-border)",
             borderRadius: 8,
             padding:      "10px 14px",
             marginBottom: 16,
@@ -121,7 +121,7 @@ export default function ChecklistConfirmModal({
                 alignItems:   "center",
                 gap:          10,
                 padding:      "12px 14px",
-                background:   addAsExpense ? "#f0f7ff" : "var(--subtle)",
+                background:   addAsExpense ? "var(--accent-bg)" : "var(--subtle)",
                 border:       `1.5px solid ${addAsExpense ? "#0070f3" : "var(--border)"}`,
                 borderRadius: 8,
                 cursor:       "pointer",

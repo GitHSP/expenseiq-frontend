@@ -96,7 +96,7 @@ export default function CashFlow({ fmt, recurring, debts, checklist, currency = 
           ))}
         </div>
         {!data.entered && data.stale && (
-          <div style={{ flexBasis: "100%", fontSize: 12, color: "#b45309" }}>
+          <div style={{ flexBasis: "100%", fontSize: 12, color: "var(--warn-text)" }}>
             Your latest bank statement is old, so enter today's balance for an accurate picture.
           </div>
         )}

@@ -12,7 +12,7 @@ const inputStyle = {
 const codeInputStyle = { ...inputStyle, fontSize: 20, letterSpacing: 6, textAlign: "center", maxWidth: 200 };
 
 function Notice({ tone = "error", children }) {
-  const c = tone === "error" ? ["#fff1f2", "#fecdd3", "#e11d48", "warning"] : ["#f0fdf4", "#bbf7d0", "#059669", "check-circle"];
+  const c = tone === "error" ? ["var(--neg-bg)", "var(--neg-border)", "#e11d48", "warning"] : ["var(--pos-bg)", "var(--pos-border)", "#059669", "check-circle"];
   return (
     <div style={{ background: c[0], border: `1px solid ${c[1]}`, color: c[2], borderRadius: 8, padding: "10px 14px",
                   fontSize: 13, display: "flex", gap: 8, alignItems: "center", marginBottom: 14 }}>

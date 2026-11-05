@@ -120,7 +120,7 @@ export default function AddIncomeModal({ editingIncome, onSave, onClose, currenc
           <button
             className="btn-primary"
             onClick={() => onSave({ ...form, ...toStored(entry, form.notes, getRate) })}
-            style={{ flex: 1, background: "linear-gradient(135deg,#55EFC4,#00B894)" }}
+            style={{ flex: 1, background: "#059669" }}
           >
             {editingIncome ? "Update Income" : "Add Income"}
           </button>

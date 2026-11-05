@@ -123,10 +123,10 @@ export default function FinancialTips({ expenses, incomes, debts, month, year })
 
   // ── Colors per type ──
   const colors = {
-    danger:  { bg:"#fff1f2", border:"#fecdd3", title:"#e11d48" },
-    warning: { bg:"#fffbeb", border:"#fde68a", title:"#d97706" },
-    success: { bg:"#f0fdf4", border:"#bbf7d0", title:"#059669" },
-    info:    { bg:"#f0f7ff", border:"#bfdbfe", title:"#0070f3" },
+    danger:  { bg:"var(--neg-bg)", border:"var(--neg-border)", title:"#e11d48" },
+    warning: { bg:"var(--warn-bg)", border:"var(--warn-border)", title:"#d97706" },
+    success: { bg:"var(--pos-bg)", border:"var(--pos-border)", title:"#059669" },
+    info:    { bg:"var(--accent-bg)", border:"var(--accent-border)", title:"#0070f3" },
   };
 
   if (!tips || tips.length === 0) return null;

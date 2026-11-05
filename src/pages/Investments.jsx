@@ -149,9 +149,9 @@ function NetWorth({ data, getRate, show, display }) {
   const noBalance = data.banks.filter(b => b.balance === null);
 
   const rows = [
-    { label: "Bank balances", value: banks, sub: `${data.banks.length - noBalance.length} accounts, from latest statements`, color: "#0070f3" },
-    { label: "Investments · Canada", value: other, sub: count(data.investments.filter(i => i.currency !== "INR").length, "item"), color: "#059669" },
-    { label: "Investments · India", value: india, sub: count(data.investments.filter(i => i.currency === "INR").length, "item"), color: "#059669" },
+    { label: "Bank balances", value: banks, sub: `${data.banks.length - noBalance.length} accounts, from latest statements`, color: "var(--text)" },
+    { label: "Investments · Canada", value: other, sub: count(data.investments.filter(i => i.currency !== "INR").length, "item"), color: "var(--text)" },
+    { label: "Investments · India", value: india, sub: count(data.investments.filter(i => i.currency === "INR").length, "item"), color: "var(--text)" },
     { label: "Debts", value: -debts, sub: count(data.debts.length, "debt"), color: "#e11d48" },
   ];
   return (
@@ -159,7 +159,7 @@ function NetWorth({ data, getRate, show, display }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
         <div>
           <div style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>Net worth</div>
-          <div style={{ fontWeight: 800, fontSize: 28, letterSpacing: "-0.8px", color: total >= 0 ? "var(--text)" : "#e11d48" }}>
+          <div style={{ fontWeight: 600, fontSize: "clamp(32px, 8vw, 44px)", letterSpacing: "-1.2px", color: total >= 0 ? "var(--text)" : "#f87171" }}>
             {show(total)}
           </div>
           {altRate && <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600 }}>{money(total * altRate, alt)}</div>}

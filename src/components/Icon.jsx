@@ -9,7 +9,7 @@ import {
   ChevronUp, ChevronDown, ArrowRight, Calendar, PiggyBank, Target, Banknote,
   Timer, Trash2, Bell, ListChecks, Link2, MessageCircle, Hand, Coins,
   CircleAlert, Hourglass, ShieldCheck, ChevronLeft, ChevronRight, Pause, Play, History, Bot, MountainSnow,
-  Landmark, FileText, Repeat,
+  Landmark, FileText, Repeat, Ellipsis,
 } from "lucide-react";
 
 // Every icon in the app goes through this registry, so data (category lists,
@@ -42,7 +42,7 @@ const ICONS = {
   "shield-check": ShieldCheck, "chevron-left": ChevronLeft,
   "chevron-right": ChevronRight, pause: Pause, play: Play,
   history: History, bot: Bot, mountain: MountainSnow,
-  landmark: Landmark, "file-text": FileText, repeat: Repeat,
+  landmark: Landmark, "file-text": FileText, repeat: Repeat, more: Ellipsis,
 };
 
 export default function Icon({ name, size = 16, strokeWidth = 2, style, ...rest }) {

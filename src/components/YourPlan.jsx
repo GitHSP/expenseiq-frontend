@@ -169,7 +169,7 @@ export default function YourPlan({ formatAmount, getRate = c => (c === "CAD" ? 1
               </div>
             )}
             {view === "pay" && basis.estimated_budget <= 0 && !basis.entered && (
-              <div style={{ fontSize: 12, color: "#b45309", marginTop: 10, lineHeight: 1.5 }}>
+              <div style={{ fontSize: 12, color: "var(--warn-text)", marginTop: 10, lineHeight: 1.5 }}>
                 Spending ({fmt(basis.living)}) looks higher than pay ({fmt(basis.pay)}). Your own transfers may be counted as spending, so check Accounts → Rules.
               </div>
             )}

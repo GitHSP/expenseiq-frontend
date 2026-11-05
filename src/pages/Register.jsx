@@ -160,8 +160,8 @@ const styles = {
     fontWeight:   400,
   },
   error: {
-    background:   "#fff1f2",
-    border:       "1px solid #fecdd3",
+    background:   "var(--neg-bg)",
+    border:       "1px solid var(--neg-border)",
     color:        "#e11d48",
     padding:      "10px 14px",
     borderRadius: "8px",

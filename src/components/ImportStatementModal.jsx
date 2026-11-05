@@ -195,7 +195,7 @@ export default function ImportStatementModal({ onClose, onImported, formatAmount
         </div>
 
         {error && (
-          <div style={{ background: "#fff1f2", border: "1px solid #fecdd3", color: "#e11d48", borderRadius: 8,
+          <div style={{ background: "var(--neg-bg)", border: "1px solid var(--neg-border)", color: "#e11d48", borderRadius: 8,
                         padding: "10px 12px", fontSize: 13, margin: "8px 0 12px", display: "flex", gap: 8, alignItems: "center" }}>
             <Icon name="warning" size={15} /> {error}
           </div>
@@ -287,7 +287,7 @@ export default function ImportStatementModal({ onClose, onImported, formatAmount
             </div>
 
             {preview.skipped?.length > 0 && (
-              <div style={{ fontSize: 12, color: "#b45309", background: "rgba(217,119,6,0.08)", border: "1px solid rgba(217,119,6,0.3)",
+              <div style={{ fontSize: 12, color: "var(--warn-text)", background: "rgba(217,119,6,0.08)", border: "1px solid rgba(217,119,6,0.3)",
                             borderRadius: 8, padding: "8px 12px", marginBottom: 10, lineHeight: 1.5 }}>
                 <strong>Couldn't read {preview.skipped.length === 1 ? "1 file" : `${preview.skipped.length} files`}</strong> — the rest are below.
                 {preview.skipped.map(s => (

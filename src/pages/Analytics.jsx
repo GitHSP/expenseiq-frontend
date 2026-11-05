@@ -123,7 +123,7 @@ export default function Analytics({ expenses, formatAmount, getRate, currency })
             {selectedCat && <button onClick={() => setSelectedCat(null)} style={{ background:"transparent", border:"none", color:"#0070f3", fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:"inherit", display:"inline-flex", alignItems:"center", gap:4 }}><Icon name="x" size={13} /> Clear</button>}
           </div>
           {selectedCat && (
-            <div style={{ background:"#f0f7ff", border:"1px solid #bfdbfe", borderRadius:8, padding:"8px 12px", marginBottom:12, fontSize:12, color:"#0070f3", fontWeight:600, display:"flex", alignItems:"center", gap:6 }}>
+            <div style={{ background:"var(--accent-bg)", border:"1px solid var(--accent-border)", borderRadius:8, padding:"8px 12px", marginBottom:12, fontSize:12, color:"#0070f3", fontWeight:600, display:"flex", alignItems:"center", gap:6 }}>
               <Icon name="chart" size={13} /> Showing: {selectedCat} — click again to deselect
             </div>
           )}
@@ -148,7 +148,7 @@ export default function Analytics({ expenses, formatAmount, getRate, currency })
             {selectedMonth !== null && <button onClick={() => setSelectedMonth(null)} style={{ background:"transparent", border:"none", color:"#0070f3", fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:"inherit", display:"inline-flex", alignItems:"center", gap:4 }}><Icon name="x" size={13} /> Clear</button>}
           </div>
           {selectedMonth !== null && (
-            <div style={{ background:"#f0f7ff", border:"1px solid #bfdbfe", borderRadius:8, padding:"8px 12px", marginBottom:12, fontSize:12, color:"#0070f3", fontWeight:600, display:"flex", alignItems:"center", gap:6 }}>
+            <div style={{ background:"var(--accent-bg)", border:"1px solid var(--accent-border)", borderRadius:8, padding:"8px 12px", marginBottom:12, fontSize:12, color:"#0070f3", fontWeight:600, display:"flex", alignItems:"center", gap:6 }}>
               <Icon name="calendar" size={13} /> Showing: {MONTHS[selectedMonth]} — click again to deselect
             </div>
           )}
@@ -160,7 +160,7 @@ export default function Analytics({ expenses, formatAmount, getRate, currency })
               <Tooltip formatter={v => [fmt(v), "Expenses"]} contentStyle={TOOLTIP_STYLE} />
               <Bar dataKey="amount" radius={[5,5,0,0]}>
                 {monthlyData.map((entry, i) => (
-                  <Cell key={i} fill={selectedMonth === entry.month ? "#0070f3" : selectedMonth !== null ? "#d0e4ff" : i === currentMonth ? "#0070f3" : "#e0eaff"} />
+                  <Cell key={i} fill="#3b82f6" fillOpacity={selectedMonth === entry.month || (selectedMonth === null && i === currentMonth) ? 1 : 0.3} />
                 ))}
               </Bar>
             </BarChart>
@@ -204,7 +204,7 @@ export default function Analytics({ expenses, formatAmount, getRate, currency })
                   const cat = CATEGORIES.find(c => c.name === exp.category);
                   return (
                     <tr key={exp.id} style={{ background: idx%2===0 ? "var(--card)" : "var(--subtle)" }}
-                      onMouseEnter={e => e.currentTarget.style.background="#f0f7ff"}
+                      onMouseEnter={e => e.currentTarget.style.background="var(--accent-bg)"}
                       onMouseLeave={e => e.currentTarget.style.background=idx%2===0?"var(--card)":"var(--subtle)"}
                     >
                       <td style={{ ...tdStyle, color:"var(--muted)", fontSize:12 }}>{exp.date}</td>
@@ -214,7 +214,7 @@ export default function Analytics({ expenses, formatAmount, getRate, currency })
                           <Icon name={cat?.icon || "package"} size={12} /> {exp.category}
                         </div>
                       </td>
-                      <td style={{ ...tdStyle, textAlign:"right", fontWeight:700, color:"#e11d48" }}>-{fmt(exp.amount)}</td>
+                      <td style={{ ...tdStyle, textAlign:"right", fontWeight:700, color:"var(--text)" }}>-{fmt(exp.amount)}</td>
                       <td style={{ ...tdStyle, color:"var(--faint2)", fontSize:12 }}>{exp.notes||"—"}</td>
                     </tr>
                   );
@@ -225,7 +225,7 @@ export default function Analytics({ expenses, formatAmount, getRate, currency })
                   <td colSpan={3} style={{ ...tdStyle, fontWeight:700, borderTop:"1px solid var(--border)", borderBottom:"none" }}>
                     {(selectedCat ? catExpenses : monthExpenses).length} transactions
                   </td>
-                  <td style={{ ...tdStyle, textAlign:"right", fontWeight:800, fontSize:15, color:"#e11d48", borderTop:"1px solid var(--border)", borderBottom:"none" }}>
+                  <td style={{ ...tdStyle, textAlign:"right", fontWeight:800, fontSize:15, color:"var(--text)", borderTop:"1px solid var(--border)", borderBottom:"none" }}>
                     -{fmt(selectedCat ? catExpenses.reduce((s,e)=>s+(parseFloat(e.amount)||0),0) : totalMonthExp)}
                   </td>
                   <td style={{ borderTop:"1px solid var(--border)", borderBottom:"none" }} />
@@ -243,7 +243,7 @@ export default function Analytics({ expenses, formatAmount, getRate, currency })
           const sorted  = [...catSpend].sort((a,b) => b.spent-a.spent);
           const maxSpent= sorted.length > 0 ? sorted[0].spent : 0;
           return sorted.map(cat => (
-            <div key={cat.name} style={{ marginBottom:16, cursor:"pointer", padding:8, borderRadius:8, background:selectedCat===cat.name?"#f0f7ff":"transparent", border:selectedCat===cat.name?"1px solid #bfdbfe":"1px solid transparent" }}
+            <div key={cat.name} style={{ marginBottom:16, cursor:"pointer", padding:8, borderRadius:8, background:selectedCat===cat.name?"var(--accent-bg)":"transparent", border:selectedCat===cat.name?"1px solid var(--accent-border)":"1px solid transparent" }}
               onClick={() => { setSelectedCat(prev => prev===cat.name?null:cat.name); setSelectedMonth(null); }}
             >
               <div style={{ display:"flex", justifyContent:"space-between", fontSize:13, marginBottom:6 }}>
@@ -263,9 +263,9 @@ export default function Analytics({ expenses, formatAmount, getRate, currency })
         <div className="card-title" style={{ marginBottom:16 }}>This Month Summary</div>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(160px,1fr))", gap:12 }}>
           {[
-            { label:"Total Spent",        value:fmt(thisMonthExp.reduce((s,e)=>s+(parseFloat(e.amount)||0),0)), color:"#e11d48" },
+            { label:"Total Spent",        value:fmt(thisMonthExp.reduce((s,e)=>s+(parseFloat(e.amount)||0),0)), color:"var(--text)" },
             { label:"Avg per Transaction",value:thisMonthExp.length>0 ? fmt(thisMonthExp.reduce((s,e)=>s+(parseFloat(e.amount)||0),0)/thisMonthExp.length) : fmt(0), color:"var(--muted)" },
-            { label:"Largest Expense",    value:thisMonthExp.length>0 ? fmt(Math.max(...thisMonthExp.map(e=>parseFloat(e.amount)||0))) : fmt(0), color:"#e11d48" },
+            { label:"Largest Expense",    value:thisMonthExp.length>0 ? fmt(Math.max(...thisMonthExp.map(e=>parseFloat(e.amount)||0))) : fmt(0), color:"var(--text)" },
             { label:"Transactions",       value:thisMonthExp.length, color:"#0070f3" },
           ].map(stat => (
             <div key={stat.label} style={{ background:"var(--subtle)", borderRadius:10, padding:14, border:"1px solid var(--subtle2)" }}>

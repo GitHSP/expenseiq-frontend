@@ -174,7 +174,7 @@ export default function Expenses({ expenses, onEdit, onDelete, formatAmount, onI
                     <tr
                       key={exp.id}
                       style={{ background: idx % 2 === 0 ? "var(--card)" : "var(--subtle)" }}
-                      onMouseEnter={e => e.currentTarget.style.background = "#f0f7ff"}
+                      onMouseEnter={e => e.currentTarget.style.background = "var(--accent-bg)"}
                       onMouseLeave={e => e.currentTarget.style.background = idx % 2 === 0 ? "var(--card)" : "var(--subtle)"}
                     >
                       <td style={{ ...tdStyle, color:"var(--muted)", fontSize:12, fontWeight:500 }}>{exp.date}</td>
@@ -188,7 +188,7 @@ export default function Expenses({ expenses, onEdit, onDelete, formatAmount, onI
                         </div>
                       </td>
                       <td style={{ ...tdStyle, textAlign:"right" }}>
-                        <span style={{ fontWeight:700, fontSize:14, color:"#e11d48", letterSpacing:"-0.3px" }}>
+                        <span style={{ fontWeight:700, fontSize:14, color:"var(--text)", letterSpacing:"-0.3px" }}>
                           -{fmt(exp.amount, exp)}
                         </span>
                       </td>
@@ -196,7 +196,7 @@ export default function Expenses({ expenses, onEdit, onDelete, formatAmount, onI
                         <div style={{ display:"flex", gap:4, justifyContent:"center", flexWrap:"wrap" }}>
                           {Array.isArray(exp.tags) && exp.tags.filter(Boolean).length > 0
                             ? exp.tags.filter(Boolean).map((tag, i) => (
-                                <span key={i} style={{ background:"#f0f7ff", color:"#0070f3", padding:"2px 8px", borderRadius:4, fontSize:10, fontWeight:600 }}>{tag}</span>
+                                <span key={i} style={{ background:"var(--accent-bg)", color:"#0070f3", padding:"2px 8px", borderRadius:4, fontSize:10, fontWeight:600 }}>{tag}</span>
                               ))
                             : <span style={{ color:"var(--faint)", fontSize:11 }}>—</span>
                           }
@@ -205,7 +205,7 @@ export default function Expenses({ expenses, onEdit, onDelete, formatAmount, onI
                       <td style={{ ...tdStyle, textAlign:"center" }}>
                         <div style={{ display:"flex", gap:6, justifyContent:"center" }}>
                           <button onClick={() => onEdit(exp)} style={{ background:"var(--bg)", color:"var(--muted2)", border:"1px solid var(--border)", padding:"5px 10px", borderRadius:6, fontSize:11, fontWeight:600, cursor:"pointer", fontFamily:"inherit", display:"inline-flex", alignItems:"center", gap:4 }}><Icon name="pencil" size={12} /> Edit</button>
-                          <button onClick={() => onDelete(exp.id)} style={{ background:"#fff1f2", color:"#e11d48", border:"1px solid #fecdd3", padding:"5px 10px", borderRadius:6, fontSize:11, fontWeight:600, cursor:"pointer", fontFamily:"inherit", display:"inline-flex", alignItems:"center", gap:4 }}><Icon name="trash" size={12} /> Delete</button>
+                          <button onClick={() => onDelete(exp.id)} style={{ background:"var(--neg-bg)", color:"var(--neg-text)", border:"1px solid var(--neg-border)", padding:"5px 10px", borderRadius:6, fontSize:11, fontWeight:600, cursor:"pointer", fontFamily:"inherit", display:"inline-flex", alignItems:"center", gap:4 }}><Icon name="trash" size={12} /> Delete</button>
                         </div>
                       </td>
                     </tr>
@@ -217,7 +217,7 @@ export default function Expenses({ expenses, onEdit, onDelete, formatAmount, onI
                   <td colSpan={3} style={{ ...tdStyle, fontWeight:700, borderTop:"1px solid var(--border)", borderBottom:"none" }}>
                     {filtered.length} transaction{filtered.length !== 1 ? "s" : ""}
                   </td>
-                  <td style={{ ...tdStyle, textAlign:"right", fontWeight:800, color:"#e11d48", fontSize:15, letterSpacing:"-0.5px", borderTop:"1px solid var(--border)", borderBottom:"none" }}>
+                  <td style={{ ...tdStyle, textAlign:"right", fontWeight:800, color:"var(--text)", fontSize:15, letterSpacing:"-0.5px", borderTop:"1px solid var(--border)", borderBottom:"none" }}>
                     -{fmt(totalFiltered)}
                   </td>
                   <td colSpan={2} style={{ borderTop:"1px solid var(--border)", borderBottom:"none" }} />

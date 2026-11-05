@@ -18,6 +18,11 @@
   --shadow:   rgba(0,0,0,0.04);
   --shadow-lg: rgba(0,0,0,0.12);
   --overlay:  rgba(0,0,0,0.4);
+  /* Status tints: soft backgrounds, borders and text for good / bad / warning / info */
+  --pos-bg: #ecfdf5;  --pos-border: #a7f3d0;  --pos-text: #047857;
+  --neg-bg: #fff1f2;  --neg-border: #fecdd3;  --neg-text: #be123c;
+  --warn-bg: #fffbeb; --warn-border: #fde68a; --warn-text: #92400e;
+  --accent-bg: #eff6ff; --accent-border: #bfdbfe; --accent-text: #1d4ed8;
 }
 
 /* ── Dark theme ── */
@@ -36,6 +41,10 @@ body.dark {
   --shadow:   rgba(0,0,0,0.35);
   --shadow-lg: rgba(0,0,0,0.6);
   --overlay:  rgba(0,0,0,0.65);
+  --pos-bg: rgba(16,185,129,0.12);  --pos-border: rgba(16,185,129,0.35);  --pos-text: #34d399;
+  --neg-bg: rgba(244,63,94,0.12);   --neg-border: rgba(244,63,94,0.35);   --neg-text: #fb7185;
+  --warn-bg: rgba(245,158,11,0.12); --warn-border: rgba(245,158,11,0.35); --warn-text: #fbbf24;
+  --accent-bg: rgba(59,130,246,0.12); --accent-border: rgba(59,130,246,0.35); --accent-text: #60a5fa;
 }
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -149,7 +158,7 @@ body {
   color: var(--text);
 }
 .sidebar-item.active {
-  background: #f0f7ff;
+  background: var(--accent-bg);
   color: #0070f3;
   font-weight: 600;
 }
@@ -295,7 +304,7 @@ body {
   margin-bottom: 8px;
   transition: all 0.12s;
 }
-.expense-row:hover { background: #f0f7ff; border-color: #d0e8ff; }
+.expense-row:hover { background: var(--accent-bg); border-color: var(--accent-border); }
 .exp-icon          { font-size: 20px; width: 36px; text-align: center; flex-shrink: 0; }
 .exp-info          { flex: 1; min-width: 0; }
 .exp-title         {
@@ -309,14 +318,14 @@ body {
 }
 .exp-meta          { font-size: 11px; color: var(--faint2); margin-top: 2px; font-weight: 500; }
 .exp-right         { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-.exp-amount        { font-weight: 700; font-size: 14px; color: #e11d48; letter-spacing: -0.3px; }
+.exp-amount        { font-weight: 700; font-size: 14px; color: var(--text); letter-spacing: -0.3px; }
 .expense-row-mobile-actions { display: flex; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--subtle2); }
 
 /* ─────────────────────────────────────────────
    TAGS & BADGES
    ───────────────────────────────────────────── */
 .tag {
-  background: #f0f7ff;
+  background: var(--accent-bg);
   color: #0070f3;
   padding: 2px 8px;
   border-radius: 4px;
@@ -327,13 +336,13 @@ body {
   letter-spacing: 0.2px;
 }
 .over-badge {
-  background: #fff1f2;
+  background: var(--neg-bg);
   color: #e11d48;
   padding: 3px 10px;
   border-radius: 4px;
   font-size: 11px;
   font-weight: 700;
-  border: 1px solid #fecdd3;
+  border: 1px solid var(--neg-border);
 }
 
 /* ─────────────────────────────────────────────
@@ -449,12 +458,12 @@ select.input option { background: var(--card); color: var(--text); }
   font-family: inherit;
   transition: all 0.15s;
 }
-.btn-ghost:hover { background: #f0f7ff; }
+.btn-ghost:hover { background: var(--accent-bg); }
 
 .btn-danger {
-  background: #fff1f2;
-  color: #e11d48;
-  border: 1px solid #fecdd3;
+  background: var(--neg-bg);
+  color: var(--neg-text);
+  border: 1px solid var(--neg-border);
   padding: 6px 12px;
   border-radius: 6px;
   cursor: pointer;
@@ -463,7 +472,7 @@ select.input option { background: var(--card); color: var(--text); }
   font-family: inherit;
   transition: all 0.15s;
 }
-.btn-danger:hover { background: #ffe4e6; }
+.btn-danger:hover { background: var(--neg-border); }
 
 /* ─────────────────────────────────────────────
    BUDGET CARDS
@@ -484,7 +493,7 @@ select.input option { background: var(--card); color: var(--text); }
   transition: all 0.15s;
 }
 .budget-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); transform: translateY(-1px); }
-.budget-card.over  { border-color: #fecdd3; background: #fff8f8; }
+.budget-card.over  { border-color: var(--neg-border); background: var(--neg-bg); }
 
 /* ─────────────────────────────────────────────
    EMPTY STATES
@@ -647,6 +656,20 @@ select.input option { background: var(--card); color: var(--text); }
     font-family: inherit;
   }
   .bottom-nav-item.active { color: #0070f3; }
+  .bottom-sheet-backdrop {
+    position: fixed; inset: 0; z-index: 199; background: var(--overlay);
+    display: flex; align-items: flex-end;
+  }
+  .bottom-sheet {
+    width: 100%; background: var(--card); border-top: 1px solid var(--border);
+    border-radius: 16px 16px 0 0; padding: 8px 8px calc(76px + env(safe-area-inset-bottom));
+  }
+  .bottom-sheet-item {
+    width: 100%; display: flex; align-items: center; gap: 14px; padding: 14px 12px;
+    background: none; border: none; border-radius: 10px; color: var(--text);
+    font: inherit; font-size: 15px; font-weight: 600; text-align: left; cursor: pointer; touch-action: manipulation;
+  }
+  .bottom-sheet-item.active { color: #0070f3; background: var(--accent-bg); }
   .bnav-icon  { font-size: 19px; line-height: 1; display: inline-flex; }
   .bnav-label { font-size: 9.5px; font-weight: 600; color: inherit; letter-spacing: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -826,7 +849,7 @@ select.input option { background: var(--card); color: var(--text); }
 }
 .exp-results-summary { font-size: 13px; color: var(--muted2); display: flex; align-items: baseline; gap: 4px; flex-wrap: wrap; }
 .exp-results-summary strong { color: var(--text); }
-.exp-results-total { font-weight: 700; color: #e11d48; margin-left: 8px; }
+.exp-results-total { font-weight: 700; color: var(--text); margin-left: 8px; }
 .exp-results-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .exp-results-actions button {
   display: inline-flex; align-items: center; gap: 5px; padding: 7px 12px; font-size: 12px; white-space: nowrap;
@@ -841,3 +864,6 @@ select.input option { background: var(--card); color: var(--text); }
   .exp-results-actions { width: 100%; }
   .exp-results-actions button { flex: 1; justify-content: center; }
 }
+
+/* The More sheet covers the chat button while it's open. */
+body:has(.bottom-sheet-backdrop) .assistant-fab { display: none; }

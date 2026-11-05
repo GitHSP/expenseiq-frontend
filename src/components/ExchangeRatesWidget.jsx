@@ -47,7 +47,7 @@ export default function ExchangeRatesWidget({
       {/* Error */}
       {error && (
         <div style={{
-          background:"#fff0f0", border:"1px solid #fca5a5",
+          background:"var(--neg-bg)", border:"1px solid var(--neg-border)",
           borderRadius:"10px", padding:"10px 14px",
           fontSize:12, color:"#dc2626", marginBottom:12,
           display:"flex", alignItems:"center", gap:8,
@@ -65,12 +65,12 @@ export default function ExchangeRatesWidget({
               key={curr.code}
               style={{
                 background:   currency === curr.code
-                  ? "linear-gradient(135deg,#f0eeff,#e8e0ff)"
+                  ? "var(--accent-bg)"
                   : "var(--subtle)",
                 borderRadius: "12px",
                 padding:      "12px 14px",
                 border:       currency === curr.code
-                  ? "1.5px solid #A29BFE"
+                  ? "1.5px solid var(--accent-border)"
                   : "1px solid var(--border)",
                 transition:   "all 0.2s",
               }}
@@ -82,7 +82,7 @@ export default function ExchangeRatesWidget({
                   <div style={{ fontSize:10, color:"var(--muted)" }}>{curr.name}</div>
                 </div>
               </div>
-              <div style={{ fontWeight:800, fontSize:16, color: currency === curr.code ? "#6C5CE7" : "var(--text)" }}>
+              <div style={{ fontWeight:800, fontSize:16, color: currency === curr.code ? "var(--accent-text)" : "var(--text)" }}>
                 {rate ? rate.toFixed(4) : "—"}
               </div>
               <div style={{ fontSize:10, color:"var(--muted)", marginTop:2 }}>
@@ -97,15 +97,15 @@ export default function ExchangeRatesWidget({
       {currency !== "CAD" && (
         <div style={{
           marginTop:      14,
-          background:     "linear-gradient(135deg,#f0eeff,#e8e0ff)",
+          background:     "var(--accent-bg)",
           borderRadius:   "12px",
           padding:        "12px 16px",
-          border:         "1.5px solid #A29BFE",
+          border:         "1.5px solid var(--accent-border)",
           display:        "flex",
           justifyContent: "space-between",
           alignItems:     "center",
         }}>
-          <div style={{ fontSize:13, color:"#6C5CE7", fontWeight:600, display:"flex", alignItems:"center", gap:6 }}>
+          <div style={{ fontSize:13, color:"var(--accent-text)", fontWeight:600, display:"flex", alignItems:"center", gap:6 }}>
             Currently viewing in
             <Flag country={SUPPORTED_CURRENCIES.find(c => c.code === currency)?.country} size={13} /> {currency}
           </div>

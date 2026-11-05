@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import {
-  PieChart, Pie, Cell, BarChart, Bar,
+  PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area, ReferenceLine,
   XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
 import ExchangeRatesWidget from "../components/ExchangeRatesWidget";
@@ -50,7 +50,7 @@ function TransactionList({ items, kind, fmt, onEdit, onDelete, empty }) {
               <div style={{ fontWeight:600, fontSize:13, color:"var(--text)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{item.title}</div>
               <div style={{ fontSize:11, color:"var(--faint2)", marginTop:1 }}>{item.category} · {item.date}</div>
             </div>
-            <div style={{ fontWeight:700, fontSize:14, color: isIncome ? "#059669" : "#e11d48", whiteSpace:"nowrap" }}>
+            <div style={{ fontWeight:700, fontSize:14, color: isIncome ? "#059669" : "var(--text)", whiteSpace:"nowrap" }}>
               {isIncome ? "+" : "-"}{fmt(item.amount, item)}
             </div>
             <div style={{ display:"flex", gap:4, flexShrink:0 }}>
@@ -200,36 +200,59 @@ export default function Dashboard({
     ? formatAmount(parseFloat(v) || 0, item)
     : `$${(parseFloat(v) || 0).toFixed(2)}`;
 
+  // Headline figures in whole dollars; lists keep the cents.
+  const whole = v => fmt(Math.round(parseFloat(v) || 0)).replace(/\.00$/, "");
+  const spentPct = totalIncome > 0 ? (totalExpenses / totalIncome) * 100 : (totalExpenses > 0 ? 100 : 0);
+  const status = totalIncome === 0 && totalExpenses === 0
+    ? { text: "Nothing yet", color: "var(--muted)", bg: "var(--subtle)" }
+    : netBalance < 0
+      ? { text: "Spending more than income", color: "#ef4444", bg: "rgba(239,68,68,0.14)" }
+      : spentPct >= 90
+        ? { text: "Close to your income", color: "#f59e0b", bg: "rgba(245,158,11,0.14)" }
+        : { text: "On track", color: "#10b981", bg: "rgba(16,185,129,0.14)" };
+
+  // Spending through the month, day by day, for the chart under the headline.
+  const shareFactor = grossExpenses > 0 ? totalExpenses / grossExpenses : 1;
+  const spentByDay = {};
+  for (const e of thisMonthExp) {
+    const d = parseInt(String(e.date).slice(8, 10), 10);
+    spentByDay[d] = (spentByDay[d] || 0) + (parseFloat(e.amount) || 0);
+  }
+  let runningSpend = 0;
+  const spendLine = Array.from({ length: daysInMonth }, (_, i) => {
+    const d = i + 1;
+    if (d > dayOfMonth) return { day: d, spent: null };
+    runningSpend += (spentByDay[d] || 0) * shareFactor;
+    return { day: d, spent: Math.round(runningSpend) };
+  });
+
   function handleCardClick(cardId) {
     setActiveCard(prev => prev === cardId ? null : cardId);
   }
 
   const statCards = [
     {
-      id:       "expenses",
-      label:    isCurrent ? "This Month" : `${MONTHS[currentMonth].slice(0, 3)} Spending`,
-      value:    fmt(totalExpenses),
-      sub:      sharedTotal > 0 && !atShare
-        ? `your share · ${fmt(sharedTotal)} paid by roommates`
-        : `${thisMonthExp.length} expenses · avg ${fmt(dailyAvg)}/day`,
-      gradient: "linear-gradient(135deg, #e11d48, #be123c)",
+      id:    "expenses",
+      label: "Spending",
+      icon:  "receipt",
+      value: whole(totalExpenses),
+      sub:   sharedTotal > 0 && !atShare
+        ? `your share · ${whole(sharedTotal)} from roommates`
+        : `${thisMonthExp.length} expenses · ${whole(dailyAvg)}/day`,
     },
     {
-      id:       "income",
-      label:    "Income",
-      value:    fmt(totalIncome),
-      sub:      `${thisMonthInc.length} entries · ${savingsRate}% saved`,
-      gradient: "linear-gradient(135deg, #059669, #047857)",
+      id:    "income",
+      label: "Income",
+      icon:  "banknote",
+      value: whole(totalIncome),
+      sub:   `${thisMonthInc.length} ${thisMonthInc.length === 1 ? "entry" : "entries"}`,
     },
     {
-      id:       "balance",
-      label:    "Net Balance",
-      value:    fmt(netBalance),
-      sub:      netBalance >= 0 ? "Surplus" : "Deficit",
-      subIcon:  netBalance >= 0 ? "arrow-up" : "arrow-down",
-      gradient: netBalance >= 0
-        ? "linear-gradient(135deg, #0070f3, #0050b3)"
-        : "linear-gradient(135deg, #e11d48, #be123c)",
+      id:    "balance",
+      label: "Saved",
+      icon:  "piggy-bank",
+      value: totalIncome > 0 ? `${Math.round(parseFloat(savingsRate))}%` : "—",
+      sub:   "of income",
     },
   ];
 
@@ -253,63 +276,81 @@ export default function Dashboard({
         </div>
       </div>
 
-      {/* ── Financial Tips ── */}
-      <FinancialTips
-        expenses={expenses}
-        incomes={incomes}
-        debts={debts || []}
-        month={currentMonth}
-        year={currentYear}
-      />
-
-      {transferIncome && (
-        <div className="card" style={{ padding:"12px 16px", marginBottom:12, border:"1px solid #fcd34d", background:"#fffbeb", color:"#92400e", fontSize:13, display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
-          <Icon name="alert" size={15} />
-          <span style={{ flex:1, minWidth:200 }}>
-            E-transfers are counted as income. If they're roommates paying their share of rent and bills,
-            add each name in Accounts → Rules as "Pays their share of my bills".
+      {/* ── The answer: what's left this month, as one big number ── */}
+      <div style={{ marginBottom:6 }}>
+        <div style={{ fontSize:13, fontWeight:500, color:"var(--muted)" }}>
+          {netBalance >= 0 ? "Left" : "Over"} {isCurrent ? "this month" : `in ${MONTHS[currentMonth]}`}
+        </div>
+        <div style={{ fontSize:"clamp(38px, 9vw, 52px)", fontWeight:600, letterSpacing:"-1.5px", lineHeight:1.1, marginTop:4,
+                      color: netBalance < 0 ? "#f87171" : "var(--text)" }}>
+          {netBalance < 0 ? "−" : ""}{whole(Math.abs(netBalance))}
+        </div>
+        <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap", marginTop:8 }}>
+          <span style={{ fontSize:12, fontWeight:600, color:status.color, background:status.bg, borderRadius:20, padding:"4px 10px" }}>
+            {status.text}
           </span>
-          {onOpenRules && <button className="btn-secondary" style={{ padding:"5px 12px", fontSize:12 }} onClick={onOpenRules}>Open Accounts</button>}
+          <span style={{ fontSize:13, color:"var(--muted)" }}>
+            {whole(totalExpenses)} spent of {whole(totalIncome)} income
+          </span>
+        </div>
+      </div>
+
+      {/* Spending through the month, with income as the line not to cross */}
+      {(totalExpenses > 0 || totalIncome > 0) && (
+        <div style={{ height:150, margin:"10px -4px 22px" }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={spendLine} margin={{ top:8, right:4, bottom:0, left:4 }}>
+              <defs>
+                <linearGradient id="spendFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.28} />
+                  <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <XAxis dataKey="day" hide />
+              <YAxis hide domain={[0, Math.max(totalIncome, totalExpenses) * 1.08 || 1]} />
+              {totalIncome > 0 && (
+                <ReferenceLine y={totalIncome} stroke="#10b981" strokeDasharray="4 4" strokeOpacity={0.8}
+                  label={{ value: `Income ${whole(totalIncome)}`, position: "insideTopRight", fill: "#10b981", fontSize: 11 }} />
+              )}
+              <Tooltip
+                formatter={v => [whole(v), "Spent so far"]}
+                labelFormatter={d => `${MONTHS[currentMonth].slice(0, 3)} ${d}`}
+                contentStyle={TOOLTIP_STYLE} />
+              <Area type="monotone" dataKey="spent" stroke="#3b82f6" strokeWidth={2} fill="url(#spendFill)"
+                connectNulls={false} dot={false} activeDot={{ r: 4 }} isAnimationActive={false} />
+            </AreaChart>
+          </ResponsiveContainer>
         </div>
       )}
 
-      {/* ── Clickable stat cards ── */}
-      <div className="stat-grid" style={{ marginBottom:16 }}>
-        {statCards.map(card => (
-          <div
-            key={card.id}
-            onClick={() => handleCardClick(card.id)}
-            style={{
-              background:   card.gradient,
-              borderRadius: 12,
-              padding:      20,
-              color:        "#fff",
-              cursor:       "pointer",
-              transition:   "all 0.2s",
-              transform:    activeCard === card.id ? "translateY(-3px)" : "translateY(0)",
-              boxShadow:    activeCard === card.id
-                ? "0 8px 24px rgba(0,0,0,0.18)"
-                : "0 1px 3px rgba(0,0,0,0.08)",
-              outline:      activeCard === card.id ? "3px solid rgba(255,255,255,0.4)" : "none",
-              outlineOffset:"2px",
-            }}
-          >
-            <div style={{ fontSize:10, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.8px", opacity:0.75, marginBottom:8 }}>
-              {card.label}
-            </div>
-            <div style={{ fontSize:22, fontWeight:800, letterSpacing:"-0.8px", lineHeight:1.1, marginBottom:6 }}>
-              {card.value}
-            </div>
-            <div style={{ fontSize:11, opacity:0.65, fontWeight:500, marginBottom:8, display:"flex", alignItems:"center", gap:3 }}>
-              {card.subIcon && <Icon name={card.subIcon} size={11} />}
-              {card.sub}
-            </div>
-            <div style={{ fontSize:10, opacity:0.6, fontWeight:600, display:"flex", alignItems:"center", gap:3 }}>
-              <Icon name={activeCard === card.id ? "chevron-up" : "chevron-down"} size={11} />
-              {activeCard === card.id ? "Click to collapse" : "Click to expand"}
-            </div>
-          </div>
-        ))}
+      {/* ── This month, as a list ── */}
+      <div style={{ fontSize:12, fontWeight:600, color:"var(--muted)", textTransform:"uppercase", letterSpacing:"0.6px", margin:"0 2px 8px" }}>
+        {isCurrent ? "This month" : monthLabel}
+      </div>
+      <div className="card" style={{ padding:0, overflow:"hidden", marginBottom:20 }}>
+        {statCards.map((card, i) => {
+          const on = activeCard === card.id;
+          const clickable = card.id !== "balance";
+          const Row = clickable ? "button" : "div";
+          return (
+            <Row key={card.id} {...(clickable ? { onClick: () => handleCardClick(card.id), "aria-expanded": on } : {})} style={{
+              width:"100%", display:"flex", alignItems:"center", gap:12, padding:"14px 16px", textAlign:"left",
+              background: on ? "var(--subtle)" : "transparent", border:"none", borderTop: i ? "1px solid var(--border)" : "none",
+              cursor: clickable ? "pointer" : "default", fontFamily:"inherit", color:"var(--text)", touchAction:"manipulation",
+            }}>
+              <span style={{ width:36, height:36, borderRadius:18, background:"var(--subtle2)", display:"inline-flex",
+                             alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                <Icon name={card.icon} size={16} />
+              </span>
+              <span style={{ flex:1, minWidth:0 }}>
+                <span style={{ display:"block", fontSize:15, fontWeight:600 }}>{card.label}</span>
+                <span style={{ display:"block", fontSize:12, color:"var(--muted)", marginTop:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{card.sub}</span>
+              </span>
+              <span style={{ fontSize:16, fontWeight:600, whiteSpace:"nowrap", color: card.id === "income" ? "#10b981" : "var(--text)" }}>{card.value}</span>
+              {clickable && <Icon name={on ? "chevron-up" : "chevron-right"} size={16} color="var(--muted)" />}
+            </Row>
+          );
+        })}
       </div>
 
       {/* ── Shared bills: rent and bills paid in full, roommates paying back ── */}
@@ -330,7 +371,7 @@ export default function Dashboard({
               </div>
               {billsTotal > 0 ? Object.entries(monthBills).map(([bill, amt]) => (
                 <div key={bill} style={{ display:"flex", justifyContent:"space-between", fontSize:13, padding:"5px 0", borderBottom:"1px solid var(--subtle2)" }}>
-                  <span>{bill}</span><span style={{ fontWeight:600, color:"#e11d48" }}>-{fmt(amt)}</span>
+                  <span>{bill}</span><span style={{ fontWeight:600, color:"var(--text)" }}>-{fmt(amt)}</span>
                 </div>
               )) : (
                 <div style={{ fontSize:12, color:"var(--faint2)" }}>
@@ -422,7 +463,7 @@ export default function Dashboard({
                         <span style={{ fontWeight:600, display:"inline-flex", alignItems:"center", gap:6 }}><Icon name={cat.icon} size={13} color={cat.color} /> {cat.name}</span>
                         <div style={{ display:"flex", gap:12 }}>
                           <span style={{ color:"var(--muted)", fontSize:11 }}>{pct.toFixed(0)}%</span>
-                          <span style={{ fontWeight:700, color:"#e11d48" }}>{fmt(spent)}</span>
+                          <span style={{ fontWeight:700, color:"var(--text)" }}>{fmt(spent)}</span>
                         </div>
                       </div>
                       <div style={{ background:"var(--subtle2)", borderRadius:100, height:5, overflow:"hidden" }}>
@@ -449,7 +490,7 @@ export default function Dashboard({
                         <div style={{ fontWeight:600, fontSize:13, color:"var(--text)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{exp.title}</div>
                         <div style={{ fontSize:11, color:"var(--faint2)", marginTop:1 }}>{exp.category} · {exp.date}</div>
                       </div>
-                      <div style={{ fontWeight:700, fontSize:14, color:"#e11d48" }}>-{fmt(exp.amount)}</div>
+                      <div style={{ fontWeight:700, fontSize:14, color:"var(--text)" }}>-{fmt(exp.amount)}</div>
                     </div>
                   );
                 })}
@@ -544,7 +585,7 @@ export default function Dashboard({
                 <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12, marginBottom:16 }}>
                   {[
                     { label:"Total Income",   value:fmt(totalIncome),   color:"#059669" },
-                    { label:"Total Expenses", value:fmt(totalExpenses), color:"#e11d48" },
+                    { label:"Total Expenses", value:fmt(totalExpenses), color:"var(--text)" },
                     { label:"Net Balance",    value:fmt(Math.abs(netBalance)), color: netBalance >= 0 ? "#0070f3" : "#e11d48" },
                   ].map(s => (
                     <div key={s.label} style={{ background:"var(--subtle)", borderRadius:10, padding:"14px", border:"1px solid var(--subtle2)", textAlign:"center" }}>
@@ -591,7 +632,7 @@ export default function Dashboard({
                         <div style={{ fontWeight:600, fontSize:13, color:"var(--text)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{tx.title}</div>
                         <div style={{ fontSize:11, color:"var(--faint2)", marginTop:1 }}>{tx.category} · {tx.date}</div>
                       </div>
-                      <div style={{ fontWeight:700, fontSize:14, color: isExp ? "#e11d48" : "#059669" }}>
+                      <div style={{ fontWeight:700, fontSize:14, color: isExp ? "var(--text)" : "#059669" }}>
                         {isExp ? "-" : "+"}{fmt(tx.amount)}
                       </div>
                     </div>
@@ -607,17 +648,24 @@ export default function Dashboard({
         </div>
       )}
 
-      {/* ── Exchange rates ── */}
-      {refreshRates && (
-        <ExchangeRatesWidget
-          rates={rates}
-          currency={currency}
-          getRate={getRate}
-          getLastUpdatedText={getLastUpdatedText}
-          loading={ratesLoading}
-          error={ratesError}
-          refresh={refreshRates}
-        />
+      {/* ── Financial Tips ── */}
+      <FinancialTips
+        expenses={expenses}
+        incomes={incomes}
+        debts={debts || []}
+        month={currentMonth}
+        year={currentYear}
+      />
+
+      {transferIncome && (
+        <div className="card" style={{ padding:"12px 16px", marginBottom:12, border:"1px solid var(--warn-border)", background:"var(--warn-bg)", color:"var(--warn-text)", fontSize:13, display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
+          <Icon name="alert" size={15} />
+          <span style={{ flex:1, minWidth:200 }}>
+            E-transfers are counted as income. If they're roommates paying their share of rent and bills,
+            add each name in Accounts → Rules as "Pays their share of my bills".
+          </span>
+          {onOpenRules && <button className="btn-secondary" style={{ padding:"5px 12px", fontSize:12 }} onClick={onOpenRules}>Open Accounts</button>}
+        </div>
       )}
 
       {/* ── Charts ── */}
@@ -630,8 +678,8 @@ export default function Dashboard({
               <YAxis tick={{ fill:"var(--faint2)", fontSize:10 }} axisLine={false} tickLine={false} width={40} />
               <Tooltip formatter={v => fmt(v)} contentStyle={TOOLTIP_STYLE} />
               <Legend wrapperStyle={{ fontSize:11 }} />
-              <Bar dataKey="Income"  fill="#059669" radius={[5,5,0,0]} />
-              <Bar dataKey="Expense" fill="#e11d48" radius={[5,5,0,0]} />
+              <Bar dataKey="Income"  fill="#059669" radius={[4,4,0,0]} />
+              <Bar dataKey="Expense" fill="#0070f3" radius={[4,4,0,0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -687,7 +735,7 @@ export default function Dashboard({
         <div className="card-header">
           <span className="card-title">Expenses · {monthLabel}</span>
           <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-            <span style={{ fontSize:13, fontWeight:700, color:"#e11d48" }}>-{fmt(totalExpenses)}</span>
+            <span style={{ fontSize:13, fontWeight:700, color:"var(--text)" }}>-{fmt(totalExpenses)}</span>
             <button className="btn-ghost" onClick={onViewAll} style={{ display:"inline-flex", alignItems:"center", gap:4 }}>View all <Icon name="arrow-right" size={13} /></button>
           </div>
         </div>
@@ -698,6 +746,18 @@ export default function Dashboard({
           empty={`No expenses in ${MONTHS[currentMonth]}`}
         />
       </div>
+      {/* ── Exchange rates ── */}
+      {refreshRates && (
+        <ExchangeRatesWidget
+          rates={rates}
+          currency={currency}
+          getRate={getRate}
+          getLastUpdatedText={getLastUpdatedText}
+          loading={ratesLoading}
+          error={ratesError}
+          refresh={refreshRates}
+        />
+      )}
     </>
   );
 }

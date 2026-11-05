@@ -132,14 +132,14 @@ const styles = {
   },
   successBox: {
     textAlign:    "center",
-    background:   "#f0fdf4",
-    border:       "1px solid #bbf7d0",
+    background:   "var(--pos-bg)",
+    border:       "1px solid var(--pos-border)",
     borderRadius: "10px",
     padding:      "24px",
   },
   error: {
-    background:   "#fff1f2",
-    border:       "1px solid #fecdd3",
+    background:   "var(--neg-bg)",
+    border:       "1px solid var(--neg-border)",
     color:        "#e11d48",
     padding:      "10px 14px",
     borderRadius: "8px",

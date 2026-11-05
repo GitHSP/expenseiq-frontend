@@ -357,7 +357,7 @@ export default function FinancialPlanner({
       {/* ── Auto rollover notification ── */}
       {rolledOver && (
         <div style={{
-          background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:12,
+          background:"var(--pos-bg)", border:"1px solid var(--pos-border)", borderRadius:12,
           padding:"14px 18px", marginBottom:20, display:"flex", alignItems:"center", gap:12,
         }}>
           <Icon name="party" size={24} color="#059669" />
@@ -380,18 +380,18 @@ export default function FinancialPlanner({
       {/* ── Summary cards ── */}
       <div className="stat-grid" style={{ marginBottom:24 }}>
         {[
-          { label:"Total Debt",       value:fmt(totalDebt),      sub:`${debts.filter(d=>d.is_active).length} active debts`, gradient:"linear-gradient(135deg, #e11d48, #be123c)" },
-          { label:"Monthly Minimums", value:fmt(totalMinimums),  sub:"total minimum payments",                              gradient:"linear-gradient(135deg, #0070f3, #0050b3)" },
+          { label:"Total Debt",       value:fmt(totalDebt),      sub:`${debts.filter(d=>d.is_active).length} active debts` },
+          { label:"Monthly Minimums", value:fmt(totalMinimums),  sub:"total minimum payments" },
           { label:"Emergency Fund",   value:fmt(emergencyFund ? emergencyFund.current_balance : 0),
             sub:emergencyFund?`${emergencyFund.progress_percent}% of ${fmt(emergencyFund.target_amount)}`:"Not set up",
-            gradient:emergencyFund?.is_funded?"linear-gradient(135deg, #059669, #047857)":"linear-gradient(135deg, #f59e0b, #d97706)" },
+            tone:emergencyFund?.is_funded?"#10b981":undefined },
           { label:"Checklist",        value:`${completedItems}/${checklist.length}`, sub:"items completed this month",
-            gradient:completedItems===checklist.length&&checklist.length>0?"linear-gradient(135deg, #059669, #047857)":"linear-gradient(135deg, #7c3aed, #6d28d9)" },
+            tone:completedItems===checklist.length&&checklist.length>0?"#10b981":undefined },
         ].map(card => (
-          <div key={card.label} style={{ background:card.gradient, borderRadius:12, padding:20, color:"var(--card)" }}>
-            <div style={{ fontSize:10, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.8px", opacity:0.75, marginBottom:8 }}>{card.label}</div>
-            <div style={{ fontSize:22, fontWeight:800, letterSpacing:"-0.8px", lineHeight:1.1, marginBottom:6 }}>{card.value}</div>
-            <div style={{ fontSize:11, opacity:0.65, fontWeight:500 }}>{card.sub}</div>
+          <div key={card.label} className="card" style={{ margin:0, padding:"16px 18px", minWidth:0 }}>
+            <div style={{ fontSize:12, fontWeight:600, color:"var(--muted)", marginBottom:6 }}>{card.label}</div>
+            <div style={{ fontSize:"clamp(17px, 4.6vw, 24px)", fontWeight:700, letterSpacing:"-0.6px", lineHeight:1.15, marginBottom:4, color:card.tone || "var(--text)" }}>{card.value}</div>
+            <div style={{ fontSize:12, color:"var(--muted)" }}>{card.sub}</div>
           </div>
         ))}
       </div>
@@ -401,7 +401,7 @@ export default function FinancialPlanner({
         display:"flex", gap:4, marginBottom:20,
         background:C.card, border:`1px solid ${C.border}`,
         borderRadius:10, padding:4,
-        overflowX:"auto", WebkitOverflowScrolling:"touch",
+        overflowX:"auto", WebkitOverflowScrolling:"touch", scrollbarWidth:"none",
       }}>
         {[
           { id:"debts",     label:"Debts",     icon:"credit-card" },
@@ -437,7 +437,7 @@ export default function FinancialPlanner({
               {(debts.length > 0 || recurring.length > 0) && (
                 <button
                   onClick={handleGenerateChecklist}
-                  style={{ background:"#f0fdf4", color:C.green, border:"1px solid #bbf7d0", padding:"9px 16px", borderRadius:8, fontWeight:600, fontSize:13, cursor:"pointer", fontFamily:"inherit", whiteSpace:"nowrap", display:"inline-flex", alignItems:"center", gap:6 }}
+                  style={{ background:"var(--pos-bg)", color:C.green, border:"1px solid var(--pos-border)", padding:"9px 16px", borderRadius:8, fontWeight:600, fontSize:13, cursor:"pointer", fontFamily:"inherit", whiteSpace:"nowrap", display:"inline-flex", alignItems:"center", gap:6 }}
                 >
                   <Icon name="refresh" size={14} /> Refresh Checklist
                 </button>
@@ -656,7 +656,7 @@ export default function FinancialPlanner({
 
               <div
                 onClick={() => setItemForm(p => ({ ...p, is_auto_debit:!p.is_auto_debit }))}
-                style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 12px", background:itemForm.is_auto_debit?"#fffbeb":"var(--subtle)", border:`1.5px solid ${itemForm.is_auto_debit?C.amber:C.border}`, borderRadius:8, cursor:"pointer", marginBottom:12, userSelect:"none" }}
+                style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 12px", background:itemForm.is_auto_debit?"var(--warn-bg)":"var(--subtle)", border:`1.5px solid ${itemForm.is_auto_debit?C.amber:C.border}`, borderRadius:8, cursor:"pointer", marginBottom:12, userSelect:"none" }}
               >
                 <div style={{ width:18, height:18, borderRadius:4, border:`2px solid ${itemForm.is_auto_debit?C.amber:"var(--faint)"}`, background:itemForm.is_auto_debit?C.amber:"var(--card)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
                   {itemForm.is_auto_debit && <Icon name="check" size={12} strokeWidth={3} color="#fff" />}
@@ -709,11 +709,11 @@ export default function FinancialPlanner({
                 const completed= sorted.filter(i => i.is_completed);
 
                 const groups = [
-                  { label:"Overdue",     icon:"alert",        items:overdue,   color:"#fff1f2", borderColor:"#fecdd3", textColor:"#e11d48" },
-                  { label:"Due Today",   icon:"bell",         items:dueToday,  color:"#fffbeb", borderColor:"#fde68a", textColor:"#d97706" },
+                  { label:"Overdue",     icon:"alert",        items:overdue,   color:"var(--neg-bg)", borderColor:"var(--neg-border)", textColor:"#e11d48" },
+                  { label:"Due Today",   icon:"bell",         items:dueToday,  color:"var(--warn-bg)", borderColor:"var(--warn-border)", textColor:"#d97706" },
                   { label:"Upcoming",    icon:"calendar",     items:upcoming,  color:"var(--card)", borderColor:C.border,  textColor:C.muted   },
                   { label:"No Due Date", icon:"clipboard",    items:noDate,    color:"var(--card)", borderColor:C.border,  textColor:C.muted   },
-                  { label:"Completed",   icon:"check-circle", items:completed, color:"#f0fdf4", borderColor:"#bbf7d0", textColor:"#059669" },
+                  { label:"Completed",   icon:"check-circle", items:completed, color:"var(--pos-bg)", borderColor:"var(--pos-border)", textColor:"#059669" },
                 ].filter(g => g.items.length > 0);
 
                 return groups.map(group => (
@@ -723,7 +723,7 @@ export default function FinancialPlanner({
                       {group.label} ({group.items.length})
                     </div>
                     {group.items.map((item, idx) => (
-                      <div key={item.id} style={{ display:"flex", alignItems:"center", gap:12, padding:"13px 18px", borderBottom:idx<group.items.length-1?`1px solid var(--subtle2)`:"none", background:item.is_completed?"#f0fdf4":"var(--card)", transition:"background 0.15s" }}>
+                      <div key={item.id} style={{ display:"flex", alignItems:"center", gap:12, padding:"13px 18px", borderBottom:idx<group.items.length-1?`1px solid var(--subtle2)`:"none", background:item.is_completed?"var(--pos-bg)":"var(--card)", transition:"background 0.15s" }}>
                         {/* Checkbox */}
                         <div
                           onClick={() => handleToggle(item.id)}
@@ -808,7 +808,7 @@ export default function FinancialPlanner({
                 </button>
               </div>
 
-              <div style={{ background:emergencyFund.is_funded?"#f0fdf4":"#fffbeb", border:`1px solid ${emergencyFund.is_funded?"#bbf7d0":"#fde68a"}`, borderRadius:10, padding:"14px 16px", marginBottom:20, display:"flex", gap:12, alignItems:"flex-start" }}>
+              <div style={{ background:emergencyFund.is_funded?"var(--pos-bg)":"var(--warn-bg)", border:`1px solid ${emergencyFund.is_funded?"var(--pos-border)":"var(--warn-border)"}`, borderRadius:10, padding:"14px 16px", marginBottom:20, display:"flex", gap:12, alignItems:"flex-start" }}>
                 <Icon name={emergencyFund.is_funded ? "party" : "target"} size={26} color={emergencyFund.is_funded ? C.green : C.amber} />
                 <div style={{ minWidth:0 }}>
                   <div style={{ fontWeight:700, fontSize:14, color:emergencyFund.is_funded?C.green:C.amber, marginBottom:3, wordBreak:"break-word" }}>
@@ -849,7 +849,7 @@ export default function FinancialPlanner({
               </div>
 
               {!emergencyFund.is_funded && parseFloat(emergencyFund.monthly_contribution) > 0 && (
-                <div style={{ background:"#f0f7ff", border:"1px solid #bfdbfe", borderRadius:8, padding:"10px 14px", marginBottom:16, fontSize:12, color:C.blue, fontWeight:500 }}>
+                <div style={{ background:"var(--accent-bg)", border:"1px solid var(--accent-border)", borderRadius:8, padding:"10px 14px", marginBottom:16, fontSize:12, color:C.blue, fontWeight:500 }}>
                   <Icon name="lightbulb" size={13} style={{ marginRight:6, verticalAlign:"-2px" }} />At {fmt(emergencyFund.monthly_contribution)}/month you'll reach your goal in{" "}
                   <strong>
                     {Math.ceil((parseFloat(emergencyFund.target_amount)-parseFloat(emergencyFund.current_balance))/parseFloat(emergencyFund.monthly_contribution))} months

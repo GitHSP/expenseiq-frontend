@@ -209,12 +209,12 @@ export default function RecurringTab({
   const summary = [
     { label: "Monthly Income",     value: fmt(income),       sub: `${active.filter(r => r.category === "income").length} sources`, color: "#059669" },
     { label: "Recurring Payments", value: fmt(outgoing),     sub: `${active.filter(r => r.category !== "income").length} payments`, color: "#0070f3" },
-    { label: "Debt Payments",      value: fmt(debtPayments), sub: `${activeDebts.length} debts${savings ? ` + ${fmt(savings)} savings` : ""}`, color: "#e11d48" },
+    { label: "Debt Payments",      value: fmt(debtPayments), sub: `${activeDebts.length} debts${savings ? ` + ${fmt(savings)} savings` : ""}`, color: "var(--text)" },
     {
       label: "Left Over",
       value: fmt(leftOver),
       sub:   leftOver > 0 && target ? `Extra to ${target.name}` : leftOver < 0 ? "Payments exceed income" : "Nothing left over",
-      color: leftOver >= 0 ? "#7c3aed" : "#e11d48",
+      color: leftOver >= 0 ? "#10b981" : "#f43f5e",
     },
   ];
 

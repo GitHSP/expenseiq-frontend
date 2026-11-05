@@ -123,9 +123,9 @@ function CoverageGrid({ accounts, months, onOpen }) {
                     const style = c >= FULL
                       ? { background: "#05966922", color: "#059669", border: "1px solid #05966955" }
                       : c > 0
-                        ? { background: gap ? "#d9770618" : "var(--subtle)", color: gap ? "#b45309" : "var(--muted)", border: `1px ${gap ? "solid #d9770655" : "dashed var(--border)"}` }
+                        ? { background: gap ? "#d9770618" : "var(--subtle)", color: gap ? "var(--warn-text)" : "var(--muted)", border: `1px ${gap ? "solid #d9770655" : "dashed var(--border)"}` }
                         : gap
-                          ? { background: "#d9770618", color: "#b45309", border: "1px solid #d9770655" }
+                          ? { background: "#d9770618", color: "var(--warn-text)", border: "1px solid #d9770655" }
                           : { background: "transparent", color: "var(--faint2)", border: "1px dashed var(--subtle2)" };
                     const title = c >= FULL ? `${monthLabel(m)}: fully covered`
                       : c > 0 ? `${monthLabel(m)}: statements cover ${Math.round(c * 100)}% of the month${gap ? " — a statement is missing" : ""}`
@@ -408,15 +408,15 @@ function RecurringTab({ recurring, accounts, months, fmt }) {
     <>
       <div className="stat-grid" style={{ marginBottom: 20 }}>
         {[
-          { label: "Recurring per month", value: fmt(total), sub: `${counted.length} active charge${counted.length === 1 ? "" : "s"}`, gradient: "linear-gradient(135deg, #0070f3, #0050b3)" },
-          { label: "Pre-authorized", value: String(padCount), sub: "debits you've authorized", gradient: "linear-gradient(135deg, #7c3aed, #6d28d9)" },
-          { label: "Per year", value: fmt(total * 12), sub: "at today's amounts", gradient: "linear-gradient(135deg, #059669, #047857)" },
-          { label: "Not seen recently", value: String(stopped.length), sub: "possibly cancelled", gradient: "linear-gradient(135deg, #64748b, #475569)" },
+          { label: "Recurring per month", value: fmt(total), sub: `${counted.length} active charge${counted.length === 1 ? "" : "s"}` },
+          { label: "Pre-authorized", value: String(padCount), sub: "debits you've authorized" },
+          { label: "Per year", value: fmt(total * 12), sub: "at today's amounts" },
+          { label: "Not seen recently", value: String(stopped.length), sub: "possibly cancelled" },
         ].map(card => (
-          <div key={card.label} style={{ background: card.gradient, borderRadius: 12, padding: 20, color: "#fff", minWidth: 0 }}>
-            <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.8px", opacity: 0.75, marginBottom: 8 }}>{card.label}</div>
-            <div style={{ fontSize: "clamp(16px, 4.6vw, 22px)", fontWeight: 800, letterSpacing: "-0.8px", lineHeight: 1.1, marginBottom: 6 }}>{card.value}</div>
-            <div style={{ fontSize: 11, opacity: 0.7, fontWeight: 500 }}>{card.sub}</div>
+          <div key={card.label} className="card" style={{ margin: 0, padding: "16px 18px", minWidth: 0 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "var(--muted)", marginBottom: 6 }}>{card.label}</div>
+            <div style={{ fontSize: "clamp(16px, 4.6vw, 24px)", fontWeight: 700, letterSpacing: "-0.6px", lineHeight: 1.15, marginBottom: 4, color: card.tone || "var(--text)" }}>{card.value}</div>
+            <div style={{ fontSize: 12, color: "var(--muted)" }}>{card.sub}</div>
           </div>
         ))}
       </div>
@@ -574,7 +574,7 @@ function TransactionsTab({ accounts, months, filter, setFilter, fmt, onChanged }
       </div>
 
       {cov !== null && cov < FULL && (
-        <div style={{ fontSize: 12, color: "#b45309", background: "rgba(217,119,6,0.08)", border: "1px solid rgba(217,119,6,0.3)",
+        <div style={{ fontSize: 12, color: "var(--warn-text)", background: "rgba(217,119,6,0.08)", border: "1px solid rgba(217,119,6,0.3)",
                       borderRadius: 8, padding: "8px 12px", marginBottom: 12 }}>
           {cov === 0
             ? `No ${selected.name} statement covers ${monthLabel(shownMonth)} yet.`
@@ -674,7 +674,7 @@ function MonthlySummary({ summary, fmt }) {
           <Tooltip formatter={v => fmt(v)} contentStyle={TOOLTIP_STYLE} />
           <Legend wrapperStyle={{ fontSize: 11 }} />
           <Bar dataKey="Income" fill="#059669" radius={[4, 4, 0, 0]} />
-          <Bar dataKey="Expenses" fill="#e11d48" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="Expenses" fill="#0070f3" radius={[4, 4, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
       <div style={{ overflowX: "auto", marginTop: 8 }}>
@@ -802,7 +802,7 @@ function CardPanel({ account, debts, fmt, onChanged }) {
               <Tooltip formatter={v => fmt(v)} contentStyle={TOOLTIP_STYLE} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
               <Bar yAxisId="flow" dataKey="Paid" fill="#059669" radius={[4, 4, 0, 0]} />
-              <Bar yAxisId="flow" dataKey="Spent" fill="#db2777" radius={[4, 4, 0, 0]} />
+              <Bar yAxisId="flow" dataKey="Spent" fill="#0070f3" radius={[4, 4, 0, 0]} />
               <Bar yAxisId="flow" dataKey="Interest" fill="#d97706" radius={[4, 4, 0, 0]} />
               <Line yAxisId="bal" dataKey="Balance" stroke="#0070f3" strokeWidth={2} dot={{ r: 3 }} connectNulls />
             </ComposedChart>
@@ -862,15 +862,15 @@ function CardsTab({ accounts, debts, fmt, onChanged }) {
     <>
       <div className="stat-grid" style={{ marginBottom: 20 }}>
         {[
-          { label: "Owed on cards (est.)", value: fmt(owed), sub: `${cards.length} card${cards.length === 1 ? "" : "s"}`, gradient: "linear-gradient(135deg, #e11d48, #be123c)" },
-          { label: "Paid to cards", value: fmt(paid), sub: "over the statements uploaded", gradient: "linear-gradient(135deg, #059669, #047857)" },
-          { label: "Spent on cards", value: fmt(spent), sub: "purchases, fees, cash advances", gradient: "linear-gradient(135deg, #db2777, #be185d)" },
-          { label: "Interest paid", value: fmt(interest), sub: "money that didn't reduce what you owe", gradient: "linear-gradient(135deg, #f59e0b, #d97706)" },
+          { label: "Owed on cards (est.)", value: fmt(owed), sub: `${cards.length} card${cards.length === 1 ? "" : "s"}` },
+          { label: "Paid to cards", value: fmt(paid), sub: "over the statements uploaded" },
+          { label: "Spent on cards", value: fmt(spent), sub: "purchases, fees, cash advances" },
+          { label: "Interest paid", value: fmt(interest), sub: "money that didn't reduce what you owe" },
         ].map(c => (
-          <div key={c.label} style={{ background: c.gradient, borderRadius: 12, padding: 20, color: "#fff", minWidth: 0 }}>
-            <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.8px", opacity: 0.75, marginBottom: 8 }}>{c.label}</div>
-            <div style={{ fontSize: "clamp(16px, 4.6vw, 22px)", fontWeight: 800, letterSpacing: "-0.8px", lineHeight: 1.1, marginBottom: 6 }}>{c.value}</div>
-            <div style={{ fontSize: 11, opacity: 0.7, fontWeight: 500 }}>{c.sub}</div>
+          <div key={c.label} className="card" style={{ margin: 0, padding: "16px 18px", minWidth: 0 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "var(--muted)", marginBottom: 6 }}>{c.label}</div>
+            <div style={{ fontSize: "clamp(16px, 4.6vw, 24px)", fontWeight: 700, letterSpacing: "-0.6px", lineHeight: 1.15, marginBottom: 4, color: c.tone || "var(--text)" }}>{c.value}</div>
+            <div style={{ fontSize: 12, color: "var(--muted)" }}>{c.sub}</div>
           </div>
         ))}
       </div>
@@ -1069,19 +1069,19 @@ export default function Accounts({ formatAmount, onImport, refreshKey, onEntries
             <>
               <div className="stat-grid" style={{ marginBottom: 20 }}>
                 {[
-                  { label: "Accounts", value: String(accounts.length), sub: kindsSummary, gradient: "linear-gradient(135deg, #0070f3, #0050b3)" },
+                  { label: "Accounts", value: String(accounts.length), sub: kindsSummary },
                   { label: "Statements", value: String(statementCount),
-                    sub: covered.length ? `${shortMonth(covered[0])} – ${shortMonth(covered[covered.length - 1])}` : "", gradient: "linear-gradient(135deg, #0891b2, #0e7490)" },
+                    sub: covered.length ? `${shortMonth(covered[0])} – ${shortMonth(covered[covered.length - 1])}` : "" },
                   { label: "Recurring / month", value: fmt(recurring.monthly_total),
-                    sub: `${recurring.pre_authorized_count || 0} pre-authorized`, gradient: "linear-gradient(135deg, #7c3aed, #6d28d9)" },
+                    sub: `${recurring.pre_authorized_count || 0} pre-authorized` },
                   { label: "Missing statements", value: String(gapCount), sub: gapCount ? "gaps between your statements" : "no gaps found",
-                    gradient: gapCount ? "linear-gradient(135deg, #f59e0b, #d97706)" : "linear-gradient(135deg, #059669, #047857)" },
+                    tone: gapCount ? "#f59e0b" : undefined },
                 ].map(card => (
-                  <div key={card.label} style={{ background: card.gradient, borderRadius: 12, padding: 20, color: "#fff", minWidth: 0 }}>
-                    <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.8px", opacity: 0.75, marginBottom: 8 }}>{card.label}</div>
-                    <div style={{ fontSize: "clamp(16px, 4.6vw, 22px)", fontWeight: 800, letterSpacing: "-0.8px", lineHeight: 1.1, marginBottom: 6 }}>{card.value}</div>
-                    <div style={{ fontSize: 11, opacity: 0.7, fontWeight: 500 }}>{card.sub}</div>
-                  </div>
+                  <div key={card.label} className="card" style={{ margin: 0, padding: "16px 18px", minWidth: 0 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "var(--muted)", marginBottom: 6 }}>{card.label}</div>
+            <div style={{ fontSize: "clamp(16px, 4.6vw, 24px)", fontWeight: 700, letterSpacing: "-0.6px", lineHeight: 1.15, marginBottom: 4, color: card.tone || "var(--text)" }}>{card.value}</div>
+            <div style={{ fontSize: 12, color: "var(--muted)" }}>{card.sub}</div>
+          </div>
                 ))}
               </div>
               <MonthlySummary summary={summary} fmt={fmt} />

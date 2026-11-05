@@ -64,7 +64,7 @@ export default function App() {
 
   // ── Dark mode ─────────────────────────────
   const [darkMode, setDarkMode] = useState(
-    () => localStorage.getItem("expenseiq_theme") === "dark"
+    () => localStorage.getItem("expenseiq_theme") !== "light"     // dark unless light was chosen
   );
 
 useEffect(() => {

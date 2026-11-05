@@ -74,7 +74,7 @@ export default function Profile({ user, onLogout, onLogoutEverywhere }) {
           width:         72,
           height:        72,
           borderRadius:  "50%",
-          background:    "linear-gradient(135deg, #0070f3, #0050b3)",
+          background:    "#0070f3",
           display:       "flex",
           alignItems:    "center",
           justifyContent:"center",
@@ -140,7 +140,7 @@ export default function Profile({ user, onLogout, onLogoutEverywhere }) {
       {/* Success / Error messages */}
       {success && (
         <div style={{
-          background:"#f0fdf4", border:"1px solid #bbf7d0",
+          background:"var(--pos-bg)", border:"1px solid var(--pos-border)",
           borderRadius:8, padding:"10px 14px",
           fontSize:13, color:"#059669", fontWeight:500,
           marginBottom:16, display:"flex", alignItems:"center", gap:8,
@@ -150,7 +150,7 @@ export default function Profile({ user, onLogout, onLogoutEverywhere }) {
       )}
       {error && (
         <div style={{
-          background:"#fff1f2", border:"1px solid #fecdd3",
+          background:"var(--neg-bg)", border:"1px solid var(--neg-border)",
           borderRadius:8, padding:"10px 14px",
           fontSize:13, color:"#e11d48", fontWeight:500,
           marginBottom:16, display:"flex", alignItems:"center", gap:8,
@@ -184,7 +184,7 @@ export default function Profile({ user, onLogout, onLogoutEverywhere }) {
             </div>
           </div>
           <div style={{
-            background:"#f0f7ff", border:"1px solid #bfdbfe",
+            background:"var(--accent-bg)", border:"1px solid var(--accent-border)",
             borderRadius:8, padding:"12px 14px", marginTop:8,
             fontSize:12, color:"#0070f3", display:"flex", alignItems:"center", gap:8,
           }}>
@@ -242,7 +242,7 @@ export default function Profile({ user, onLogout, onLogoutEverywhere }) {
 
       {/* Danger zone tab */}
       {tab === "danger" && (
-        <div className="card" style={{ border:"1.5px solid #fecdd3" }}>
+        <div className="card" style={{ border:"1.5px solid var(--neg-border)" }}>
           <div className="card-title" style={{ marginBottom:6, color:"#e11d48" }}>
             <IconLabel name="warning" size={15}>Danger Zone</IconLabel>
           </div>
@@ -254,9 +254,9 @@ export default function Profile({ user, onLogout, onLogoutEverywhere }) {
             justifyContent:"space-between",
             alignItems:   "center",
             padding:      "14px",
-            background:   "#fff1f2",
+            background:   "var(--neg-bg)",
             borderRadius: 8,
-            border:       "1px solid #fecdd3",
+            border:       "1px solid var(--neg-border)",
             marginBottom: 10,
           }}>
             <div>
@@ -266,9 +266,9 @@ export default function Profile({ user, onLogout, onLogoutEverywhere }) {
             <button
               onClick={() => window.confirm("Sign out of Glacier on every device?") && (onLogoutEverywhere || onLogout)()}
               style={{
-                background:   "#fff1f2",
+                background:   "var(--neg-bg)",
                 color:        "#e11d48",
-                border:       "1px solid #fecdd3",
+                border:       "1px solid var(--neg-border)",
                 padding:      "8px 16px",
                 borderRadius: 8,
                 fontWeight:   600,
