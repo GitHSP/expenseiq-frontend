@@ -586,7 +586,7 @@ export default function Dashboard({
                   {[
                     { label:"Total Income",   value:fmt(totalIncome),   color:"#059669" },
                     { label:"Total Expenses", value:fmt(totalExpenses), color:"var(--text)" },
-                    { label:"Net Balance",    value:fmt(Math.abs(netBalance)), color: netBalance >= 0 ? "#0070f3" : "#e11d48" },
+                    { label:"Net Balance",    value:fmt(Math.abs(netBalance)), color: netBalance >= 0 ? "var(--accent-text)" : "#e11d48" },
                   ].map(s => (
                     <div key={s.label} style={{ background:"var(--subtle)", borderRadius:10, padding:"14px", border:"1px solid var(--subtle2)", textAlign:"center" }}>
                       <div style={{ fontSize:10, color:"var(--faint2)", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:6 }}>{s.label}</div>

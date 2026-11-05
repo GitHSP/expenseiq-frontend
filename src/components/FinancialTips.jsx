@@ -126,7 +126,7 @@ export default function FinancialTips({ expenses, incomes, debts, month, year })
     danger:  { bg:"var(--neg-bg)", border:"var(--neg-border)", title:"#e11d48" },
     warning: { bg:"var(--warn-bg)", border:"var(--warn-border)", title:"#d97706" },
     success: { bg:"var(--pos-bg)", border:"var(--pos-border)", title:"#059669" },
-    info:    { bg:"var(--accent-bg)", border:"var(--accent-border)", title:"#0070f3" },
+    info:    { bg:"var(--accent-bg)", border:"var(--accent-border)", title:"var(--accent)" },
   };
 
   if (!tips || tips.length === 0) return null;

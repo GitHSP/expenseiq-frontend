@@ -10,7 +10,7 @@ const AREAS = {
   debt:      { label: "Debts",          icon: "credit-card", color: "#e11d48" },
   checklist: { label: "Checklist",      icon: "list-checks", color: "#059669" },
   plan:      { label: "Monthly plan",   icon: "calendar",    color: "#0891b2" },
-  recurring: { label: "Recurring",      icon: "refresh",     color: "#0070f3" },
+  recurring: { label: "Recurring",      icon: "refresh",     color: "var(--accent-text)" },
   import:    { label: "Imports",        icon: "download",    color: "#7c3aed" },
   fund:      { label: "Emergency fund", icon: "shield",      color: "#d97706" },
   expense:   { label: "Expenses",       icon: "receipt",     color: "#db2777" },

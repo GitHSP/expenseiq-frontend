@@ -90,7 +90,7 @@ export default function CashFlow({ fmt, recurring, debts, checklist, currency = 
         <div style={{ display: "inline-flex", gap: 4, background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 8, padding: 3 }}>
           {RANGES.map(r => (
             <button key={r} onClick={() => setDays(r)} aria-pressed={days === r} style={{
-              background: days === r ? "#0070f3" : "transparent", color: days === r ? "#fff" : "var(--muted2)",
+              background: days === r ? "var(--accent)" : "transparent", color: days === r ? "var(--accent-ink)" : "var(--muted2)",
               border: "none", borderRadius: 6, padding: "6px 12px", fontWeight: 600, fontSize: 12, cursor: "pointer", fontFamily: "inherit",
             }}>{r} days</button>
           ))}

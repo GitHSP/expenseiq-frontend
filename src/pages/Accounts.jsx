@@ -60,7 +60,7 @@ function Tabs({ tab, setTab }) {
         { id: "transactions", label: "Transactions", icon: "receipt" },
       ].map(t => (
         <button key={t.id} onClick={() => setTab(t.id)} style={{
-          background: tab === t.id ? "#0070f3" : "transparent", color: tab === t.id ? "#fff" : "var(--muted)",
+          background: tab === t.id ? "var(--accent)" : "transparent", color: tab === t.id ? "var(--accent-ink)" : "var(--muted)",
           border: "none", padding: "8px 18px", borderRadius: 7, fontWeight: 600, fontSize: 13, fontFamily: "inherit",
           cursor: "pointer", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: 6,
         }}>
@@ -179,7 +179,7 @@ function AccountCard({ account, accounts, months, fmt, onOpen, onChanged, onEntr
   return (
     <div className="card" style={{ marginBottom: 12, padding: 16 }}>
       <div style={{ display: "flex", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
-        <span style={{ width: 38, height: 38, borderRadius: 10, background: "#0070f31a", color: "#0070f3", flexShrink: 0,
+        <span style={{ width: 38, height: 38, borderRadius: 10, background: "var(--accent)1a", color: "var(--accent-text)", flexShrink: 0,
                        display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
           <Icon name={k.icon} size={18} />
         </span>
@@ -308,7 +308,7 @@ function RecurringRow({ item, accountsById, fmt }) {
         style={{ display: "flex", gap: 12, alignItems: "center", width: "100%", padding: "12px 16px", background: "transparent",
                  border: "none", cursor: "pointer", textAlign: "left", fontFamily: "inherit", color: "var(--text)" }}>
         <span style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0, display: "inline-flex", alignItems: "center", justifyContent: "center",
-                       background: item.pre_authorized ? "#7c3aed1a" : "#0070f31a", color: item.pre_authorized ? "#7c3aed" : "#0070f3" }}>
+                       background: item.pre_authorized ? "#7c3aed1a" : "var(--accent)1a", color: item.pre_authorized ? "#7c3aed" : "var(--accent-text)" }}>
           <Icon name={item.pre_authorized ? "shield-check" : "repeat"} size={16} />
         </span>
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -371,7 +371,7 @@ const STATUS = {
   paid:     { label: "Paid",                    color: "#059669", icon: "check-circle" },
   missing:  { label: "Not on the statement",    color: "#e11d48", icon: "alert" },
   partial:  { label: "Not in the part uploaded", color: "#d97706", icon: "hourglass" },
-  upcoming: { label: "Expected",                color: "#0070f3", icon: "calendar" },
+  upcoming: { label: "Expected",                color: "var(--accent-text)", icon: "calendar" },
   unknown:  { label: "No statement uploaded",   color: "#64748b", icon: "file-text" },
 };
 
@@ -804,7 +804,7 @@ function CardPanel({ account, debts, fmt, onChanged }) {
               <Bar yAxisId="flow" dataKey="Paid" fill="#059669" radius={[4, 4, 0, 0]} />
               <Bar yAxisId="flow" dataKey="Spent" fill="#0070f3" radius={[4, 4, 0, 0]} />
               <Bar yAxisId="flow" dataKey="Interest" fill="#d97706" radius={[4, 4, 0, 0]} />
-              <Line yAxisId="bal" dataKey="Balance" stroke="#0070f3" strokeWidth={2} dot={{ r: 3 }} connectNulls />
+              <Line yAxisId="bal" dataKey="Balance" stroke="#94a3b8" strokeWidth={2} dot={{ r: 3 }} connectNulls />
             </ComposedChart>
           </ResponsiveContainer>
           <div style={{ overflowX: "auto", marginTop: 6 }}>

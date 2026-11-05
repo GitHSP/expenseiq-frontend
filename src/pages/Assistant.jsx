@@ -10,7 +10,7 @@ const SUGGESTIONS = [
   "Keep my dining under $300 a month",
 ];
 
-const ALERT_COLORS = { danger: "#e11d48", warning: "#d97706", info: "#0070f3" };
+const ALERT_COLORS = { danger: "#e11d48", warning: "#d97706", info: "var(--accent)" };
 
 // Things Aurora would flag right now, shown before the first message.
 function Heads({ onAsk }) {
@@ -43,7 +43,7 @@ function Heads({ onAsk }) {
       ))}
       {alerts.length > 4 && (
         <button onClick={() => onAsk("What needs my attention?")}
-          style={{ width: "100%", padding: "7px 12px", fontSize: 12, color: "#0070f3", background: "transparent",
+          style={{ width: "100%", padding: "7px 12px", fontSize: 12, color: "var(--accent-text)", background: "transparent",
                    border: "none", borderTop: "1px solid var(--subtle2)", cursor: "pointer", fontFamily: "inherit" }}>
           {alerts.length - 4} more — ask Aurora
         </button>
@@ -167,8 +167,8 @@ function MessageBubble({ message, onRetry, canRetry }) {
         maxWidth:     "78%",
         padding:      "10px 14px",
         borderRadius: isUser ? "14px 14px 2px 14px" : "14px 14px 14px 2px",
-        background:   isUser ? "#0070f3" : "var(--card)",
-        color:        isUser ? "#fff" : "var(--text)",
+        background:   isUser ? "var(--accent)" : "var(--card)",
+        color:        isUser ? "var(--accent-ink)" : "var(--text)",
         border:       isUser ? "none" : "1px solid var(--border)",
         boxShadow:    `0 1px 2px var(--shadow)`,
         fontSize:     14,
@@ -184,7 +184,7 @@ function MessageBubble({ message, onRetry, canRetry }) {
         {message.isError && message.retryText && canRetry && (
           <button onClick={() => onRetry(message.retryText)}
             style={{ display: "inline-flex", alignItems: "center", gap: 5, marginTop: 8, fontSize: 12, fontWeight: 700,
-                     color: "#0070f3", background: "rgba(0,112,243,0.08)", border: "1px solid rgba(0,112,243,0.25)",
+                     color: "var(--accent-text)", background: "color-mix(in srgb, var(--accent) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--accent) 25%, transparent)",
                      borderRadius: 8, padding: "5px 10px", cursor: "pointer", fontFamily: "inherit" }}>
             <Icon name="refresh" size={12} /> Retry
           </button>
@@ -268,7 +268,7 @@ function SyncPanel({ syncEnabled, syncBusy, syncError, enableSync, disableSync }
         <div style={{ color: "#e11d48" }}>{localError || syncError}</div>
       )}
       <div style={{ display: "flex", gap: 8 }}>
-        <button type="submit" disabled={syncBusy} style={{ ...syncBtnStyle, flex: 1, background: "#0070f3", color: "#fff", border: "none" }}>
+        <button type="submit" disabled={syncBusy} style={{ ...syncBtnStyle, flex: 1, background: "var(--accent)", color: "var(--accent-ink)", border: "none" }}>
           {syncBusy ? "Working..." : "Enable sync"}
         </button>
         <button type="button" onClick={() => setOpen(false)} style={{ ...syncBtnStyle, flex: 1 }}>
@@ -471,8 +471,8 @@ export default function Assistant({ onActionsTaken, onClose }) {
           style={{
             fontSize:     14,
             fontWeight:   600,
-            color:        "#fff",
-            background:   sending || !input.trim() ? "var(--faint)" : "#0070f3",
+            color:        "var(--accent-ink)",
+            background:   sending || !input.trim() ? "var(--faint)" : "var(--accent)",
             border:       "none",
             borderRadius: 10,
             padding:      "0 20px",

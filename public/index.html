@@ -4,7 +4,12 @@
     <meta charset="utf-8" />
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-    <meta name="theme-color" content="#0070f3" />
+    <meta name="theme-color" content="#0a0a0a" />
+    <script>
+      // Dark before the app loads (no white flash), unless light was chosen.
+      try { if (localStorage.getItem("glacier_theme") !== "light") document.documentElement.classList.add("pre-dark"); } catch (e) {}
+    </script>
+    <style>html.pre-dark, html.pre-dark body { background: #0a0a0a; }</style>
     <meta
       name="description"
       content="Glacier — track spending, plan your monthly payments, and pay down debt the smart way."

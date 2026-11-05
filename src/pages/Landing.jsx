@@ -17,7 +17,7 @@ const FEATURES = [
 
 // Rule-of-thumb split of take-home pay, shown as a static guide.
 const SPLIT = [
-  { pct: 50, label: "Essentials",         icon: "house",       color: "#0070f3",
+  { pct: 50, label: "Essentials",         icon: "house",       color: "var(--accent-text)",
     body: "Rent, bills, groceries, transport and minimum debt payments." },
   { pct: 30, label: "Lifestyle",          icon: "sparkles",    color: "#7c3aed",
     body: "Eating out, shopping, hobbies and subscriptions — guilt-free." },

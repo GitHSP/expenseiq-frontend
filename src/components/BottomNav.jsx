@@ -16,7 +16,7 @@ function Badge({ count }) {
   );
 }
 
-export default function BottomNav({ view, setView, badges }) {
+export default function BottomNav({ view, setView, badges, darkMode, onToggleDark }) {
   const [more, setMore] = useState(false);
   const main = NAV_ITEMS.filter(i => MAIN.includes(i.id)).sort((a, b) => MAIN.indexOf(a.id) - MAIN.indexOf(b.id));
   const rest = NAV_ITEMS.filter(i => !MAIN.includes(i.id));
@@ -38,6 +38,13 @@ export default function BottomNav({ view, setView, badges }) {
                 <Icon name="chevron-right" size={16} />
               </button>
             ))}
+            {onToggleDark && (
+              <button className="bottom-sheet-item" onClick={onToggleDark} role="switch" aria-checked={!!darkMode}>
+                <Icon name={darkMode ? "moon" : "sun"} size={20} />
+                <span style={{ flex: 1 }}>Dark mode</span>
+                <span className={`theme-switch${darkMode ? " on" : ""}`} aria-hidden="true"><span /></span>
+              </button>
+            )}
           </div>
         </div>
       )}

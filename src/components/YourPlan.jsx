@@ -139,8 +139,8 @@ export default function YourPlan({ formatAmount, getRate = c => (c === "CAD" ? 1
           <div style={{ ...sectionGap, display: "flex", gap: 6, overflowX: "auto", WebkitOverflowScrolling: "touch", paddingBottom: 2 }}>
             {tabs.map(id => (
               <button key={id} onClick={() => setChosen(id)} aria-pressed={view === id} style={{
-                ...tapStyle, flex: "0 0 auto", minHeight: 40, background: view === id ? "#0070f3" : "var(--card)", color: view === id ? "#fff" : "var(--text)",
-                border: `1px solid ${view === id ? "#0070f3" : "var(--border)"}`, borderRadius: 20, padding: "0 14px", fontSize: 13, fontWeight: 600,
+                ...tapStyle, flex: "0 0 auto", minHeight: 40, background: view === id ? "var(--accent)" : "var(--card)", color: view === id ? "var(--accent-ink)" : "var(--text)",
+                border: `1px solid ${view === id ? "var(--accent)" : "var(--border)"}`, borderRadius: 20, padding: "0 14px", fontSize: 13, fontWeight: 600,
               }}>{SCENARIOS[id]}</button>
             ))}
           </div>
@@ -280,7 +280,7 @@ export default function YourPlan({ formatAmount, getRate = c => (c === "CAD" ? 1
             const fill = text => text.replace(/\{(\w+)\}/g, (_, k) => fmt(a.amounts[k]));
             return (
               <div key={a.title} style={{ display: "flex", gap: 10, padding: "10px 0", borderTop: i ? "1px solid var(--subtle2)" : "none" }}>
-                <Icon name={a.level === "warn" ? "warning" : "lightbulb"} size={15} color={a.level === "warn" ? "#d97706" : "#0070f3"} style={{ flexShrink: 0, marginTop: 1 }} />
+                <Icon name={a.level === "warn" ? "warning" : "lightbulb"} size={15} color={a.level === "warn" ? "#d97706" : "var(--accent)"} style={{ flexShrink: 0, marginTop: 1 }} />
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{fill(a.title)}</div>
                   <div style={{ fontSize: 12, color: "var(--muted2)", marginTop: 2, lineHeight: 1.5 }}>{fill(a.text)}</div>
@@ -331,8 +331,8 @@ function DebtPicker({ debts, selected, other, fmt, onChange }) {
   const same = list => list.length === selected.length && list.every(id => selected.includes(id));
   const presets = [["All debts", all], ["Credit cards", cards], ["Loans and EMIs", loans]].filter(([, list]) => list.length > 0);
   const chip = on => ({
-    ...tapStyle, minHeight: 40, background: on ? "#0070f3" : "var(--bg)", color: on ? "#fff" : "var(--text)",
-    border: `1px solid ${on ? "#0070f3" : "var(--border)"}`, borderRadius: 20, padding: "0 12px", fontSize: 13, fontWeight: 600,
+    ...tapStyle, minHeight: 40, background: on ? "var(--accent)" : "var(--bg)", color: on ? "var(--accent-ink)" : "var(--text)",
+    border: `1px solid ${on ? "var(--accent)" : "var(--border)"}`, borderRadius: 20, padding: "0 12px", fontSize: 13, fontWeight: 600,
     display: "inline-flex", alignItems: "center", gap: 5,
   });
   return (
@@ -348,8 +348,8 @@ function DebtPicker({ debts, selected, other, fmt, onChange }) {
           const on = selected.includes(d.id);
           return (
             <button key={d.id} aria-pressed={on} onClick={() => onChange(on ? selected.filter(id => id !== d.id) : [...selected, d.id])}
-              style={{ ...chip(false), background: on ? "rgba(0,112,243,0.1)" : "transparent", border: `1px solid ${on ? "#0070f3" : "var(--border)"}`, color: on ? "var(--text)" : "var(--muted2)" }}>
-              <Icon name={on ? "check-circle" : "plus"} size={13} color={on ? "#0070f3" : undefined} />
+              style={{ ...chip(false), background: on ? "color-mix(in srgb, var(--accent) 10%, transparent)" : "transparent", border: `1px solid ${on ? "var(--accent)" : "var(--border)"}`, color: on ? "var(--text)" : "var(--muted2)" }}>
+              <Icon name={on ? "check-circle" : "plus"} size={13} color={on ? "var(--accent)" : undefined} />
               {d.name}
             </button>
           );

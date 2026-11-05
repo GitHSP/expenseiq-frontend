@@ -8,7 +8,7 @@ import { moneyUnit } from "../utils/money";
 // this tab is where permanent changes — a rent increase, a new bill — go.
 
 export const RECURRING_CATEGORIES = {
-  fixed_expense: { label: "Fixed Expense", icon: "house",       color: "#0070f3" },
+  fixed_expense: { label: "Fixed Expense", icon: "house",       color: "var(--accent-text)" },
   auto_debit:    { label: "Auto Debit",    icon: "warning",     color: "#d97706" },
   transfer:      { label: "Transfer",      icon: "exchange",    color: "#7c3aed" },
   temp_payment:  { label: "Temporary",     icon: "timer",       color: "#0891b2" },
@@ -208,7 +208,7 @@ export default function RecurringTab({
 
   const summary = [
     { label: "Monthly Income",     value: fmt(income),       sub: `${active.filter(r => r.category === "income").length} sources`, color: "#059669" },
-    { label: "Recurring Payments", value: fmt(outgoing),     sub: `${active.filter(r => r.category !== "income").length} payments`, color: "#0070f3" },
+    { label: "Recurring Payments", value: fmt(outgoing),     sub: `${active.filter(r => r.category !== "income").length} payments`, color: "var(--accent-text)" },
     { label: "Debt Payments",      value: fmt(debtPayments), sub: `${activeDebts.length} debts${savings ? ` + ${fmt(savings)} savings` : ""}`, color: "var(--text)" },
     {
       label: "Left Over",
@@ -242,7 +242,7 @@ export default function RecurringTab({
 
       {/* ── Add / edit form ── */}
       {showForm && (
-        <div className="card" style={{ marginBottom: 16, border: "1.5px solid #0070f3" }}>
+        <div className="card" style={{ marginBottom: 16, border: "1.5px solid var(--accent)" }}>
           <div className="card-title" style={{ marginBottom: 14 }}>
             {editingId ? "Edit Recurring Item" : "New Recurring Item"}
           </div>

@@ -12,7 +12,7 @@ import { statementsAPI } from "../utils/api";
 // all of its rows, for the Accounts page.
 
 const EXPENSE_NAMES = CATEGORIES.map(c => c.name);
-const FILE_COLORS   = ["#0070f3", "#059669", "#d97706", "#db2777", "#0891b2", "#7c3aed"];
+const FILE_COLORS   = ["var(--accent)", "#059669", "#d97706", "#db2777", "#0891b2", "#7c3aed"];
 const INCOME_NAMES  = INCOME_CATEGORIES.map(c => c.name);
 
 const cellStyle = { padding: "8px 10px", borderBottom: "1px solid var(--subtle2)", fontSize: 13, verticalAlign: "middle" };
@@ -212,13 +212,13 @@ export default function ImportStatementModal({ onClose, onImported, formatAmount
               role="button" tabIndex={0}
               onKeyDown={e => (e.key === "Enter" || e.key === " ") && fileInput.current?.click()}
               style={{
-                border: `2px dashed ${dragOver ? "#0070f3" : "var(--border)"}`,
-                background: dragOver ? "rgba(0,112,243,0.05)" : "var(--bg)",
+                border: `2px dashed ${dragOver ? "var(--accent)" : "var(--border)"}`,
+                background: dragOver ? "color-mix(in srgb, var(--accent) 5%, transparent)" : "var(--bg)",
                 borderRadius: 12, padding: "36px 20px", textAlign: "center", cursor: busy ? "wait" : "pointer",
                 margin: "8px 0 16px",
               }}
             >
-              <div style={{ color: "#0070f3", marginBottom: 10 }}>
+              <div style={{ color: "var(--accent-text)", marginBottom: 10 }}>
                 <Icon name={busy ? "loader" : "receipt"} size={32} className={busy ? "spin" : undefined} />
               </div>
               <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>

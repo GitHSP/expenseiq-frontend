@@ -105,7 +105,7 @@ export default function Analytics({ expenses, formatAmount, getRate, currency })
       <div style={{ display:"inline-flex", gap:4, marginBottom:20, background:"var(--card)", border:"1px solid var(--border)", borderRadius:10, padding:4 }}>
         {[["plan", "Your plan"], ["spending", "Spending"]].map(([id, label]) => (
           <button key={id} onClick={() => setPage(id)} style={{
-            background: page === id ? "#0070f3" : "transparent", color: page === id ? "#fff" : "var(--muted)",
+            background: page === id ? "var(--accent)" : "transparent", color: page === id ? "var(--accent-ink)" : "var(--muted)",
             border:"none", borderRadius:7, padding:"7px 16px", fontWeight:600, fontSize:13, cursor:"pointer", fontFamily:"inherit",
           }}>{label}</button>
         ))}
@@ -117,13 +117,13 @@ export default function Analytics({ expenses, formatAmount, getRate, currency })
       {/* ── Charts ── */}
       <div className="charts-grid">
         {/* Pie */}
-        <div className="card" style={{ outline: selectedCat ? "2px solid #0070f3" : "none", outlineOffset:2 }}>
+        <div className="card" style={{ outline: selectedCat ? "2px solid var(--accent)" : "none", outlineOffset:2 }}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
             <div className="card-title">Category Breakdown</div>
-            {selectedCat && <button onClick={() => setSelectedCat(null)} style={{ background:"transparent", border:"none", color:"#0070f3", fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:"inherit", display:"inline-flex", alignItems:"center", gap:4 }}><Icon name="x" size={13} /> Clear</button>}
+            {selectedCat && <button onClick={() => setSelectedCat(null)} style={{ background:"transparent", border:"none", color:"var(--accent-text)", fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:"inherit", display:"inline-flex", alignItems:"center", gap:4 }}><Icon name="x" size={13} /> Clear</button>}
           </div>
           {selectedCat && (
-            <div style={{ background:"var(--accent-bg)", border:"1px solid var(--accent-border)", borderRadius:8, padding:"8px 12px", marginBottom:12, fontSize:12, color:"#0070f3", fontWeight:600, display:"flex", alignItems:"center", gap:6 }}>
+            <div style={{ background:"var(--accent-bg)", border:"1px solid var(--accent-border)", borderRadius:8, padding:"8px 12px", marginBottom:12, fontSize:12, color:"var(--accent-text)", fontWeight:600, display:"flex", alignItems:"center", gap:6 }}>
               <Icon name="chart" size={13} /> Showing: {selectedCat} — click again to deselect
             </div>
           )}
@@ -142,13 +142,13 @@ export default function Analytics({ expenses, formatAmount, getRate, currency })
         </div>
 
         {/* Bar */}
-        <div className="card" style={{ outline: selectedMonth !== null ? "2px solid #0070f3" : "none", outlineOffset:2 }}>
+        <div className="card" style={{ outline: selectedMonth !== null ? "2px solid var(--accent)" : "none", outlineOffset:2 }}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
             <div className="card-title">Year Overview {currentYear}</div>
-            {selectedMonth !== null && <button onClick={() => setSelectedMonth(null)} style={{ background:"transparent", border:"none", color:"#0070f3", fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:"inherit", display:"inline-flex", alignItems:"center", gap:4 }}><Icon name="x" size={13} /> Clear</button>}
+            {selectedMonth !== null && <button onClick={() => setSelectedMonth(null)} style={{ background:"transparent", border:"none", color:"var(--accent-text)", fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:"inherit", display:"inline-flex", alignItems:"center", gap:4 }}><Icon name="x" size={13} /> Clear</button>}
           </div>
           {selectedMonth !== null && (
-            <div style={{ background:"var(--accent-bg)", border:"1px solid var(--accent-border)", borderRadius:8, padding:"8px 12px", marginBottom:12, fontSize:12, color:"#0070f3", fontWeight:600, display:"flex", alignItems:"center", gap:6 }}>
+            <div style={{ background:"var(--accent-bg)", border:"1px solid var(--accent-border)", borderRadius:8, padding:"8px 12px", marginBottom:12, fontSize:12, color:"var(--accent-text)", fontWeight:600, display:"flex", alignItems:"center", gap:6 }}>
               <Icon name="calendar" size={13} /> Showing: {MONTHS[selectedMonth]} — click again to deselect
             </div>
           )}
@@ -266,7 +266,7 @@ export default function Analytics({ expenses, formatAmount, getRate, currency })
             { label:"Total Spent",        value:fmt(thisMonthExp.reduce((s,e)=>s+(parseFloat(e.amount)||0),0)), color:"var(--text)" },
             { label:"Avg per Transaction",value:thisMonthExp.length>0 ? fmt(thisMonthExp.reduce((s,e)=>s+(parseFloat(e.amount)||0),0)/thisMonthExp.length) : fmt(0), color:"var(--muted)" },
             { label:"Largest Expense",    value:thisMonthExp.length>0 ? fmt(Math.max(...thisMonthExp.map(e=>parseFloat(e.amount)||0))) : fmt(0), color:"var(--text)" },
-            { label:"Transactions",       value:thisMonthExp.length, color:"#0070f3" },
+            { label:"Transactions",       value:thisMonthExp.length, color:"var(--accent-text)" },
           ].map(stat => (
             <div key={stat.label} style={{ background:"var(--subtle)", borderRadius:10, padding:14, border:"1px solid var(--subtle2)" }}>
               <div style={{ fontSize:10, color:"var(--faint2)", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:6, fontWeight:600 }}>{stat.label}</div>

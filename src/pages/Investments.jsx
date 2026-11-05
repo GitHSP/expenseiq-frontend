@@ -9,7 +9,7 @@ import { financialPlannerAPI } from "../utils/api";
 // bank balances from the newest statements and takes off debts.
 
 const KINDS = {
-  insurance: { label: "Insurance",          plural: "Insurance",          icon: "shield",     color: "#0070f3" },
+  insurance: { label: "Insurance",          plural: "Insurance",          icon: "shield",     color: "var(--accent-text)" },
   chit:      { label: "Chit",               plural: "Chits",              icon: "coins",      color: "#d97706" },
   rd:        { label: "Recurring deposit",  plural: "Recurring deposits", icon: "piggy-bank", color: "#059669" },
   fd:        { label: "Fixed deposit",      plural: "Fixed deposits",     icon: "lock",       color: "#7c3aed" },
@@ -187,7 +187,7 @@ function NetWorth({ data, getRate, show, display }) {
         <div style={{ marginTop: 6 }}>
           {[
             {
-              title: "Bank accounts", total: banks, color: "#0070f3",
+              title: "Bank accounts", total: banks, color: "var(--accent-text)",
               rows: data.banks.map(b => ({ key: `b${b.id}`, name: b.name, cad: b.balance === null ? null : num(b.balance),
                                            detail: b.as_of ? `Statement ending ${dateLabel(b.as_of)}` : "No closing balance found" })),
             },
@@ -237,7 +237,7 @@ function InvestmentForm({ initial, recurring, onSave, onCancel, saving }) {
   const amount = (key, props = {}) => input(key, { type: "number", inputMode: "decimal", step: "any", placeholder: "0", ...props });
 
   return (
-    <div className="card" style={{ marginBottom: 16, border: "1.5px solid #0070f3" }}>
+    <div className="card" style={{ marginBottom: 16, border: "1.5px solid var(--accent)" }}>
       <div className="card-title" style={{ marginBottom: 14 }}>
         {initial.id ? `Edit ${KINDS[k].label}` : `New ${KINDS[k].label}`}
       </div>

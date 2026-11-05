@@ -50,7 +50,7 @@ export default function Expenses({ expenses, onEdit, onDelete, formatAmount, onI
 
   function SortIcon({ col }) {
     if (sortBy !== col) return <Icon name="sort" size={12} style={{ color:"var(--faint)", marginLeft:4 }} />;
-    return <Icon name={sortDir === "asc" ? "arrow-up" : "arrow-down"} size={12} style={{ color:"#0070f3", marginLeft:4 }} />;
+    return <Icon name={sortDir === "asc" ? "arrow-up" : "arrow-down"} size={12} style={{ color:"var(--accent-text)", marginLeft:4 }} />;
   }
 
   const thStyle = {
@@ -196,7 +196,7 @@ export default function Expenses({ expenses, onEdit, onDelete, formatAmount, onI
                         <div style={{ display:"flex", gap:4, justifyContent:"center", flexWrap:"wrap" }}>
                           {Array.isArray(exp.tags) && exp.tags.filter(Boolean).length > 0
                             ? exp.tags.filter(Boolean).map((tag, i) => (
-                                <span key={i} style={{ background:"var(--accent-bg)", color:"#0070f3", padding:"2px 8px", borderRadius:4, fontSize:10, fontWeight:600 }}>{tag}</span>
+                                <span key={i} style={{ background:"var(--accent-bg)", color:"var(--accent-text)", padding:"2px 8px", borderRadius:4, fontSize:10, fontWeight:600 }}>{tag}</span>
                               ))
                             : <span style={{ color:"var(--faint)", fontSize:11 }}>—</span>
                           }

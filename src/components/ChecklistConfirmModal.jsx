@@ -122,7 +122,7 @@ export default function ChecklistConfirmModal({
                 gap:          10,
                 padding:      "12px 14px",
                 background:   addAsExpense ? "var(--accent-bg)" : "var(--subtle)",
-                border:       `1.5px solid ${addAsExpense ? "#0070f3" : "var(--border)"}`,
+                border:       `1.5px solid ${addAsExpense ? "var(--accent)" : "var(--border)"}`,
                 borderRadius: 8,
                 cursor:       "pointer",
                 transition:   "all 0.15s",
@@ -135,8 +135,8 @@ export default function ChecklistConfirmModal({
                 width:         20,
                 height:        20,
                 borderRadius:  5,
-                border:        `2px solid ${addAsExpense ? "#0070f3" : "var(--faint)"}`,
-                background:    addAsExpense ? "#0070f3" : "var(--card)",
+                border:        `2px solid ${addAsExpense ? "var(--accent)" : "var(--faint)"}`,
+                background:    addAsExpense ? "var(--accent)" : "var(--card)",
                 display:       "flex",
                 alignItems:    "center",
                 justifyContent:"center",
@@ -151,7 +151,7 @@ export default function ChecklistConfirmModal({
                 <div style={{
                   fontWeight: 600,
                   fontSize:   13,
-                  color:      addAsExpense ? "#0070f3" : "var(--text)",
+                  color:      addAsExpense ? "var(--accent-text)" : "var(--text)",
                 }}>
                   Also add as an expense
                 </div>

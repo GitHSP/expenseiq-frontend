@@ -8,7 +8,7 @@ import UnitSelect from "../components/UnitSelect";
 import { moneyUnit } from "../utils/money";
 
 const C = {
-  blue:    "#0070f3",
+  blue:    "var(--accent)",
   green:   "#059669",
   red:     "#e11d48",
   amber:   "#f59e0b",
@@ -412,7 +412,7 @@ export default function FinancialPlanner({
         ].map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
             background:   activeTab===tab.id ? C.blue : "transparent",
-            color:        activeTab===tab.id ? "#fff" : C.muted,
+            color:        activeTab===tab.id ? "var(--accent-ink)" : C.muted,
             border:       "none", padding:"8px 18px", borderRadius:7,
             fontWeight:   600, fontSize:13, fontFamily:"inherit",
             cursor:       "pointer", transition:"all 0.15s", whiteSpace:"nowrap",
@@ -588,7 +588,7 @@ export default function FinancialPlanner({
         <div style={{ display:"inline-flex", gap:4, marginBottom:14, background:"var(--bg)", border:"1px solid var(--border)", borderRadius:8, padding:3 }}>
           {[["this", "This month"], ["next", "Next month"]].map(([id, label]) => (
             <button key={id} onClick={() => setPlanMonth(id)} style={{
-              background: planMonth === id ? C.blue : "transparent", color: planMonth === id ? "#fff" : C.muted,
+              background: planMonth === id ? C.blue : "transparent", color: planMonth === id ? "var(--accent-ink)" : C.muted,
               border:"none", borderRadius:6, padding:"6px 12px", fontWeight:600, fontSize:12, cursor:"pointer", fontFamily:"inherit",
             }}>{label}</button>
           ))}

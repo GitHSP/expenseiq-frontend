@@ -175,12 +175,12 @@ const styles = {
     height:         "52px",
     margin:         "0 auto 12px",
     borderRadius:   "14px",
-    background:     "#0070f3",
-    color:          "#fff",
+    background:     "linear-gradient(180deg, #f2cc6b, #c9962c)",
+    color:          "#2a1d05",
     display:        "flex",
     alignItems:     "center",
     justifyContent: "center",
-    boxShadow:      "0 6px 16px rgba(0,112,243,0.3)",
+    boxShadow:      "0 6px 16px rgba(201,150,44,0.3)",
   },
   title: {
     fontSize:      "22px",
@@ -233,7 +233,7 @@ const styles = {
   },
   btn: {
     width:         "100%",
-    background:    "#0070f3",
+    background:    "var(--accent)",
     color:         "#ffffff",
     border:        "none",
     padding:       "11px",
@@ -269,7 +269,7 @@ const styles = {
     fontWeight: 400,
   },
   link: {
-    color:          "#0070f3",
+    color:          "var(--accent-text)",
     cursor:         "pointer",
     fontWeight:     600,
     fontSize:       "12px",

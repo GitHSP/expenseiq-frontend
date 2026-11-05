@@ -74,13 +74,13 @@ export default function Profile({ user, onLogout, onLogoutEverywhere }) {
           width:         72,
           height:        72,
           borderRadius:  "50%",
-          background:    "#0070f3",
+          background:    "var(--accent)",
           display:       "flex",
           alignItems:    "center",
           justifyContent:"center",
           fontSize:      28,
           fontWeight:    800,
-          color:         "#fff",
+          color:         "var(--accent-ink)",
           flexShrink:    0,
         }}>
           {user?.username?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U"}
@@ -116,8 +116,8 @@ export default function Profile({ user, onLogout, onLogoutEverywhere }) {
             key={t.id}
             onClick={() => { setTab(t.id); setError(""); setSuccess(""); }}
             style={{
-              background:  tab === t.id ? "#0070f3" : "transparent",
-              color:       tab === t.id ? "#fff"    : "var(--muted)",
+              background:  tab === t.id ? "var(--accent)" : "transparent",
+              color:       tab === t.id ? "var(--accent-ink)"    : "var(--muted)",
               border:      "none",
               padding:     "8px 18px",
               borderRadius:7,
@@ -186,7 +186,7 @@ export default function Profile({ user, onLogout, onLogoutEverywhere }) {
           <div style={{
             background:"var(--accent-bg)", border:"1px solid var(--accent-border)",
             borderRadius:8, padding:"12px 14px", marginTop:8,
-            fontSize:12, color:"#0070f3", display:"flex", alignItems:"center", gap:8,
+            fontSize:12, color:"var(--accent-text)", display:"flex", alignItems:"center", gap:8,
           }}>
             <Icon name="lightbulb" size={14} /> Profile editing coming soon — for now your username and email are set at registration.
           </div>

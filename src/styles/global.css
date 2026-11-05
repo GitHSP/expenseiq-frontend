@@ -22,7 +22,8 @@
   --pos-bg: #ecfdf5;  --pos-border: #a7f3d0;  --pos-text: #047857;
   --neg-bg: #fff1f2;  --neg-border: #fecdd3;  --neg-text: #be123c;
   --warn-bg: #fffbeb; --warn-border: #fde68a; --warn-text: #92400e;
-  --accent-bg: #eff6ff; --accent-border: #bfdbfe; --accent-text: #1d4ed8;
+  --accent: #c9962c; --accent-hover: #b5851f; --accent-ink: #1c1405; --accent-text: #8a5a00;
+  --accent-bg: #fdf6e3; --accent-border: #f0d9a0;
 }
 
 /* ── Dark theme ── */
@@ -44,7 +45,8 @@ body.dark {
   --pos-bg: rgba(16,185,129,0.12);  --pos-border: rgba(16,185,129,0.35);  --pos-text: #34d399;
   --neg-bg: rgba(244,63,94,0.12);   --neg-border: rgba(244,63,94,0.35);   --neg-text: #fb7185;
   --warn-bg: rgba(245,158,11,0.12); --warn-border: rgba(245,158,11,0.35); --warn-text: #fbbf24;
-  --accent-bg: rgba(59,130,246,0.12); --accent-border: rgba(59,130,246,0.35); --accent-text: #60a5fa;
+  --accent: #e3b341; --accent-hover: #f0c75e; --accent-ink: #1c1405; --accent-text: #f0c75e;
+  --accent-bg: rgba(227,179,65,0.12); --accent-border: rgba(227,179,65,0.35);
 }
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -108,7 +110,7 @@ body {
 .logo-dot {
   width: 8px;
   height: 8px;
-  background: #0070f3;
+  background: var(--accent);
   border-radius: 50%;
   flex-shrink: 0;
 }
@@ -159,7 +161,7 @@ body {
 }
 .sidebar-item.active {
   background: var(--accent-bg);
-  color: #0070f3;
+  color: var(--accent-text);
   font-weight: 600;
 }
 .sidebar-item .nav-icon { font-size: 16px; flex-shrink: 0; display: inline-flex; }
@@ -189,10 +191,10 @@ body {
   letter-spacing: -0.1px;
 }
 .sidebar-btn.primary {
-  background: #0070f3;
-  color: #fff;
+  background: var(--accent);
+  color: var(--accent-ink);
 }
-.sidebar-btn.primary:hover { background: #0060df; }
+.sidebar-btn.primary:hover { background: var(--accent-hover); }
 .sidebar-btn.secondary {
   background: transparent;
   color: var(--muted2);
@@ -326,7 +328,7 @@ body {
    ───────────────────────────────────────────── */
 .tag {
   background: var(--accent-bg);
-  color: #0070f3;
+  color: var(--accent-text);
   padding: 2px 8px;
   border-radius: 4px;
   font-size: 10px;
@@ -363,7 +365,7 @@ body {
   transition: border-color 0.15s;
   cursor: pointer;
 }
-.filter-select:focus  { border-color: #0070f3; box-shadow: 0 0 0 3px rgba(0,112,243,0.1); }
+.filter-select:focus  { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 10%, transparent); }
 .filter-select option { background: var(--card); color: var(--text); }
 
 .summary-bar {
@@ -396,8 +398,8 @@ body {
 }
 .input::placeholder { color: var(--faint); font-weight: 400; }
 .input:focus {
-  border-color: #0070f3;
-  box-shadow: 0 0 0 3px rgba(0,112,243,0.1);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 10%, transparent);
 }
 select.input { cursor: pointer; }
 select.input option { background: var(--card); color: var(--text); }
@@ -418,8 +420,8 @@ select.input option { background: var(--card); color: var(--text); }
    BUTTONS
    ───────────────────────────────────────────── */
 .btn-primary {
-  background: #0070f3;
-  color: #fff;
+  background: var(--accent);
+  color: var(--accent-ink);
   border: none;
   padding: 10px 20px;
   border-radius: 8px;
@@ -430,7 +432,7 @@ select.input option { background: var(--card); color: var(--text); }
   transition: all 0.15s;
   letter-spacing: -0.1px;
 }
-.btn-primary:hover { background: #0060df; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,112,243,0.3); }
+.btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 30%, transparent); }
 
 .btn-secondary {
   background: var(--card);
@@ -448,7 +450,7 @@ select.input option { background: var(--card); color: var(--text); }
 
 .btn-ghost {
   background: transparent;
-  color: #0070f3;
+  color: var(--accent-text);
   border: none;
   padding: 6px 10px;
   border-radius: 6px;
@@ -604,8 +606,8 @@ select.input option { background: var(--card); color: var(--text); }
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    background: #0070f3;
-    color: #fff;
+    background: var(--accent);
+    color: var(--accent-ink);
     border: none;
     padding: 7px 14px;
     border-radius: 7px;
@@ -655,7 +657,7 @@ select.input option { background: var(--card); color: var(--text); }
     transition: color 0.15s;
     font-family: inherit;
   }
-  .bottom-nav-item.active { color: #0070f3; }
+  .bottom-nav-item.active { color: var(--accent-text); }
   .bottom-sheet-backdrop {
     position: fixed; inset: 0; z-index: 199; background: var(--overlay);
     display: flex; align-items: flex-end;
@@ -669,7 +671,17 @@ select.input option { background: var(--card); color: var(--text); }
     background: none; border: none; border-radius: 10px; color: var(--text);
     font: inherit; font-size: 15px; font-weight: 600; text-align: left; cursor: pointer; touch-action: manipulation;
   }
-  .bottom-sheet-item.active { color: #0070f3; background: var(--accent-bg); }
+  .bottom-sheet-item.active { color: var(--accent-text); background: var(--accent-bg); }
+  .theme-switch {
+    width: 42px; height: 24px; border-radius: 12px; background: var(--border); position: relative;
+    transition: background 0.2s; flex-shrink: 0;
+  }
+  .theme-switch > span {
+    position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%;
+    background: #fff; transition: transform 0.2s;
+  }
+  .theme-switch.on { background: var(--accent); }
+  .theme-switch.on > span { transform: translateX(18px); }
   .bnav-icon  { font-size: 19px; line-height: 1; display: inline-flex; }
   .bnav-label { font-size: 9.5px; font-weight: 600; color: inherit; letter-spacing: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -739,18 +751,18 @@ select.input option { background: var(--card); color: var(--text); }
   height: 56px;
   border-radius: 50%;
   border: none;
-  background: #0070f3;
-  color: #fff;
+  background: var(--accent);
+  color: var(--accent-ink);
   font-size: 24px;
   cursor: pointer;
-  box-shadow: 0 6px 20px rgba(0,112,243,0.35);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
   z-index: 250;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
-.assistant-fab:hover { transform: scale(1.06); box-shadow: 0 8px 24px rgba(0,112,243,0.45); }
+.assistant-fab:hover { transform: scale(1.06); box-shadow: 0 8px 24px color-mix(in srgb, var(--accent) 45%, transparent); }
 .assistant-fab.open  { font-size: 20px; }
 
 .assistant-panel {
@@ -807,13 +819,13 @@ select.input option { background: var(--card); color: var(--text); }
 }
 .month-picker button:hover:not(:disabled) { background: var(--subtle2); }
 .month-picker button:disabled { color: var(--faint); cursor: default; }
-.month-picker .month-picker-today { color: #0070f3; border-left: 1px solid var(--border); border-radius: 0 7px 7px 0; }
+.month-picker .month-picker-today { color: var(--accent-text); border-left: 1px solid var(--border); border-radius: 0 7px 7px 0; }
 .tx-scroll { max-height: 360px; overflow-y: auto; padding-right: 4px; }
 
 /* Brand mark (Glacier peak) in the sidebar and mobile top bar */
 .logo-mark {
   width: 24px; height: 24px; border-radius: 7px; flex-shrink: 0;
-  background: linear-gradient(180deg, #0a84ff, #0050b3); color: #fff;
+  background: linear-gradient(180deg, #f2cc6b, #c9962c); color: #2a1d05;
   display: inline-flex; align-items: center; justify-content: center;
 }
 
@@ -841,7 +853,7 @@ select.input option { background: var(--card); color: var(--text); }
   background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
   padding: 9px 12px 9px 32px; color: var(--text); font: inherit; font-size: 13px; outline: none;
 }
-.exp-search input:focus { border-color: #0070f3; }
+.exp-search input:focus { border-color: var(--accent); }
 .exp-results {
   display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;
   padding: 10px 16px; border-top: 1px solid var(--subtle2); background: var(--subtle);

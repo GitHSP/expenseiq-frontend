@@ -63,12 +63,15 @@ export default function App() {
   const [accountsKey, setAccountsKey] = useState(0);   // bumped after an import to refresh Accounts
 
   // ── Dark mode ─────────────────────────────
-  const [darkMode, setDarkMode] = useState(
-    () => localStorage.getItem("expenseiq_theme") !== "light"     // dark unless light was chosen
-  );
+  // Dark unless the user picks light. A new key, since every visit before dark
+  // became the default saved "light" under the old one.
+  const [darkMode, setDarkMode] = useState(() => {
+    try { return localStorage.getItem("glacier_theme") !== "light"; } catch { return true; }
+  });
 
 useEffect(() => {
-  localStorage.setItem("expenseiq_theme", darkMode ? "dark" : "light");
+  try { localStorage.setItem("glacier_theme", darkMode ? "dark" : "light"); } catch {}
+  document.documentElement.classList.remove("pre-dark");      // the app's own theme takes over
   if (darkMode) {
     document.body.classList.add("dark");
   } else {
@@ -508,6 +511,8 @@ async function handleLogout() {
           view={view}
           setView={setView}
           badges={badges}
+          darkMode={darkMode}
+          onToggleDark={() => setDarkMode(p => !p)}
         />
       </div>
 
