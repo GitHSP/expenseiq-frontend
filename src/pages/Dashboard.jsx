@@ -95,7 +95,7 @@ export default function Dashboard({
   const now = new Date();
   // Roommates' shares of rent and bills (Accounts → Rules, "pays their share
   // of my bills") aren't income: they lower what the user really spent.
-  const [sharing, setSharing] = useState({ matchers: [], billRules: 0, byMonth: {}, months: {} });
+  const [sharing, setSharing] = useState({ matchers: [], billRules: 0, byMonth: {}, months: {}, roommates: null });
   useEffect(() => {
     let live = true;
     Promise.all([accountsAPI.rules().catch(() => ({ rules: [] })), accountsAPI.summary().catch(() => ({ months: [] }))])
@@ -106,6 +106,7 @@ export default function Dashboard({
           billRules: (r.rules || []).filter(x => x.treat_as === "bill").length,
           byMonth:   Object.fromEntries((s.months || []).map(m => [m.month, parseFloat(m.shared_by_others) || 0])),
           months:    Object.fromEntries((s.months || []).map(m => [m.month, m])),
+          roommates: s.roommates || null,
         });
       });
     return () => { live = false; };
@@ -311,6 +312,8 @@ export default function Dashboard({
       </div>
 
       {/* ── Shared bills: rent and bills paid in full, roommates paying back ── */}
+      {sharing.roommates && <RoommateBalances data={sharing.roommates} fmt={fmt} />}
+
       {(sharedTotal > 0 || billsTotal > 0) && (
         <div className="card" style={{ marginBottom:16 }}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", flexWrap:"wrap", gap:6, marginBottom:12 }}>
@@ -696,5 +699,41 @@ export default function Dashboard({
         />
       </div>
     </>
+  );
+}
+
+// Each roommate's running balance since the first shared bill on the
+// statements: a late e-transfer just evens out in the total.
+function RoommateBalances({ data, fmt }) {
+  const month = ym => new Date(`${ym}-15T12:00:00`).toLocaleDateString("en-US", { month: "short", year: "numeric" });
+  const latest = new Date(`${data.latest}-15T12:00:00`).toLocaleDateString("en-US", { month: "short" });
+  const each = parseFloat(data.latest_each) || 0;
+  return (
+    <div className="card" style={{ marginBottom: 16 }}>
+      <div className="card-title" style={{ marginBottom: 2 }}>Roommates' running balance</div>
+      <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 8 }}>
+        Since {month(data.since)}: each owes an equal part of the shared bills beyond your share ({fmt(each)} for {latest}).
+      </div>
+      {data.people.map(p => {
+        const behind = parseFloat(p.balance) || 0;
+        const status = behind <= 0.5
+          ? (behind < -0.5 ? { text: `${fmt(-behind)} ahead`, color: "#059669" } : { text: "Up to date", color: "#059669" })
+          : behind <= each + 0.5
+            ? { text: `${latest} still to come`, color: "#d97706" }
+            : { text: `${fmt(behind)} behind`, color: "#dc2626" };
+        return (
+          <div key={p.name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "10px 0", borderTop: "1px solid var(--subtle2)" }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text)" }}>{p.name}</div>
+              <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 1 }}>Paid {fmt(p.paid)} of {fmt(p.owed)}</div>
+            </div>
+            <strong style={{ fontSize: 13, color: status.color, whiteSpace: "nowrap" }}>{status.text}</strong>
+          </div>
+        );
+      })}
+      <div style={{ fontSize: 11, color: "var(--faint2)", marginTop: 8 }}>
+        A roommate who keeps back your share of a bill they pay (like WiFi) shows a small, steady difference here.
+      </div>
+    </div>
   );
 }
