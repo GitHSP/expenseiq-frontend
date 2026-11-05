@@ -482,21 +482,11 @@ export default function Dashboard({
                 <div style={{ fontSize:11, color:"var(--muted)", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:12 }}>
                   All Transactions
                 </div>
-                {thisMonthExp.length === 0 ? (
-                  <div style={{ textAlign:"center", color:"var(--faint)", padding:"20px 0", fontSize:13 }}>No expenses in {MONTHS[currentMonth]}</div>
-                ) : thisMonthExp.map(exp => {
-                  const cat = CATEGORIES.find(c => c.name === exp.category);
-                  return (
-                    <div key={exp.id} style={rowStyle}>
-                      <CategoryIcon cat={cat} fallback={"package"} />
-                      <div style={{ flex:1, minWidth:0 }}>
-                        <div style={{ fontWeight:600, fontSize:13, color:"var(--text)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{exp.title}</div>
-                        <div style={{ fontSize:11, color:"var(--faint2)", marginTop:1 }}>{exp.category} · {exp.date}</div>
-                      </div>
-                      <div style={{ fontWeight:700, fontSize:14, color:"var(--text)" }}>-{fmt(exp.amount)}</div>
-                    </div>
-                  );
-                })}
+                <TransactionList
+                  items={[...thisMonthExp].sort((x, y) => String(y.date).localeCompare(String(x.date)))}
+                  kind="expense" fmt={fmt} onEdit={onEdit} onDelete={onDelete}
+                  empty={`No expenses in ${MONTHS[currentMonth]}`}
+                />
               </div>
             </>
           )}
@@ -509,9 +499,20 @@ export default function Dashboard({
                   <div style={{ fontWeight:800, fontSize:16, color:"var(--text)", letterSpacing:"-0.4px" }}>This Month's Income</div>
                   <div style={{ fontSize:12, color:"var(--muted)", marginTop:2 }}>{thisMonthInc.length} entries · Total {fmt(totalIncome)}</div>
                 </div>
-                <button className="btn-primary" style={{ padding:"7px 14px", fontSize:12 }} onClick={onAddIncome}>
-                  + Add Income
-                </button>
+                <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                  {onBulkDeleteIncome && thisMonthInc.length > 1 && (
+                    <button className="btn-ghost" style={{ color:"var(--neg-text)", fontSize:12, display:"inline-flex", alignItems:"center", gap:4 }}
+                      onClick={() => window.confirm(`Delete all ${thisMonthInc.length} income entries from ${monthLabel}, totalling ${fmt(totalIncome)}?
+
+This can't be undone.`)
+                        && onBulkDeleteIncome(thisMonthInc.map(i => i.id), monthLabel)}>
+                      <Icon name="trash" size={12} /> Delete all
+                    </button>
+                  )}
+                  <button className="btn-primary" style={{ padding:"7px 14px", fontSize:12 }} onClick={onAddIncome}>
+                    + Add Income
+                  </button>
+                </div>
               </div>
 
               {/* By source */}
@@ -540,21 +541,11 @@ export default function Dashboard({
               {/* Transactions */}
               <div style={{ padding:"16px 20px" }}>
                 <div style={{ fontSize:11, color:"var(--muted)", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:12 }}>All Transactions</div>
-                {thisMonthInc.length === 0 ? (
-                  <div style={{ textAlign:"center", color:"var(--faint)", padding:"20px 0", fontSize:13 }}>No income this month</div>
-                ) : thisMonthInc.map(inc => {
-                  const cat = INCOME_CATEGORIES.find(c => c.name === inc.category);
-                  return (
-                    <div key={inc.id} style={rowStyle}>
-                      <CategoryIcon cat={cat} fallback={"coins"} />
-                      <div style={{ flex:1, minWidth:0 }}>
-                        <div style={{ fontWeight:600, fontSize:13, color:"var(--text)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{inc.title}</div>
-                        <div style={{ fontSize:11, color:"var(--faint2)", marginTop:1 }}>{inc.category} · {inc.date}</div>
-                      </div>
-                      <div style={{ fontWeight:700, fontSize:14, color:"#059669" }}>+{fmt(inc.amount, inc)}</div>
-                    </div>
-                  );
-                })}
+                <TransactionList
+                  items={[...thisMonthInc].sort((x, y) => String(y.date).localeCompare(String(x.date)))}
+                  kind="income" fmt={fmt} onEdit={onEditIncome} onDelete={onDeleteIncome}
+                  empty={`No income in ${MONTHS[currentMonth]}`}
+                />
                 {sharedInc.length > 0 && (
                   <>
                     <div style={{ fontSize:11, color:"var(--muted)", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px", margin:"16px 0 8px" }}>
@@ -708,47 +699,6 @@ export default function Dashboard({
         </div>
       </div>
 
-      {/* ── Income & expenses for the month (scrollable, editable) ── */}
-      <div className="card">
-        <div className="card-header">
-          <span className="card-title">Income · {monthLabel}</span>
-          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-            <span style={{ fontSize:13, fontWeight:700, color:"#059669" }}>+{fmt(totalIncome)}</span>
-            {onBulkDeleteIncome && thisMonthInc.length > 1 && (
-              <button className="btn-ghost" style={{ color:"#e11d48", fontSize:12, display:"inline-flex", alignItems:"center", gap:4 }}
-                onClick={() => window.confirm(`Delete all ${thisMonthInc.length} income entries from ${monthLabel}, totalling ${fmt(totalIncome)}?\n\nThis can't be undone.`)
-                  && onBulkDeleteIncome(thisMonthInc.map(i => i.id), monthLabel)}>
-                <Icon name="trash" size={12} /> Delete all
-              </button>
-            )}
-            <button className="btn-primary" style={{ padding:"7px 14px", fontSize:12 }} onClick={onAddIncome}>
-              + Add Income
-            </button>
-          </div>
-        </div>
-        <TransactionList
-          items={[...thisMonthInc].sort((a, b) => b.date.localeCompare(a.date))}
-          kind="income" fmt={fmt}
-          onEdit={onEditIncome} onDelete={onDeleteIncome}
-          empty={`No income in ${MONTHS[currentMonth]}`}
-        />
-      </div>
-
-      <div className="card">
-        <div className="card-header">
-          <span className="card-title">Expenses · {monthLabel}</span>
-          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-            <span style={{ fontSize:13, fontWeight:700, color:"var(--text)" }}>-{fmt(totalExpenses)}</span>
-            <button className="btn-ghost" onClick={onViewAll} style={{ display:"inline-flex", alignItems:"center", gap:4 }}>View all <Icon name="arrow-right" size={13} /></button>
-          </div>
-        </div>
-        <TransactionList
-          items={[...thisMonthExp].sort((a, b) => b.date.localeCompare(a.date))}
-          kind="expense" fmt={fmt}
-          onEdit={onEdit} onDelete={onDelete}
-          empty={`No expenses in ${MONTHS[currentMonth]}`}
-        />
-      </div>
       {/* ── Exchange rates ── */}
       {refreshRates && (
         <ExchangeRatesWidget

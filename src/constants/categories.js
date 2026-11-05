@@ -16,6 +16,12 @@ export const CATEGORIES = [
   { name: "Medical & Health",       icon: "hospital"      , color: "#10b981" },
   { name: "Education & Books",      icon: "graduation-cap", color: "#3b82f6" },
   { name: "Abroad Expense",         icon: "plane"         , color: "#8b5cf6" },
+  { name: "Drinks & Bars",          icon: "wine"          , color: "#b45309" },
+  { name: "Smoke & Vape",           icon: "cigarette"     , color: "#78716c" },
+  { name: "Transfers to People",    icon: "send"          , color: "#0ea5e9" },
+  { name: "Loan & BNPL Payments",   icon: "hand-coins"    , color: "#be123c" },
+  { name: "Household",              icon: "washing-machine", color: "#14b8a6" },
+  { name: "Immigration",            icon: "file-text"     , color: "#64748b" },
   { name: "Other",                  icon: "package"       , color: "#6b7280" },
 ];
 
