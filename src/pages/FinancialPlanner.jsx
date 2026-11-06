@@ -594,21 +594,24 @@ export default function FinancialPlanner({
 
                 {debt.statement_balance !== null && debt.statement_balance !== undefined && (() => {
                   const stmt = parseFloat(debt.statement_balance), mine = parseFloat(debt.current_balance);
-                  const gap = stmt - mine;
+                  const paidDown = stmt - mine;                       // more than 0: paid off since the statement
                   const when = new Date(`${debt.statement_date}T12:00:00`).toLocaleDateString("en-US", { month:"short", day:"numeric" });
+                  const good = paidDown >= 1;
                   return (
-                    <div style={{ marginTop:12, padding:"10px 12px", borderRadius:8, background: gap > 5 ? "var(--warn-bg)" : "var(--subtle)",
-                                  border:`1px solid ${gap > 5 ? "var(--warn-border)" : "var(--subtle2)"}`, display:"flex", alignItems:"center",
+                    <div style={{ marginTop:12, padding:"10px 12px", borderRadius:8, background: good ? "var(--pos-bg)" : "var(--subtle)",
+                                  border:`1px solid ${good ? "var(--pos-border)" : "var(--subtle2)"}`, display:"flex", alignItems:"center",
                                   justifyContent:"space-between", gap:10, flexWrap:"wrap" }}>
                       <div style={{ fontSize:12, color:"var(--muted)", lineHeight:1.5 }}>
+                        {good && (
+                          <span style={{ display:"block", fontSize:13, fontWeight:700, color:"var(--pos-text)" }}>
+                            Good job! {fmt(paidDown)} paid off since the {when} statement
+                          </span>
+                        )}
                         Last statement ({when}): <strong style={{ color:"var(--text)" }}>{fmt(stmt)}</strong>
-                        {Math.abs(gap) >= 1
-                          ? <span style={{ display:"block", color: gap > 5 ? "var(--warn-text)" : "var(--muted)" }}>
-                              {gap > 0 ? `Statement is ${fmt(gap)} higher: purchases you haven't counted?` : `${fmt(-gap)} paid since, by your Planner`}
-                            </span>
-                          : <span style={{ display:"block" }}>Same as your Planner</span>}
+                        {!good && Math.abs(paidDown) >= 1 && <span style={{ display:"block" }}>Your Planner is {fmt(-paidDown)} higher</span>}
+                        {Math.abs(paidDown) < 1 && <span style={{ display:"block" }}>Same as your Planner</span>}
                       </div>
-                      {Math.abs(gap) >= 1 && (
+                      {Math.abs(paidDown) >= 1 && (
                         <button className="btn-secondary" style={{ padding:"6px 12px", fontSize:12 }}
                           onClick={() => window.confirm(`Set ${debt.name} to ${fmt(stmt)}, the balance on the ${when} statement?`)
                             && updateDebt(debt.id, { current_balance: stmt }).then(() => showMsg(`${debt.name} set to the statement balance`)).catch(e => showMsg(e.message || "Couldn't update"))}>
