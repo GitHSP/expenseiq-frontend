@@ -15,8 +15,11 @@ const CATEGORY_MAP = {
 };
 
 export default function ChecklistConfirmModal({
-  item, debt, onConfirm, onCancel, fmt = (v) => `$${(parseFloat(v) || 0).toFixed(2)}`,
+  item, debt, onConfirm, onCancel, fmt = (v) => `$${(parseFloat(v) || 0).toFixed(2)}`, currency = "CAD",
 }) {
+  // A card or loan payment: the planned amount, or what was really paid (extra on a card).
+  const [paidOther, setPaidOther] = useState(false);
+  const [otherText, setOtherText] = useState("");
   const [addAsExpense,     setAddAsExpense]     = useState(false);
   const [expenseCategory,  setExpenseCategory]  = useState(
     CATEGORY_MAP[item?.category] || "Bills & Utilities"
@@ -26,7 +29,15 @@ export default function ChecklistConfirmModal({
 
   const isDebtPayment = ["debt_min", "debt_extra"].includes(item.category);
   const isSavings     = item.category === "savings";
-  const amount        = parseFloat(item.amount) || 0;
+  const planned       = parseFloat(item.amount) || 0;
+  const typed         = parseFloat(otherText);
+  const other         = isDebtPayment && paidOther;          // typed in the app's currency
+  const amount        = planned;
+  const choice = on => ({
+    flex: "1 1 140px", minHeight: 52, padding: "8px 12px", borderRadius: 10, textAlign: "left", cursor: "pointer",
+    fontFamily: "inherit", color: "var(--text)", background: on ? "var(--accent-bg)" : "var(--subtle)",
+    border: `1.5px solid ${on ? "var(--accent)" : "var(--border)"}`, touchAction: "manipulation",
+  });
 
   return (
     <div className="modal-overlay" onClick={onCancel}>
@@ -53,8 +64,31 @@ export default function ChecklistConfirmModal({
           </div>
         </div>
 
+        {/* Card or loan: minimum or another amount */}
+        {isDebtPayment && (
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "var(--muted)", marginBottom: 8 }}>How much did you pay?</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <button type="button" style={choice(!paidOther)} onClick={() => setPaidOther(false)} aria-pressed={!paidOther}>
+                <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}>{item.category === "debt_extra" ? "The planned amount" : "The minimum"}</div>
+                <div style={{ fontSize: 16, fontWeight: 800 }}>{fmt(planned, item)}</div>
+              </button>
+              <button type="button" style={choice(paidOther)} onClick={() => setPaidOther(true)} aria-pressed={paidOther}>
+                <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}>A different amount</div>
+                <div style={{ fontSize: 16, fontWeight: 800 }}>{paidOther && typed > 0 ? `${typed}` : "Enter it"}</div>
+              </button>
+            </div>
+            {paidOther && (
+              <input type="number" min="0" step="0.01" inputMode="decimal" autoFocus value={otherText}
+                onChange={e => setOtherText(e.target.value)} placeholder={`Amount paid (${currency})`} aria-label="Amount paid"
+                style={{ width: "100%", marginTop: 10, background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8,
+                         padding: "11px 12px", color: "var(--text)", fontSize: 15, fontFamily: "inherit", boxSizing: "border-box" }} />
+            )}
+          </div>
+        )}
+
         {/* Amount */}
-        {amount > 0 && (
+        {amount > 0 && !isDebtPayment && (
           <div style={{
             background:    "var(--bg)",
             borderRadius:  10,
@@ -83,15 +117,15 @@ export default function ChecklistConfirmModal({
             padding:      "10px 14px",
             marginBottom: 16,
             fontSize:     12,
-            color:        "#e11d48",
+            color:        "var(--neg-text)",
             fontWeight:   500,
           }}>
-            <Icon name="credit-card" size={13} style={{ marginRight:6, verticalAlign:"-2px" }} />This will reduce <strong>{debt.name}</strong> balance by{" "}
-            <strong>{fmt(amount, item)}</strong>
-            {" "}<Icon name="arrow-right" size={12} style={{ verticalAlign:"-2px" }} /> New balance:{" "}
-            <strong>
-              {fmt(Math.max(0, parseFloat(debt.current_balance) - amount))}
-            </strong>
+            <Icon name="credit-card" size={13} style={{ marginRight:6, verticalAlign:"-2px" }} />This will lower <strong>{debt.name}</strong> by{" "}
+            <strong>{other ? (typed > 0 ? `${typed} ${currency}` : "the amount you enter") : fmt(planned, item)}</strong>
+            {!other && <>
+              {" "}<Icon name="arrow-right" size={12} style={{ verticalAlign:"-2px" }} /> New balance:{" "}
+              <strong>{fmt(Math.max(0, parseFloat(debt.current_balance) - planned))}</strong>
+            </>}
           </div>
         )}
 
@@ -205,11 +239,13 @@ export default function ChecklistConfirmModal({
         {/* Buttons */}
         <div style={{ display:"flex", gap:10 }}>
           <button
-            onClick={() => onConfirm({ addAsExpense, expenseCategory })}
+            disabled={other && !(typed > 0)}
+            onClick={() => onConfirm({ addAsExpense, expenseCategory, paid: other ? typed : null })}
             style={{
               flex:         1,
-              background:   "#059669",
-              color:        "#fff",
+              background:   "var(--accent)",
+              color:        "var(--accent-ink)",
+              opacity:      other && !(typed > 0) ? 0.5 : 1,
               border:       "none",
               padding:      "12px",
               borderRadius: 8,

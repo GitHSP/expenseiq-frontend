@@ -239,17 +239,19 @@ export default function FinancialPlanner({
     setConfirmItem(item);
   }
 
-  async function handleConfirm({ addAsExpense, expenseCategory }) {
+  async function handleConfirm({ addAsExpense, expenseCategory, paid }) {
     const item = confirmItem;
     setConfirmItem(null);
 
     try {
-      const result = await toggleChecklistItem(item.id);
+      // A different amount is typed in the app's currency; the server works in CAD.
+      const paidCad = paid ? money.toCAD(paid) : null;
+      const result = await toggleChecklistItem(item.id, paidCad);
 
-      if (addAsExpense && item.amount && onAddExpense) {
+      if (addAsExpense && (paidCad || item.amount) && onAddExpense) {
         await onAddExpense({
           title:    stripEmoji(item.label),
-          amount:   parseFloat(item.amount),
+          amount:   paidCad || parseFloat(item.amount),
           category: expenseCategory,
           date:     new Date().toISOString().split("T")[0],
           tags:     "planner,checklist",
@@ -766,6 +768,9 @@ export default function FinancialPlanner({
                               <Icon name={CATEGORY_ICONS[item.category]} size={10} />
                               {CATEGORY_LABELS[item.category]}
                             </span>
+                            {item.is_completed && item.paid_amount && parseFloat(item.paid_amount) !== parseFloat(item.amount) && (
+                              <span style={{ fontSize:10, fontWeight:700, color:"var(--pos-text)" }}>Paid {fmt(item.paid_amount)}</span>
+                            )}
                             {item.due_day && !item.is_completed && (
                               <span style={{ fontSize:10, fontWeight:600, color:item.due_day<today?"#e11d48":item.due_day===today?"#d97706":C.muted }}>
                                 Day {item.due_day}
@@ -913,6 +918,7 @@ export default function FinancialPlanner({
           item={confirmItem}
           debt={debts.find(d => d.id === confirmItem.linked_debt)}
           fmt={fmt}
+          currency={currency}
           onConfirm={handleConfirm}
           onCancel={() => setConfirmItem(null)}
         />

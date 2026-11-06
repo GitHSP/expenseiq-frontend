@@ -547,9 +547,11 @@ export const financialPlannerAPI = {
     });
     return handleResponse(res);
   },
-  toggleChecklist: async (id) => {
+  // amount (CAD): what was actually paid, when it isn't the planned amount.
+  toggleChecklist: async (id, amount) => {
     const res = await authFetch(`${FP_URL}/checklist/${id}/toggle/`, {
       method: "POST", headers: getHeaders(true),
+      ...(amount ? { body: JSON.stringify({ amount }) } : {}),
     });
     return handleResponse(res);
   },

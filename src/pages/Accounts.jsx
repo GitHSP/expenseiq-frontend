@@ -201,7 +201,8 @@ function AccountCard({ account, accounts, months, fmt, onOpen, onChanged, onEntr
             <div style={{ fontWeight: 700, fontSize: 15, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
               {account.name}
               <span style={{ fontSize: 11, fontWeight: 600, color: "var(--muted)" }}>{k.label}</span>
-              {missing.length > 0 && <Badge color="#d97706" title="No statement uploaded for these dates">
+              {account.closed && <Badge color="#64748b" title="Not in use: no upload reminders, and its balance isn't counted">Not in use</Badge>}
+              {missing.length > 0 && !account.closed && <Badge color="#d97706" title="No statement uploaded for these dates">
                 {missing.length === 1
                   ? `Statement missing: ${rangeLabel(missing[0].start, missing[0].end)}`
                   : `${missing.length} statements missing`}</Badge>}
@@ -237,6 +238,11 @@ Its ${statements.length} statement${statements.length === 1 ? "" : "s"} and all 
               {others.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
             </select>
           )}
+          <button className="btn-secondary" disabled={busy} style={{ padding: "6px 10px", fontSize: 12 }}
+            title={account.closed ? "Count this account again" : "You've stopped using it: no upload reminders, and its old balance isn't counted"}
+            onClick={() => run(async () => { await accountsAPI.update(account.id, { closed: !account.closed }); onChanged(); })}>
+            {account.closed ? "Using it again" : "Not using it"}
+          </button>
           {!editing && (
             <button className="btn-ghost" style={{ padding: "6px 8px" }} aria-label={`Rename ${account.name}`} onClick={() => setEditing(true)}>
               <Icon name="pencil" size={14} />
