@@ -300,6 +300,14 @@ export const statementsAPI = {
 // ─────────────────────────────────────────────
 // ACCOUNTS (built from uploaded statements)
 // ─────────────────────────────────────────────
+export const categoriesAPI = {
+  list: async () => handleResponse(await authFetch(`${BASE_URL}/categories/`, { headers: getHeaders(true) })),
+  // {action: "add", name, icon, color} · {action: "remove", name, move_to} · {action: "show", name}
+  change: async (body) => handleResponse(await authFetch(`${BASE_URL}/categories/`, {
+    method: "POST", headers: getHeaders(true), body: JSON.stringify(body),
+  })),
+};
+
 export const accountsAPI = {
   list: async () => handleResponse(await authFetch(`${BASE_URL}/statements/accounts/`, { headers: getHeaders(true) })),
   update: async (id, changes) => handleResponse(await authFetch(`${BASE_URL}/statements/accounts/${id}/`, {

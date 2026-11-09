@@ -33,6 +33,8 @@ import Profile           from "./pages/Profile";
 
 // Utils
 import { exportToCSV } from "./utils/helpers";
+import { applyUserCategories } from "./constants/categories";
+import { categoriesAPI } from "./utils/api";
 
 import FinancialPlanner   from "./pages/FinancialPlanner";
 import AssistantWidget    from "./components/AssistantWidget";
@@ -61,6 +63,14 @@ export default function App() {
     try { sessionStorage.setItem("expenseiq_view", view); } catch {}
   }, [view]);
   const [accountsKey, setAccountsKey] = useState(0);   // bumped after an import to refresh Accounts
+  // The user's categories (hidden ones left out, their own added) for every picker and chart.
+  const [, setCategoriesVersion] = useState(0);
+  const applyCategories = rows => { applyUserCategories(rows); setCategoriesVersion(v => v + 1); };
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    categoriesAPI.list().then(d => applyCategories(d.categories)).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoggedIn]);
 
   // ── Dark mode ─────────────────────────────
   // Dark unless the user picks light. A new key, since every visit before dark
@@ -383,6 +393,7 @@ async function handleLogout() {
             onDelete={handleDelete}
             formatAmount={formatAmount}
             onImport={() => setShowImport(true)}
+            onCategoriesChanged={rows => { applyCategories(rows); reloadExpenses({ silent: true }); }}
             onBulkDelete={async (ids, label) => {
               try {
                 const { deleted } = await bulkDeleteExpenses(ids, label);

@@ -1,5 +1,6 @@
 import { useState }   from "react";
 import { CATEGORIES } from "../constants/categories";
+import CategoryManager from "../components/CategoryManager";
 import { isSameMonth } from "../utils/helpers";
 import Icon from "../components/Icon";
 
@@ -8,7 +9,8 @@ const MONTHS = [
   "July","August","September","October","November","December"
 ];
 
-export default function Expenses({ expenses, onEdit, onDelete, formatAmount, onImport, onBulkDelete }) {
+export default function Expenses({ expenses, onEdit, onDelete, formatAmount, onImport, onBulkDelete, onCategoriesChanged }) {
+  const [managing, setManaging] = useState(false);
   const [filterCat,   setFilterCat]   = useState("All");
   const [filterMonth, setFilterMonth] = useState("All");
   const [sortBy,      setSortBy]      = useState("date");
@@ -86,12 +88,19 @@ export default function Expenses({ expenses, onEdit, onDelete, formatAmount, onI
             {expenses.length} transactions in total
           </div>
         </div>
-        {onImport && (
-          <button className="btn-secondary page-head-action" onClick={onImport}>
-            <Icon name="download" size={14} /> Import statement
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button className="btn-secondary page-head-action" onClick={() => setManaging(m => !m)} aria-expanded={managing}>
+            <Icon name="list-checks" size={14} /> Categories
           </button>
-        )}
+          {onImport && (
+            <button className="btn-secondary page-head-action" onClick={onImport}>
+              <Icon name="download" size={14} /> Import statement
+            </button>
+          )}
+        </div>
       </div>
+
+      {managing && <CategoryManager onChanged={onCategoriesChanged} />}
 
       {/* ── Filters ── */}
       <div className="exp-filters">

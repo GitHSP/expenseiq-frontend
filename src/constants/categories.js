@@ -1,4 +1,4 @@
-export const CATEGORIES = [
+export const BUILTIN_CATEGORIES = [
   { name: "Food & Dining",          icon: "utensils"      , color: "#e11d48" },
   { name: "Transport",              icon: "car"           , color: "#0070f3" },
   { name: "Shopping",               icon: "shopping-bag"  , color: "#7c3aed" },
@@ -24,6 +24,19 @@ export const CATEGORIES = [
   { name: "Immigration",            icon: "file-text"     , color: "#64748b" },
   { name: "Other",                  icon: "package"       , color: "#6b7280" },
 ];
+
+// The categories the app offers: the built-in ones the user hasn't hidden, plus
+// their own. Filled in place from the server (applyUserCategories), so every
+// screen that imports it sees the same list.
+export const CATEGORIES = [...BUILTIN_CATEGORIES];
+
+export function applyUserCategories(rows) {
+  const builtin = Object.fromEntries(BUILTIN_CATEGORIES.map(c => [c.name, c]));
+  const visible = (rows || []).filter(r => !r.hidden)
+    .map(r => (r.builtin ? builtin[r.name] : { name: r.name, icon: r.icon || "package", color: r.color || "#6b7280" }))
+    .filter(Boolean);
+  if (visible.length) CATEGORIES.splice(0, CATEGORIES.length, ...visible);
+}
 
 export const MONTHS = [
   "Jan","Feb","Mar","Apr","May","Jun",
