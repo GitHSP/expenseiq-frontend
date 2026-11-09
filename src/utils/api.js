@@ -444,6 +444,22 @@ export const financialPlannerAPI = {
     });
     return handleResponse(res);
   },
+  getGoals: async () => {
+    const res = await authFetch(`${FP_URL}/goals/`, { method: "GET", headers: getHeaders(true) });
+    return handleResponse(res);
+  },
+  addGoal: async (data) => {
+    const res = await authFetch(`${FP_URL}/goals/`, { method: "POST", headers: getHeaders(true), body: JSON.stringify(data) });
+    return handleResponse(res);
+  },
+  updateGoal: async (id, data) => {
+    const res = await authFetch(`${FP_URL}/goals/${id}/`, { method: "PATCH", headers: getHeaders(true), body: JSON.stringify(data) });
+    return handleResponse(res);
+  },
+  deleteGoal: async (id) => {
+    const res = await authFetch(`${FP_URL}/goals/${id}/`, { method: "DELETE", headers: getHeaders(true) });
+    return res.ok ? null : handleResponse(res);
+  },
   getDebtHistory: async () => {
     const res = await authFetch(`${FP_URL}/debts/history/`, { method: "GET", headers: getHeaders(true) });
     return handleResponse(res);

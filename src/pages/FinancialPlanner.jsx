@@ -4,6 +4,7 @@ import RecurringTab                from "../components/RecurringTab";
 import NextMonthPlan               from "../components/NextMonthPlan";
 import CashFlow                    from "../components/CashFlow";
 import SpendingLimits              from "../components/SpendingLimits";
+import SavingsGoals                from "../components/SavingsGoals";
 import DebtTrend                   from "../components/DebtTrend";
 import { financialPlannerAPI }     from "../utils/api";
 import Icon, { IconLabel, stripEmoji } from "../components/Icon";
@@ -422,7 +423,7 @@ export default function FinancialPlanner({
           { id:"checklist", label:"Checklist", icon:"list-checks" },
           { id:"cashflow",  label:"Cash flow", icon:"calendar"    },
           { id:"limits",    label:"Limits",    icon:"target"      },
-          { id:"fund",      label:"Fund",      icon:"shield"      },
+          { id:"fund",      label:"Savings",   icon:"shield"      },
         ].map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
             background:   activeTab===tab.id ? C.blue : "transparent",
@@ -943,6 +944,10 @@ export default function FinancialPlanner({
       )}
 
       {/* ── Confirm Modal ── */}
+      {activeTab === "fund" && (
+        <SavingsGoals fmt={v => fmt(Math.round(parseFloat(v) || 0)).replace(/\.00$/, "")} currency={currency} getRate={getRate} />
+      )}
+
       {confirmItem && (
         <ChecklistConfirmModal
           item={confirmItem}

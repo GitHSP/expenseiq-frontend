@@ -19,6 +19,12 @@ export default function ComingUp({ fmt, refreshKey, onOpenAccounts, onOpenPlanne
       sub: `${d.days === 0 ? "Today" : d.days === 1 ? "Tomorrow" : `In ${d.days} days`} · ${new Date(`${d.date}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric" })}${d.auto ? " · automatic" : ""}`,
       value: fmt(d.amount), tone: d.days <= 1 ? "var(--warn-text)" : undefined, onClick: onOpenPlanner,
     })),
+    // The balance on the statement date is what the credit bureaus see.
+    ...(data.closing || []).map(c => ({
+      key: `close-${c.label}`, icon: "credit-card", label: `Pay ${fmt(c.to_target)} on ${c.label} before ${c.days === 0 ? "today's" : c.days === 1 ? "tomorrow's" : "its"} statement`,
+      sub: `Closes ${new Date(`${c.date}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric" })} · ${c.percent}% used · gets it under 30% for your credit score`,
+      tone: "var(--warn-text)", onClick: onOpenPlanner,
+    })),
     // Several cards near their limit, or several accounts behind on statements: one line each.
     ...(data.limits.length === 1 ? [{
       key: "limit", icon: "credit-card", label: `${data.limits[0].label} is near its limit`,
@@ -31,6 +37,12 @@ export default function ComingUp({ fmt, refreshKey, onOpenAccounts, onOpenPlanne
       key: `budget-${b.label}`, icon: "target", label: `${b.label} limit`,
       sub: `${fmt(b.spent)} of ${fmt(b.limit)} spent`, value: `${Math.round(b.percent)}%`,
       tone: b.percent >= 100 ? "var(--neg-text)" : "var(--warn-text)", onClick: onOpenPlanner,
+    })),
+    ...(data.changes || []).map(c => ({
+      key: `change-${c.label}`, icon: c.kind === "up" ? "arrow-up" : "repeat",
+      label: c.kind === "up" ? `${c.label} went up` : `New regular charge: ${c.label}`,
+      sub: c.kind === "up" ? `Was ${fmt(c.usual)}, now ${fmt(c.amount)}` : `${fmt(c.amount)} ${c.frequency || ""}`.trim(),
+      value: fmt(c.amount), tone: c.kind === "up" ? "var(--neg-text)" : undefined, onClick: onOpenAccounts,
     })),
     ...(data.uploads.length ? [{
       key: "uploads", icon: "file-text",
