@@ -3,11 +3,16 @@ import { useAssistant } from "../hooks/useAssistant";
 import Icon, { stripEmoji } from "../components/Icon";
 import { assistantAPI } from "../utils/api";
 
+// Answered instantly from your own figures (no AI needed): see backend assistant/quick.py.
 const SUGGESTIONS = [
-  "How did my last month go?",
-  "Which card should I pay first, and how much?",
-  "How much did I spend on coffee, and on which card?",
-  "Keep my dining under $300 a month",
+  "When am I debt-free?",
+  "What's due this week?",
+  "How much did I spend last month?",
+  "Which card should get the extra?",
+  "How much did I spend on coffee?",
+  "What's my credit utilization?",
+  "How are my savings goals?",
+  "How much interest am I paying?",
 ];
 
 const ALERT_COLORS = { danger: "#e11d48", warning: "#d97706", info: "var(--accent)" };
