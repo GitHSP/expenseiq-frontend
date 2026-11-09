@@ -55,11 +55,15 @@ export default function YourPlan({ formatAmount, getRate = c => (c === "CAD" ? 1
   const [hourlyText, setHourlyText] = useState("");
   const [chosen, setChosen] = useState(null);       // the scenario shown
   const [debtIds, setDebtIds] = useState(() => load("glacier_plan_debts") || "");   // "" = all
+  // What if: typed in the app's currency; extra hours use the take-home hourly rate.
+  const [whatif, setWhatif] = useState({ hours: "", cut: "", lump: "" });
   const [plan, setPlan] = useState(null);
   const [updating, setUpdating] = useState(false);
   const [worth, setWorth] = useState(null);
   const [error, setError] = useState("");
 
+  const whatifExtraCad = Math.max(num(whatif.hours) * num(hourlyCad) * 52 / 12 + num(whatif.cut) / rate, 0);
+  const whatifLumpCad = Math.max(num(whatif.lump) / rate, 0);
   const typed = cad => (cad === null || cad === "" ? "" : String(Math.round(num(cad) * rate * 100) / 100));
   useEffect(() => {
     setBudgetText(typed(budgetCad));
@@ -80,12 +84,13 @@ export default function YourPlan({ formatAmount, getRate = c => (c === "CAD" ? 1
     let live = true;
     setUpdating(true);
     const timer = setTimeout(() => {
-      financialPlannerAPI.getOutlook({ targetMonths: years * 12, budget: budgetCad, debts: debtIds })
+      financialPlannerAPI.getOutlook({ targetMonths: years * 12, budget: budgetCad, debts: debtIds,
+                                       whatifExtra: whatifExtraCad, whatifLump: whatifLumpCad })
         .then(p => { if (live) { setPlan(p); setError(""); setUpdating(false); } })
         .catch(() => { if (live) { setError("Couldn't load your plan. Try again in a moment."); setUpdating(false); } });
     }, 250);
     return () => { live = false; clearTimeout(timer); };
-  }, [years, budgetCad, debtIds]);
+  }, [years, budgetCad, debtIds, whatifExtraCad, whatifLumpCad]);
 
   useEffect(() => {
     let live = true;
@@ -174,6 +179,9 @@ export default function YourPlan({ formatAmount, getRate = c => (c === "CAD" ? 1
               </div>
             )}
           </div>
+
+          <WhatIf plan={plan} whatif={whatif} setWhatif={setWhatif} hourlyCad={hourlyCad} currency={currency}
+            fmt={fmt} updating={updating} />
 
           {/* Each debt */}
           <div className="card" style={{ ...sectionGap, opacity: updating ? 0.6 : 1, transition: "opacity 0.15s" }}>
@@ -549,3 +557,55 @@ function Assets({ worth, maturities, fmt, getRate }) {
     </>
   );
 }
+
+
+// What if I worked more, spent less, or paid a lump sum: the new debt-free date
+// beside the one for the plan you're looking at.
+function WhatIf({ plan, whatif, setWhatif, hourlyCad, currency, fmt, updating }) {
+  const w = plan.whatif;
+  const base = plan.scenarios[w?.base || (plan.basis.entered ? "pace" : "planner")];
+  const field = { width: "100%", background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, padding: "10px 11px",
+                  fontSize: 14, color: "var(--text)", fontFamily: "inherit", boxSizing: "border-box" };
+  const input = (key, label, placeholder, disabled) => (
+    <div style={{ flex: "1 1 140px", minWidth: 0 }}>
+      <label htmlFor={`wi-${key}`} style={{ display: "block", fontSize: 11, fontWeight: 600, color: "var(--muted2)", marginBottom: 5 }}>{label}</label>
+      <input id={`wi-${key}`} type="number" min="0" inputMode="decimal" value={whatif[key]} disabled={disabled} placeholder={placeholder}
+        onChange={e => setWhatif(x => ({ ...x, [key]: e.target.value }))} style={{ ...field, opacity: disabled ? 0.5 : 1 }} />
+    </div>
+  );
+  const sooner = w && base?.months && w.months ? base.months - w.months : null;
+  const saved = w && base?.interest && w.interest ? parseFloat(base.interest) - parseFloat(w.interest) : null;
+  const when = iso => new Date(`${iso}T12:00:00`).toLocaleDateString("en-US", { month: "short", year: "numeric" });
+
+  return (
+    <div className="card" style={{ marginBottom: 12, opacity: updating ? 0.6 : 1, transition: "opacity 0.15s" }}>
+      <div className="card-title" style={{ marginBottom: 2 }}>What if…</div>
+      <div style={{ fontSize: 12, color: "var(--muted2)", marginBottom: 12 }}>
+        Try more hours, less spending or a one-time payment, and see how much sooner you'd be debt-free.
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+        {input("hours", "Extra hours a week", hourlyCad ? "e.g. 5" : "Set your hourly pay first", !hourlyCad)}
+        {input("cut", `Spend less a month (${currency})`, "e.g. 200")}
+        {input("lump", `One-time payment (${currency})`, "e.g. 1000")}
+      </div>
+      {!hourlyCad && <div style={{ fontSize: 11, color: "var(--muted2)", marginTop: 6 }}>Extra hours use your take-home per hour: set it under "Change my goal or amount".</div>}
+      {w && base && (
+        <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--subtle2)" }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 15, color: "var(--muted2)", textDecoration: "line-through" }}>{base.months ? when(base.date) : "Not reached"}</span>
+            <span style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.5px" }}>{w.months ? when(w.date) : "Not reached"}</span>
+          </div>
+          <div style={{ fontSize: 13, color: "var(--muted2)", marginTop: 4, lineHeight: 1.6 }}>
+            {sooner > 0 && <strong style={{ color: "var(--pos-text)" }}>{sooner} month{sooner === 1 ? "" : "s"} sooner</strong>}
+            {sooner > 0 && saved > 0 && " · "}
+            {saved > 0 && <strong style={{ color: "var(--pos-text)" }}>{fmt(saved)} less interest</strong>}
+            {!(sooner > 0) && !(saved > 0) && "No change yet: try a bigger amount."}
+            {w.extra > 0 && <span style={{ display: "block" }}>Paying {fmt(w.budget)} a month toward debts ({fmt(w.extra)} more than now){w.lump > 0 ? `, after a ${fmt(w.lump)} payment` : ""}.</span>}
+            {!(w.extra > 0) && w.lump > 0 && <span style={{ display: "block" }}>After a one-time {fmt(w.lump)} payment to your highest-rate debt.</span>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+

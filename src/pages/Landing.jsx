@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Icon from "../components/Icon";
 import "../styles/landing.css";
+import Logo from "../components/Logo";
 
 // Public home page shown to logged-out visitors.
 
@@ -168,8 +169,11 @@ export default function Landing({ onGetStarted, onSignIn, darkMode, onToggleDark
       {/* ── Nav ── */}
       <header className="lp-nav">
         <div className="lp-brand">
-          <span className="lp-brand-mark"><Icon name="mountain" size={18} /></span>
-          Glacier
+          <Logo size={32} />
+          <span style={{ lineHeight: 1.1 }}>
+            Glacier
+            <span style={{ display: "block", fontSize: 10.5, fontWeight: 600, color: "var(--muted)", letterSpacing: "0.4px", marginTop: 1 }}>Money manager</span>
+          </span>
         </div>
         <nav className="lp-nav-actions">
           <button className="lp-icon-btn" onClick={onToggleDark} aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}>

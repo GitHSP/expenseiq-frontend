@@ -2,6 +2,7 @@ import { useState }         from "react";
 import { NAV_ITEMS }        from "../constants/categories";
 import CurrencySelector     from "./CurrencySelector";
 import Icon                 from "./Icon";
+import Logo from "./Logo";
 
 export default function Sidebar({
   view, setView, onAddExpense, onExportCSV,
@@ -15,8 +16,13 @@ export default function Sidebar({
 
       {/* ── Logo ── */}
       <div className="sidebar-logo">
-        <span className="logo-mark"><Icon name="mountain" size={14} /></span>
-        {!collapsed && <span className="logo-text">Glacier</span>}
+        <Logo size={26} />
+        {!collapsed && (
+          <span className="logo-text" style={{ lineHeight: 1.1 }}>
+            Glacier
+            <span style={{ display: "block", fontSize: 10.5, fontWeight: 600, color: "var(--muted)", letterSpacing: "0.4px", marginTop: 1 }}>Money manager</span>
+          </span>
+        )}
         <button
           className="sidebar-collapse-btn"
           onClick={() => setCollapsed(p => !p)}

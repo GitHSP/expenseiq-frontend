@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Icon from "../components/Icon";
+import Logo from "../components/Logo";
 
 export default function Register({ onRegister, onGoToLogin, onGoHome }) {
   const [email,     setEmail]     = useState("");
@@ -34,7 +35,7 @@ export default function Register({ onRegister, onGoToLogin, onGoHome }) {
     <div style={styles.page}>
       <div style={styles.card}>
 
-        <div style={styles.logo}><Icon name="mountain" size={26} /></div>
+        <Logo size={52} style={{ margin: "0 auto 12px", borderRadius: 14, boxShadow: "0 6px 16px rgba(201,150,44,0.3)" }} />
         <div style={styles.title}>Create account</div>
         <div style={styles.subtitle}>Start managing your finances today</div>
 

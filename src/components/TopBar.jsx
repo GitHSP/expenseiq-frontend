@@ -1,12 +1,13 @@
 import { SUPPORTED_CURRENCIES } from "../hooks/useCurrency";
 import Icon from "./Icon";
+import Logo from "./Logo";
 
 export default function TopBar({ onAddExpense, onExportCSV, user, onLogout, currency, setCurrency }) {
   return (
     <div className="topbar">
 
       {/* Logo */}
-      <div className="topbar-logo"><span className="logo-mark"><Icon name="mountain" size={14} /></span> Glacier</div>
+      <div className="topbar-logo"><Logo size={26} /> Glacier</div>
 
       {/* Right side actions */}
       <div className="topbar-actions">

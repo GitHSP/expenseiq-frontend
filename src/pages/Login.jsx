@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Icon from "../components/Icon";
+import Logo from "../components/Logo";
 
 export default function Login({ onLogin, onTwoFactor, onGoToRegister, onGoToForgot, onGoHome }) {
   const [email,    setEmail]    = useState("");
@@ -83,8 +84,9 @@ export default function Login({ onLogin, onTwoFactor, onGoToRegister, onGoToForg
     <div style={styles.page}>
       <div style={styles.card}>
 
-        <div style={styles.logo}><Icon name="mountain" size={26} /></div>
+        <Logo size={52} style={{ margin: "0 auto 12px", borderRadius: 14, boxShadow: "0 6px 16px rgba(201,150,44,0.3)" }} />
         <div style={styles.title}>Glacier</div>
+        <div style={{ fontSize: 12, fontWeight: 600, color: "var(--muted)", letterSpacing: "0.4px", margin: "-2px 0 6px" }}>Money manager</div>
         <div style={styles.subtitle}>Sign in to your account</div>
 
         {error && <div style={styles.error}>{error}</div>}
