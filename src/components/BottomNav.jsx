@@ -16,6 +16,36 @@ function Badge({ count }) {
   );
 }
 
+// "Install Glacier": Android/desktop Chrome can install straight away; on an
+// iPhone it's Share → Add to Home Screen. Hidden once it's running as an app.
+function InstallRow() {
+  const [help, setHelp] = useState(false);
+  const standalone = window.matchMedia?.("(display-mode: standalone)").matches || window.navigator.standalone;
+  if (standalone) return null;
+  const iphone = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  async function install() {
+    const prompt = window.__glacierInstall;
+    if (prompt) { prompt.prompt(); await prompt.userChoice; window.__glacierInstall = null; return; }
+    setHelp(h => !h);
+  }
+  return (
+    <>
+      <button className="bottom-sheet-item" onClick={install}>
+        <Icon name="download" size={20} />
+        <span style={{ flex: 1 }}>Install Glacier app</span>
+        <Icon name={help ? "chevron-up" : "chevron-right"} size={16} />
+      </button>
+      {help && (
+        <div style={{ padding: "0 12px 10px 46px", fontSize: 13, color: "var(--muted)", lineHeight: 1.6 }}>
+          {iphone
+            ? <>In Safari, tap <strong>Share</strong> (the square with an arrow), then <strong>Add to Home Screen</strong>.</>
+            : <>In Chrome, open the <strong>⋮ menu</strong> and tap <strong>Install app</strong> (or Add to Home screen).</>}
+        </div>
+      )}
+    </>
+  );
+}
+
 export default function BottomNav({ view, setView, badges, darkMode, onToggleDark }) {
   const [more, setMore] = useState(false);
   // The tapped item lights up at once; the page itself renders just after,
@@ -49,6 +79,7 @@ export default function BottomNav({ view, setView, badges, darkMode, onToggleDar
                 <Icon name="chevron-right" size={16} />
               </button>
             ))}
+            <InstallRow />
             {onToggleDark && (
               <button className="bottom-sheet-item" onClick={onToggleDark} role="switch" aria-checked={!!darkMode}>
                 <Icon name={darkMode ? "moon" : "sun"} size={20} />

@@ -179,7 +179,7 @@ function AccountCard({ account, accounts, months, fmt, onOpen, onChanged, onEntr
   return (
     <div className="card" style={{ marginBottom: 12, padding: 16 }}>
       <div style={{ display: "flex", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
-        <span style={{ width: 38, height: 38, borderRadius: 10, background: "var(--accent)1a", color: "var(--accent-text)", flexShrink: 0,
+        <span style={{ width: 38, height: 38, borderRadius: 10, background: "var(--accent-bg)", color: "var(--accent-text)", flexShrink: 0,
                        display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
           <Icon name={k.icon} size={18} />
         </span>
@@ -304,8 +304,26 @@ Its ${statements.length} statement${statements.length === 1 ? "" : "s"} and all 
 // Recurring
 // ─────────────────────────────────────────────
 
-function RecurringRow({ item, accountsById, fmt }) {
+// A regular charge as a Planner recurring payment: same amount and day, its
+// average if it varies, and "paid by card" when a card pays it.
+function plannerPayment(item, accountsById) {
+  const account = accountsById[item.occurrences[item.occurrences.length - 1].account_id];
+  const byDay = ["weekly", "biweekly"].includes(item.frequency);
+  return {
+    label: item.name.slice(0, 100), amount: item.typical_amount,
+    category: item.pre_authorized ? "auto_debit" : "fixed_expense",
+    frequency: byDay ? item.frequency : "monthly",
+    due_day: byDay ? null : item.day_of_month,
+    anchor_date: byDay ? item.last_date : null,
+    average_from: item.varies ? item.name.slice(0, 100) : "",
+    is_auto_debit: item.pre_authorized, paid_by_card: account?.kind === "credit_card",
+  };
+}
+
+function RecurringRow({ item, accountsById, fmt, inPlanner, onAddToPlanner }) {
   const [open, setOpen] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const canAdd = item.status === "active" && !item.own_transfer && ["weekly", "biweekly", "monthly"].includes(item.frequency);
   const names = item.account_ids.map(id => accountsById[id]?.name).filter(Boolean).join(", ");
   const when = item.frequency === "monthly" ? `around the ${ordinal(item.day_of_month)}` : null;
   return (
@@ -314,7 +332,7 @@ function RecurringRow({ item, accountsById, fmt }) {
         style={{ display: "flex", gap: 12, alignItems: "center", width: "100%", padding: "12px 16px", background: "transparent",
                  border: "none", cursor: "pointer", textAlign: "left", fontFamily: "inherit", color: "var(--text)" }}>
         <span style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0, display: "inline-flex", alignItems: "center", justifyContent: "center",
-                       background: item.pre_authorized ? "#7c3aed1a" : "var(--accent)1a", color: item.pre_authorized ? "#7c3aed" : "var(--accent-text)" }}>
+                       background: item.pre_authorized ? "#7c3aed1a" : "var(--accent-bg)", color: item.pre_authorized ? "#7c3aed" : "var(--accent-text)" }}>
           <Icon name={item.pre_authorized ? "shield-check" : "repeat"} size={16} />
         </span>
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -339,6 +357,18 @@ function RecurringRow({ item, accountsById, fmt }) {
       </button>
       {open && (
         <div style={{ padding: "0 16px 12px 60px", fontSize: 12 }}>
+          {canAdd && (
+            <div style={{ marginBottom: 10 }}>
+              {inPlanner
+                ? <span style={{ display: "inline-flex", alignItems: "center", gap: 5, color: "var(--pos-text)", fontWeight: 600 }}>
+                    <Icon name="check-circle" size={13} /> In your Planner
+                  </span>
+                : <button className="btn-secondary" disabled={adding} style={{ padding: "6px 12px", fontSize: 12 }}
+                    onClick={async () => { setAdding(true); try { await onAddToPlanner(plannerPayment(item, accountsById)); } finally { setAdding(false); } }}>
+                    {adding ? "Adding..." : "+ Add to Planner"}
+                  </button>}
+            </div>
+          )}
           {item.monthly_amount && item.frequency !== "monthly" && (
             <div style={{ color: "var(--muted)", marginBottom: 6 }}>About {fmt(item.monthly_amount)} a month</div>
           )}
@@ -383,6 +413,25 @@ const STATUS = {
 
 function RecurringTab({ recurring, accounts, months, fmt }) {
   const [account, setAccount] = useState("");
+  // The Planner's recurring payments, to tell which charges are already there.
+  const [planned, setPlanned] = useState([]);
+  const [note, setNote] = useState("");
+  useEffect(() => {
+    financialPlannerAPI.getRecurring().then(r => setPlanned(Array.isArray(r) ? r : r.results || [])).catch(() => {});
+  }, []);
+  const inPlanner = item => {
+    const name = item.name.toLowerCase();
+    return planned.some(p => p.label.toLowerCase() === name || (p.average_from && name.includes(p.average_from.toLowerCase())));
+  };
+  async function addToPlanner(payment) {
+    try {
+      const created = await financialPlannerAPI.createRecurring(payment);
+      setPlanned(p => [...p, created]);
+      setNote(`${payment.label} added to Planner → Recurring.`);
+    } catch (e) {
+      setNote(e.message || "Couldn't add it to the Planner.");
+    }
+  }
   const [padOnly, setPadOnly] = useState(false);
   const [view, setView] = useState("list");
   const accountsById = useMemo(() => Object.fromEntries(accounts.map(a => [a.id, a])), [accounts]);
@@ -458,7 +507,9 @@ function RecurringTab({ recurring, accounts, months, fmt }) {
             <div style={{ padding: "12px 16px", fontWeight: 700, fontSize: 13, display: "flex", justifyContent: "space-between" }}>
               <span>Active</span><span style={{ color: "var(--muted)" }}>{fmt(total)} / month</span>
             </div>
-            {active.map(i => <RecurringRow key={i.key} item={i} accountsById={accountsById} fmt={fmt} />)}
+            {note && <div style={{ padding: "8px 16px", fontSize: 12, color: "var(--pos-text)" }}>{note}</div>}
+            {active.map(i => <RecurringRow key={i.key} item={i} accountsById={accountsById} fmt={fmt}
+              inPlanner={inPlanner(i)} onAddToPlanner={addToPlanner} />)}
             {!active.length && <div style={{ padding: "12px 16px", fontSize: 13, color: "var(--muted)", borderTop: "1px solid var(--subtle2)" }}>None match these filters.</div>}
           </div>
           {stopped.length > 0 && (
