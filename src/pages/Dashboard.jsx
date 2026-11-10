@@ -6,6 +6,7 @@ import {
 import ExchangeRatesWidget from "../components/ExchangeRatesWidget";
 import FinancialTips       from "../components/FinancialTips";
 import ComingUp            from "../components/ComingUp";
+import AvailableBalance    from "../components/AvailableBalance";
 import Icon, { CategoryIcon } from "../components/Icon";
 import { CATEGORIES, MONTHS } from "../constants/categories";
 import { INCOME_CATEGORIES }  from "../hooks/useIncome";
@@ -323,6 +324,8 @@ export default function Dashboard({
           </ResponsiveContainer>
         </div>
       )}
+
+      {isCurrent && <AvailableBalance fmt={fmt} refreshKey={refreshKey} onOpenAccounts={onOpenRules} />}
 
       {/* ── This month, as a list ── */}
       <div style={{ fontSize:12, fontWeight:600, color:"var(--muted)", textTransform:"uppercase", letterSpacing:"0.6px", margin:"0 2px 8px" }}>

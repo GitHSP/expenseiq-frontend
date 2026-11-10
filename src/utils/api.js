@@ -310,6 +310,7 @@ export const categoriesAPI = {
 
 export const accountsAPI = {
   list: async () => handleResponse(await authFetch(`${BASE_URL}/statements/accounts/`, { headers: getHeaders(true) })),
+  available: async () => handleResponse(await authFetch(`${BASE_URL}/statements/accounts/available/`, { headers: getHeaders(true) })),
   update: async (id, changes) => handleResponse(await authFetch(`${BASE_URL}/statements/accounts/${id}/`, {
     method: "PATCH", headers: getHeaders(true), body: JSON.stringify(changes),
   })),
