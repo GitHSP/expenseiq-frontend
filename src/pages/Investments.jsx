@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import Icon from "../components/Icon";
+import PolicyPlan, { PastePlan } from "../components/PolicyPlan";
 import { financialPlannerAPI } from "../utils/api";
 
 // Investments: insurance policies with a cash value, chits, recurring and
@@ -545,7 +546,7 @@ function ExpectedValue({ s, m }) {
   );
 }
 
-function InvestmentCard({ inv, recurring, onEdit, onDelete, onAddPayment, onDeletePayment, show, display }) {
+function InvestmentCard({ inv, recurring, onEdit, onDelete, onAddPayment, onDeletePayment, onReplace, show, display }) {
   const [open, setOpen] = useState(false);
   const kind = KINDS[inv.kind];
   const s = inv.summary || {};
@@ -647,7 +648,19 @@ function InvestmentCard({ inv, recurring, onEdit, onDelete, onAddPayment, onDele
       </div>
       {inv.notes && <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 10 }}>{inv.notes}</div>}
 
-      {inv.kind === "insurance" && s.expected?.length > 0 && (
+      {inv.kind === "insurance" && s.plan && (
+        <>
+          <button className="btn-secondary" style={{ marginTop: 12, padding: "6px 12px", fontSize: 12, display: "inline-flex", alignItems: "center", gap: 5 }}
+            onClick={() => setOpen(o => !o)} aria-expanded={open}>
+            <Icon name={open ? "chevron-up" : "chevron-down"} size={13} /> {open ? "Hide plan" : "Plan & projections"}
+          </button>
+          {open && <PolicyPlan inv={inv} m={m} onSaved={onReplace} />}
+        </>
+      )}
+      {inv.kind === "insurance" && !s.plan && (
+        <div style={{ marginTop: 12 }}><PastePlan inv={inv} onSaved={onReplace} /></div>
+      )}
+      {inv.kind === "insurance" && !s.plan && s.expected?.length > 0 && (
         <>
           <button className="btn-secondary" style={{ marginTop: 12, padding: "6px 12px", fontSize: 12 }} onClick={() => setOpen(o => !o)}>
             {open ? "Hide expected value" : "Expected value"}
@@ -819,7 +832,7 @@ export default function Investments({
             </div>
             {group.map(inv => (
               <InvestmentCard key={inv.id} inv={inv} recurring={recurring} onEdit={openEdit} onDelete={remove}
-                onAddPayment={addPayment} onDeletePayment={deletePayment} show={show} display={display} />
+                onAddPayment={addPayment} onDeletePayment={deletePayment} onReplace={replace} show={show} display={display} />
             ))}
           </div>
         );
