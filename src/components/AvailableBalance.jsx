@@ -16,6 +16,23 @@ export function updatedAgo(iso) {
   return `updated ${days} day${days === 1 ? "" : "s"} ago`;
 }
 
+// "Estimated: $1,374 you typed − $107 paid since (Insurance)": Planner payments ticked
+// after the balance was typed, worked out by the backend (card payments left out).
+function SinceLine({ account, fmt }) {
+  const s = account.since_update;
+  if (!s) return null;
+  const paid = s.items.filter(i => !i.income).map(i => i.label);
+  const got = s.items.filter(i => i.income).map(i => i.label);
+  const names = list => (list.length > 2 ? `${list.slice(0, 2).join(", ")} +${list.length - 2} more` : list.join(", "));
+  return (
+    <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
+      Estimated: {fmt(account.current_balance)} you typed
+      {parseFloat(s.paid) > 0 && <> − {fmt(s.paid)} paid since ({names(paid)})</>}
+      {parseFloat(s.received) > 0 && <> + {fmt(s.received)} received ({names(got)})</>}
+    </div>
+  );
+}
+
 const field = { background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, padding: "8px 10px",
                 fontSize: 14, color: "var(--text)", fontFamily: "inherit", boxSizing: "border-box", minWidth: 0 };
 
@@ -50,10 +67,11 @@ export function BalanceEditor({ account, fmt, onSaved }) {
                   {fmt(account.available)}
                 </div>
                 <div style={{ fontSize: 12, color: stale ? "var(--warn-text)" : "var(--muted)", marginTop: 2 }}>
-                  Balance {fmt(account.current_balance)}
+                  Balance {fmt(account.estimated_balance ?? account.current_balance)}
                   {parseFloat(account.overdraft_limit) > 0 && ` + overdraft ${fmt(account.overdraft_limit)}`}
                   {" · "}{updatedAgo(account.balance_updated_at)}
                 </div>
+                <SinceLine account={account} fmt={fmt} />
               </>
             ) : (
               <div style={{ fontSize: 13, color: "var(--muted)" }}>
@@ -144,6 +162,7 @@ export default function AvailableBalance({ fmt, refreshKey, onOpenAccounts }) {
             ))}
           </div>
         )}
+        {counted.filter(a => a.since_update).map(a => <SinceLine key={a.id} account={a} fmt={fmt} />)}
         <div style={{ fontSize: 12, marginTop: 6, color: stale ? "var(--warn-text)" : "var(--muted)" }}>
           {stale ? `Balance ${updatedAgo(oldest)}. Tap to update it.` : updatedAgo(oldest)[0].toUpperCase() + updatedAgo(oldest).slice(1)}
         </div>
