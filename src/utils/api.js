@@ -598,6 +598,11 @@ export const financialPlannerAPI = {
 export const assistantAPI = {
   // What Aurora would flag right now (price rises, fees, cards near limit...).
   alerts: async () => handleResponse(await authFetch(`${BASE_URL}/assistant/alerts/`, { headers: getHeaders(true) })),
+  // Your often-asked questions (learned) and the common ones; hide one of yours.
+  quickQuestions: async () => handleResponse(await authFetch(`${BASE_URL}/assistant/quick-questions/`, { headers: getHeaders(true) })),
+  hideQuickQuestion: async (text) => handleResponse(await authFetch(`${BASE_URL}/assistant/quick-questions/`, {
+    method: "DELETE", headers: getHeaders(true), body: JSON.stringify({ text }),
+  })),
   chat: async (messages) => {
     const res = await authFetch(`${BASE_URL}/assistant/chat/`, {
       method: "POST", headers: getHeaders(true),

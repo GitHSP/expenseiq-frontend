@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useAssistant } from "../hooks/useAssistant";
 import Icon, { stripEmoji } from "../components/Icon";
 import { assistantAPI } from "../utils/api";
 
 // Answered instantly from your own figures (no AI needed): see backend assistant/quick.py.
+// The server sends the same list plus the user's own often-asked questions.
 const SUGGESTIONS = [
   "When am I debt-free?",
   "What's due this week?",
@@ -13,7 +14,66 @@ const SUGGESTIONS = [
   "What's my credit utilization?",
   "How are my savings goals?",
   "How much interest am I paying?",
+  "What are my planned recurring payments?",
 ];
+
+// Quick questions: yours (learned from what you ask often) and the common ones.
+// ⚡ = answered instantly from your data; the rest go to the AI.
+function useQuickQuestions() {
+  const [data, setData] = useState({ yours: [], common: SUGGESTIONS });
+  const load = useCallback(() => {
+    assistantAPI.quickQuestions().then(d => setData({ yours: d.yours || [], common: d.common || SUGGESTIONS })).catch(() => {});
+  }, []);
+  useEffect(() => { load(); }, [load]);
+  const hide = async text => {
+    setData(d => ({ ...d, yours: d.yours.filter(q => q.text !== text) }));
+    try { await assistantAPI.hideQuickQuestion(text); } catch { load(); }
+  };
+  return { ...data, load, hide };
+}
+
+function QuickList({ yours, common, onAsk, onHide }) {
+  const mine = new Set(yours.map(q => q.text.toLowerCase().replace(/[?!.]/g, "").trim()));
+  const others = common.filter(c => !mine.has(c.toLowerCase().replace(/[?!.]/g, "").trim()));
+  const chip = { display: "flex", alignItems: "center", gap: 8, width: "100%", textAlign: "left", fontSize: 14,
+                 color: "var(--text)", background: "var(--card)", border: "1px solid var(--border)", borderRadius: 10,
+                 padding: "11px 12px", cursor: "pointer", fontFamily: "inherit", minHeight: 44 };
+  const head = { fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.5px", margin: "4px 2px 6px" };
+  return (
+    <div>
+      {yours.length > 0 && (
+        <>
+          <div style={head}>Yours</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 12 }}>
+            {yours.map(q => (
+              <div key={q.text} style={{ display: "flex", gap: 6 }}>
+                <button style={chip} onClick={() => onAsk(q.text)}>
+                  {q.instant ? <Icon name="zap" size={14} color="var(--accent-text)" /> : <Icon name="chat" size={14} color="var(--muted)" />}
+                  <span style={{ flex: 1, minWidth: 0 }}>{q.text}</span>
+                </button>
+                <button onClick={() => onHide(q.text)} aria-label={`Remove "${q.text}" from quick questions`}
+                  style={{ ...chip, width: 44, flexShrink: 0, justifyContent: "center", padding: 0, color: "var(--muted)" }}>
+                  <Icon name="x" size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+      <div style={head}>Common</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {others.map(s => (
+          <button key={s} style={chip} onClick={() => onAsk(s)}>
+            <Icon name="zap" size={14} color="var(--accent-text)" /><span style={{ flex: 1 }}>{s}</span>
+          </button>
+        ))}
+      </div>
+      <div style={{ fontSize: 11, color: "var(--faint2)", margin: "10px 2px 0", lineHeight: 1.5 }}>
+        ⚡ Instant, from your own data. Questions you ask twice or more show up under "Yours".
+      </div>
+    </div>
+  );
+}
 
 const ALERT_COLORS = { danger: "#e11d48", warning: "#d97706", info: "var(--accent)" };
 
@@ -100,7 +160,7 @@ function RichText({ text }) {
     if (b.type === "table") {
       return (
         <div key={i} style={{ overflowX: "auto", margin: "6px 0" }}>
-          <table style={{ borderCollapse: "collapse", fontSize: 13, width: "100%" }}>
+          <table className="aurora-table" style={{ borderCollapse: "collapse", fontSize: 13, width: "100%" }}>
             <tbody>
               {b.rows.map((r, ri) => (
                 <tr key={ri} style={{ borderTop: ri ? "1px solid var(--subtle2)" : "none" }}>
@@ -168,8 +228,7 @@ function MessageBubble({ message, onRetry, canRetry }) {
       justifyContent: isUser ? "flex-end" : "flex-start",
       marginBottom:   14,
     }}>
-      <div style={{
-        maxWidth:     "78%",
+      <div className={`aurora-bubble ${isUser ? "user" : "bot"}`} style={{
         padding:      "10px 14px",
         borderRadius: isUser ? "14px 14px 2px 14px" : "14px 14px 14px 2px",
         background:   isUser ? "var(--accent)" : "var(--card)",
@@ -303,7 +362,18 @@ export default function Assistant({ onActionsTaken, onClose }) {
     syncEnabled, syncBusy, syncError, enableSync, disableSync,
   } = useAssistant();
   const [input, setInput] = useState("");
+  const [showQuick, setShowQuick] = useState(false);
+  const [waited, setWaited] = useState(0);
   const listRef = useRef(null);
+  const quick = useQuickQuestions();
+
+  // "Thinking… 4s": a reply that uses the AI can take a while.
+  useEffect(() => {
+    if (!sending) { setWaited(0); return; }
+    const started = Date.now();
+    const t = setInterval(() => setWaited(Math.round((Date.now() - started) / 1000)), 1000);
+    return () => clearInterval(t);
+  }, [sending]);
 
   useEffect(() => {
     if (listRef.current) {
@@ -315,8 +385,10 @@ export default function Assistant({ onActionsTaken, onClose }) {
     const value = (text ?? input).trim();
     if (!value || sending) return;
     setInput("");
+    setShowQuick(false);
     const data = await sendMessage(value);
     if (data?.actions?.length && onActionsTaken) onActionsTaken(data.actions);
+    quick.load();                       // a question asked again may now be one of "yours"
   }
 
   function handleKeyDown(e) {
@@ -327,11 +399,10 @@ export default function Assistant({ onActionsTaken, onClose }) {
   }
 
   return (
-    <div style={{
+    <div className="aurora" style={{
       display:       "flex",
       flexDirection: "column",
       height:        "100%",
-      padding:       16,
       boxSizing:     "border-box",
     }}>
       {/* ── Header ── */}
@@ -347,8 +418,8 @@ export default function Assistant({ onActionsTaken, onClose }) {
           <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "var(--text)" }}>
             Aurora
           </h2>
-          <p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--muted)" }}>
-            Log expenses, update debts, manage your checklist.
+          <p className="aurora-sub" style={{ margin: "2px 0 0", fontSize: 12, color: "var(--muted)" }}>
+            Ask about your money, or log an expense.
           </p>
         </div>
         <div style={{ display: "flex", alignItems: "flex-start", gap: 8, flexWrap: "wrap" }}>
@@ -375,14 +446,14 @@ export default function Assistant({ onActionsTaken, onClose }) {
       {/* ── Message list ── */}
       <div
         ref={listRef}
+        className="aurora-list"
         style={{
           flex:         1,
           overflowY:    "auto",
           background:   "var(--bg)",
           border:       "1px solid var(--border)",
           borderRadius: 12,
-          padding:      16,
-          marginBottom: 12,
+          marginBottom: 10,
         }}
       >
         {!loaded ? (
@@ -393,27 +464,10 @@ export default function Assistant({ onActionsTaken, onClose }) {
           <div style={{ padding: "24px 8px" }}>
             <Heads onAsk={handleSend} />
             <div style={{ color: "var(--muted)", fontSize: 14, marginBottom: 14, textAlign: "center" }}>
-              <Icon name="wave" size={15} style={{ marginRight: 6, verticalAlign: "-2px" }} />Hi! I'm Aurora, your money assistant. Try something like:
+              <Icon name="wave" size={15} style={{ marginRight: 6, verticalAlign: "-2px" }} />Hi! I'm Aurora, your money assistant. Tap a question or type your own:
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, maxWidth: 420, margin: "0 auto" }}>
-              {SUGGESTIONS.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => handleSend(s)}
-                  style={{
-                    textAlign:    "left",
-                    fontSize:     13,
-                    color:        "var(--text)",
-                    background:   "var(--card)",
-                    border:       "1px solid var(--border)",
-                    borderRadius: 10,
-                    padding:      "10px 14px",
-                    cursor:       "pointer",
-                  }}
-                >
-                  "{s}"
-                </button>
-              ))}
+            <div style={{ maxWidth: 420, margin: "0 auto" }}>
+              <QuickList yours={quick.yours} common={quick.common} onAsk={handleSend} onHide={quick.hide} />
             </div>
           </div>
         ) : (
@@ -435,7 +489,7 @@ export default function Assistant({ onActionsTaken, onClose }) {
                   color:        "var(--muted)",
                   fontSize:     14,
                 }}>
-                  Thinking...
+                  Thinking…{waited >= 3 ? ` ${waited}s` : ""}
                 </div>
               </div>
             )}
@@ -449,19 +503,34 @@ export default function Assistant({ onActionsTaken, onClose }) {
         </div>
       )}
 
+      {/* ── Quick questions, any time ── */}
+      {messages.length > 0 && showQuick && (
+        <div style={{ maxHeight: "45vh", overflowY: "auto", marginBottom: 10, padding: 10, borderRadius: 12,
+                      border: "1px solid var(--border)", background: "var(--bg)" }}>
+          <QuickList yours={quick.yours} common={quick.common} onAsk={handleSend} onHide={quick.hide} />
+        </div>
+      )}
+      {messages.length > 0 && (
+        <button onClick={() => setShowQuick(v => !v)} aria-expanded={showQuick}
+          style={{ ...syncBtnStyle, alignSelf: "flex-start", marginBottom: 8, minHeight: 36, color: "var(--accent-text)" }}>
+          <Icon name="zap" size={13} /> {showQuick ? "Hide quick questions" : "Quick questions"}
+        </button>
+      )}
+
       {/* ── Input ── */}
       <div style={{ display: "flex", gap: 8 }}>
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="I spent $20 on gas today..."
+          placeholder="Ask anything, or: coffee 4.50"
           rows={1}
           style={{
             flex:         1,
+            minWidth:     0,
             resize:       "none",
             fontFamily:   "inherit",
-            fontSize:     14,
+            fontSize:     16,
             color:        "var(--text)",
             background:   "var(--card)",
             border:       "1px solid var(--border)",

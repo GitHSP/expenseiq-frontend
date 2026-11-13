@@ -638,7 +638,7 @@ select.input option { background: var(--card); color: var(--text); }
     border-top: 1px solid var(--border);
     display: flex;
     z-index: 200;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 6px);
     box-shadow: 0 -1px 12px rgba(0,0,0,0.06);
   }
   .bottom-nav-item {
@@ -648,8 +648,11 @@ select.input option { background: var(--card); color: var(--text); }
     align-items: center;
     justify-content: center;
     min-width: 0;
-    padding: 10px 1px;
+    min-height: 58px;
+    padding: 10px 1px 8px;
     cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
     border: none;
     background: transparent;
     color: var(--faint);
@@ -683,7 +686,7 @@ select.input option { background: var(--card); color: var(--text); }
   .theme-switch.on { background: var(--accent); }
   .theme-switch.on > span { transform: translateX(18px); }
   .bnav-icon  { font-size: 19px; line-height: 1; display: inline-flex; }
-  .bnav-label { font-size: 9.5px; font-weight: 600; color: inherit; letter-spacing: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bnav-label { font-size: 10.5px; font-weight: 600; color: inherit; letter-spacing: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   .main         { padding: 16px; }
   .stat-grid    { grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
@@ -895,4 +898,36 @@ button:active:not(:disabled) { transform: scale(0.97); }
   .btn-secondary:hover { background: var(--card); border-color: var(--border); }
   .btn-ghost:hover { background: transparent; }
   button { transition: transform 0.08s ease, opacity 0.08s ease, background-color 0.15s ease; }
+}
+
+
+/* ── Installed as an app (home screen): the phone's gesture bar sits under
+   the page, so keep the bottom nav, the chat button and the chat input clear of it. ── */
+@media (display-mode: standalone) and (max-width: 768px) {
+  .bottom-nav { padding-bottom: max(env(safe-area-inset-bottom, 0px), 18px); }
+  .assistant-fab { bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+  .main { padding-bottom: 110px; }
+  .bottom-sheet { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* ── Aurora ── */
+.aurora { padding: 16px; }
+.aurora-list { padding: 16px; }
+.aurora-bubble.user { max-width: 82%; }
+.aurora-bubble.bot  { max-width: 92%; }
+@media (max-width: 768px) {
+  .assistant-panel { height: 100dvh; }
+  .aurora {
+    padding: calc(10px + env(safe-area-inset-top, 0px)) 10px calc(10px + env(safe-area-inset-bottom, 0px));
+  }
+  .aurora-sub { display: none; }
+  .aurora-list { padding: 10px; border-radius: 10px; }
+  .aurora-bubble.user { max-width: 88%; }
+  .aurora-bubble.bot  { max-width: 100%; }
+  /* Tables wrap instead of running off the screen. */
+  .aurora-table { font-size: 12px !important; }
+  .aurora-table th, .aurora-table td { white-space: normal !important; padding: 4px 6px 4px 0 !important; }
+}
+@media (display-mode: standalone) and (max-width: 768px) {
+  .aurora { padding-bottom: max(calc(10px + env(safe-area-inset-bottom, 0px)), 22px); }
 }
