@@ -17,14 +17,16 @@ export default function TodayCard({ refreshKey, onOpen }) {
   if (!started && !d.prompts.set_week) return null;
 
   const nowHm = d.now.slice(11, 16);
-  const next = plan?.slots.find(s => !s.done && s.end > nowHm);
+  const nowMin = parseInt(nowHm.slice(0, 2), 10) * 60 + parseInt(nowHm.slice(3), 10);
+  // Minutes from the start of the day; slots after midnight go past 1440.
+  const next = plan?.slots.find(s => !s.done && s.end_min > nowMin);
   const done = plan ? plan.slots.filter(s => s.done).length : 0;
   const row = { width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", background: "transparent",
                 border: "none", textAlign: "left", cursor: "pointer", fontFamily: "inherit", color: "var(--text)", minHeight: 52 };
   const lines = [];
   if (d.prompts.set_week) lines.push({ icon: "calendar", title: "Set your working hours", sub: started ? "for the week ahead" : "so Glacier can plan your days", tone: "var(--accent-text)" });
   if (d.prompts.plan_tomorrow) lines.push({ icon: "sun", title: "Plan tomorrow", sub: "a few questions, two minutes", tone: "var(--accent-text)" });
-  if (next) lines.push({ icon: "clock", title: next.title, sub: `${next.start}–${next.end}${next.start <= nowHm ? " · now" : " · next"} · ${done} of ${plan.slots.length} done` });
+  if (next) lines.push({ icon: "clock", title: next.title, sub: `${next.start}–${next.end}${next.start_min <= nowMin ? " · now" : " · next"} · ${done} of ${plan.slots.length} done` });
   else if (plan) lines.push({ icon: "check-circle", title: "Today's plan is done", sub: `${done} of ${plan.slots.length} ticked`, tone: "var(--pos-text)" });
   if (!lines.length) return null;
 

@@ -931,3 +931,10 @@ button:active:not(:disabled) { transform: scale(0.97); }
 @media (display-mode: standalone) and (max-width: 768px) {
   .aurora { padding-bottom: max(calc(10px + env(safe-area-inset-bottom, 0px)), 22px); }
 }
+
+
+/* iPhone zooms into any box with text under 16px when it's tapped; the page then
+   sits wider than the screen and the fixed bottom menu ends up mid-screen. */
+@media (max-width: 768px) {
+  input, select, textarea { font-size: 16px !important; }
+}

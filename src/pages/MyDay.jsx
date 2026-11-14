@@ -9,7 +9,8 @@ import { dayAPI } from "../utils/api";
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const KIND_COLOR = { routine: "var(--muted)", work: "#0070f3", goal: "var(--accent-text)", task: "#059669", other: "#7c3aed" };
 const input = { background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, padding: "8px 10px",
-                fontSize: 15, color: "var(--text)", fontFamily: "inherit", boxSizing: "border-box", minWidth: 0 };
+                fontSize: 16, color: "var(--text)", fontFamily: "inherit", boxSizing: "border-box", minWidth: 0, maxWidth: "100%" };
+const field = { display: "block", minWidth: 0, fontSize: 12, color: "var(--muted)" };
 const head = { fontSize: 12, fontWeight: 600, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.6px", margin: "22px 2px 8px" };
 const mins = m => (m >= 60 ? `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ""}` : `${m} min`);
 const dayLabel = iso => new Date(`${iso}T12:00:00`).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
@@ -71,12 +72,13 @@ function PlanForm({ data, date, onDone, run }) {
   return (
     <div className="card">
       <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 12 }}>Plan {dayLabel(date)}</div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-        <label style={{ fontSize: 12, color: "var(--muted)" }}>Waking up at
-          <input type="time" value={wake} onChange={e => setWake(e.target.value)} style={{ ...input, width: "100%", marginTop: 4 }} /></label>
-        <label style={{ fontSize: 12, color: "var(--muted)" }}>Bed at
-          <input type="time" value={bed} onChange={e => setBed(e.target.value)} style={{ ...input, width: "100%", marginTop: 4 }} /></label>
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 10 }}>
+        <label style={field}>Waking up at
+          <input type="time" value={wake} onChange={e => setWake(e.target.value)} style={{ ...input, display: "block", width: "100%", marginTop: 4 }} /></label>
+        <label style={field}>Bed at
+          <input type="time" value={bed} onChange={e => setBed(e.target.value)} style={{ ...input, display: "block", width: "100%", marginTop: 4 }} /></label>
       </div>
+      <div style={{ fontSize: 11, color: "var(--faint2)", marginTop: 4 }}>Times after midnight (like bed at 1 AM) are fine.</div>
       <label style={{ display: "flex", alignItems: "center", gap: 8, margin: "14px 0 8px", fontSize: 14, fontWeight: 600 }}>
         <input type="checkbox" checked={working} onChange={e => setWorking(e.target.checked)} style={{ width: 20, height: 20, accentColor: "var(--accent)" }} />
         Working that day
