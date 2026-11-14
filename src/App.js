@@ -41,6 +41,7 @@ import AssistantWidget    from "./components/AssistantWidget";
 import Activity           from "./pages/Activity";
 import Accounts           from "./pages/Accounts";
 import Investments        from "./pages/Investments";
+import MyDay from "./pages/MyDay";
 import Icon               from "./components/Icon";
 
 export default function App() {
@@ -360,6 +361,7 @@ async function handleLogout() {
             refreshKey={accountsKey}
             onOpenRules={() => setView("accounts")}
             onOpenPlanner={() => setView("payments")}
+            onOpenDay={() => setView("day")}
             expenses={expenses}
             onEdit={openEditModal}
             onDelete={handleDelete}
@@ -462,6 +464,8 @@ async function handleLogout() {
             }}
           />
         );
+      case "day":
+        return <MyDay />;
       case "investments":
         return <Investments getRate={getRate} currency={currency} formatAmount={formatAmount}
                             showToast={showToast} recurring={recurring} />;

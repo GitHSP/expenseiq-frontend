@@ -354,6 +354,23 @@ export const accountsAPI = {
 
 const FP_URL = `${BASE_URL}/fp`;
 
+// My day: the week's hours, goals that need time, tasks and each day's plan.
+const day = async (path, method = "GET", body) => handleResponse(await authFetch(`${FP_URL}/day/${path}`, {
+  method, headers: getHeaders(true), ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+}));
+export const dayAPI = {
+  get: () => day(""),
+  saveProfile: (data) => day("profile/", "PUT", data),
+  saveWeek: (data) => day("week/", "PUT", data),
+  addGoal: (data) => day("goals/", "POST", data),
+  updateGoal: (id, data) => day(`goals/${id}/`, "PATCH", data),
+  deleteGoal: (id) => day(`goals/${id}/`, "DELETE"),
+  addTask: (data) => day("tasks/", "POST", data),
+  deleteTask: (id) => day(`tasks/${id}/`, "DELETE"),
+  plan: (data) => day("plan/", "POST", data),
+  updateSlot: (id, data) => day(`slots/${id}/`, "PATCH", data),
+};
+
 export const financialPlannerAPI = {
 
   // ── Debts ──

@@ -7,7 +7,7 @@ import {
   LoaderCircle, TriangleAlert, Siren, PartyPopper, CreditCard, CircleCheck,
   Check, X, Lock, KeyRound, Mail, Search, ArrowUp, ArrowDown, ArrowUpDown,
   ChevronUp, ChevronDown, ArrowRight, Calendar, PiggyBank, Target, Banknote,
-  Timer, Trash2, Bell, ListChecks, Link2, MessageCircle, Hand, Coins,
+  Timer, Clock, CalendarClock, Trash2, Bell, ListChecks, Link2, MessageCircle, Hand, Coins,
   CircleAlert, Hourglass, ShieldCheck, ChevronLeft, ChevronRight, Pause, Play, History, Bot, MountainSnow,
   Landmark, FileText, Repeat, Ellipsis, Wine, Cigarette, Send, HandCoins, WashingMachine,
 } from "lucide-react";
@@ -35,7 +35,7 @@ const ICONS = {
   check: Check, x: X, lock: Lock, key: KeyRound, mail: Mail, search: Search,
   "arrow-up": ArrowUp, "arrow-down": ArrowDown, sort: ArrowUpDown,
   "chevron-up": ChevronUp, "chevron-down": ChevronDown, "arrow-right": ArrowRight,
-  calendar: Calendar, "piggy-bank": PiggyBank, target: Target,
+  calendar: Calendar, clock: Clock, "calendar-clock": CalendarClock, "piggy-bank": PiggyBank, target: Target,
   banknote: Banknote, timer: Timer, trash: Trash2, bell: Bell,
   "list-checks": ListChecks, link: Link2, chat: MessageCircle, wave: Hand,
   coins: Coins, alert: CircleAlert, hourglass: Hourglass,
