@@ -44,11 +44,11 @@ export const MONTHS = [
 ];
 
 export const NAV_ITEMS = [
+  { id: "day",        label: "My day",     icon: "calendar-clock" },
   { id: "dashboard",  label: "Dashboard",  icon: "dashboard" },
   { id: "expenses",   label: "Expenses",   icon: "receipt" },
   { id: "analytics",  label: "Analytics",  icon: "chart" },
   { id: "payments",   label: "Planner",    icon: "clipboard" },
-  { id: "day",        label: "My day",     icon: "calendar-clock" },
   { id: "accounts",   label: "Accounts",   icon: "landmark" },
   { id: "investments", label: "Invest",    icon: "piggy-bank" },
   { id: "activity",   label: "Activity",   icon: "history" },

@@ -57,8 +57,8 @@ export default function App() {
   // ── Navigation ────────────────────────────
   // Remembered for this tab, so reloading stays on the same page.
   const [view, setView] = useState(() => {
-    try { return sessionStorage.getItem("expenseiq_view") || "dashboard"; }
-    catch { return "dashboard"; }
+    try { return sessionStorage.getItem("expenseiq_view") || "day"; }
+    catch { return "day"; }
   });
   useEffect(() => {
     try { sessionStorage.setItem("expenseiq_view", view); } catch {}
@@ -329,7 +329,7 @@ useEffect(() => {
 // ─────────────────────────────────────────────
 async function handleLogout() {
   await logout();
-  setView("dashboard");
+  setView("day");
   setAuthView("landing");
   showToast("Logged out!");
 }

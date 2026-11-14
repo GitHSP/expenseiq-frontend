@@ -3,8 +3,9 @@ import { NAV_ITEMS } from "../constants/categories";
 import Icon from "./Icon";
 
 // Phones get the four pages used most, and the rest under More.
-const MAIN = ["dashboard", "expenses", "payments", "analytics"];
-const SHORT = { dashboard: "Home", analytics: "Plan" };
+// My day is the home page; the money dashboard comes second.
+const MAIN = ["day", "dashboard", "expenses", "payments"];
+const SHORT = { dashboard: "Money", analytics: "Plan" };
 
 function Badge({ count }) {
   if (!(count > 0)) return null;
