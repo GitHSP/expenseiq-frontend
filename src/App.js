@@ -465,7 +465,7 @@ async function handleLogout() {
           />
         );
       case "day":
-        return <MyDay />;
+        return <MyDay expenses={expenses} fmt={formatAmount} />;
       case "investments":
         return <Investments getRate={getRate} currency={currency} formatAmount={formatAmount}
                             showToast={showToast} recurring={recurring} />;

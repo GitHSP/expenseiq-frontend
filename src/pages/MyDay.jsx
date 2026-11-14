@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Icon from "../components/Icon";
 import { dayAPI } from "../utils/api";
+import QuoteCard from "../components/QuoteCard";
 
 // My day: tomorrow's plan in time slots (built around work), today's slots to
 // tick off, goals that need time (an exam, the gym) and the week's working
@@ -224,7 +225,7 @@ function Week({ data, start, onSaved, run }) {
   );
 }
 
-export default function MyDay() {
+export default function MyDay({ expenses, fmt }) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState("");
   const [tab, setTab] = useState("today");
@@ -249,6 +250,7 @@ export default function MyDay() {
   return (
     <div style={{ maxWidth: 640, margin: "0 auto" }}>
       <div className="page-head"><h1 style={{ margin: 0, fontSize: 24 }}>My day</h1></div>
+      <QuoteCard expenses={expenses} fmt={fmt} />
 
       {data.prompts.set_week && !weekStart && (
         <Prompt icon="calendar" title="Set your working hours" sub="Glacier plans your days around them. It asks each Sunday."
