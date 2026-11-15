@@ -358,6 +358,53 @@ const FP_URL = `${BASE_URL}/fp`;
 const day = async (path, method = "GET", body) => handleResponse(await authFetch(`${FP_URL}/day/${path}`, {
   method, headers: getHeaders(true), ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
 }));
+// Documents (encrypted on the server): list, upload, open, delete.
+export const documentsAPI = {
+  list: async (filter = {}) => {
+    const q = new URLSearchParams(filter).toString();
+    return handleResponse(await authFetch(`${FP_URL}/documents/${q ? `?${q}` : ""}`, { headers: getHeaders(true) }));
+  },
+  upload: async (file, fields = {}) => {
+    const body = new FormData();
+    body.append("file", file);
+    Object.entries(fields).forEach(([k, v]) => v !== undefined && v !== null && body.append(k, v));
+    const headers = {};
+    const token = getToken();
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+    return handleResponse(await authFetch(`${FP_URL}/documents/`, { method: "POST", headers, body }));
+  },
+  // Fetch the decrypted file and open it (PDF viewer on phones) or save it.
+  open: async (doc) => {
+    const res = await authFetch(`${FP_URL}/documents/${doc.id}/`, { headers: getHeaders(true) });
+    if (!res.ok) throw new Error("Couldn't open that document.");
+    const url = URL.createObjectURL(await res.blob());
+    const a = document.createElement("a");
+    a.href = url; a.download = doc.name; a.target = "_blank"; a.rel = "noopener";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  },
+  remove: async (id) => {
+    const res = await authFetch(`${FP_URL}/documents/${id}/`, { method: "DELETE", headers: getHeaders(true) });
+    if (!res.ok && res.status !== 204) throw new Error("Couldn't delete it.");
+  },
+};
+
+// A full backup of the user's data (a .json.gz file), downloaded in the browser.
+export const backupAPI = {
+  download: async () => {
+    const res = await authFetch(`${FP_URL}/backup/`, { headers: getHeaders(true) });
+    if (!res.ok) throw new Error("Couldn't make the backup. Please try again.");
+    const blob = await res.blob();
+    const name = (res.headers.get("Content-Disposition") || "").match(/filename="([^"]+)"/)?.[1] || "glacier-backup.json.gz";
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    return name;
+  },
+};
+
 export const dayAPI = {
   get: () => day(""),
   saveProfile: (data) => day("profile/", "PUT", data),

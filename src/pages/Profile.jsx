@@ -1,7 +1,33 @@
 import { useState } from "react";
-import { authAPI }  from "../utils/api";
+import { authAPI, backupAPI }  from "../utils/api";
 import Icon, { IconLabel } from "../components/Icon";
 import SecurityTab from "../components/SecurityTab";
+
+// Backup: everything in one file, emailed every Sunday, or downloaded now.
+function BackupTab() {
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState("");
+  async function download() {
+    setBusy(true); setNote("");
+    try { setNote(`Saved ${await backupAPI.download()}.`); }
+    catch (e) { setNote(e.message); }
+    finally { setBusy(false); }
+  }
+  return (
+    <div className="card">
+      <div className="card-title" style={{ marginBottom:8 }}>Backup</div>
+      <div style={{ fontSize:13, color:"var(--muted)", lineHeight:1.6, marginBottom:16 }}>
+        One file with everything you've entered: expenses, statements, Planner, debts, investments and policy plans,
+        goals, My day and Aurora's notes. It's emailed to you every <strong>Sunday morning</strong>.
+        Your password and security keys are never included. Keep the file somewhere safe; it's your financial data.
+      </div>
+      <button className="btn-primary" onClick={download} disabled={busy} style={{ padding:"10px 20px" }}>
+        {busy ? "Preparing..." : "Download backup now"}
+      </button>
+      {note && <div style={{ fontSize:13, color:"var(--muted)", marginTop:10 }}>{note}</div>}
+    </div>
+  );
+}
 
 export default function Profile({ user, onLogout, onLogoutEverywhere }) {
   const [tab,         setTab]         = useState("profile");
@@ -110,6 +136,7 @@ export default function Profile({ user, onLogout, onLogoutEverywhere }) {
           { id:"profile",  label:"Profile",  icon:"user"    },
           { id:"password", label:"Password", icon:"lock"    },
           { id:"security", label:"Security", icon:"shield-check" },
+          { id:"backup",   label:"Backup",   icon:"download" },
           { id:"danger",   label:"Danger",   icon:"warning" },
         ].map(t => (
           <button
@@ -239,6 +266,8 @@ export default function Profile({ user, onLogout, onLogoutEverywhere }) {
       )}
 
       {tab === "security" && <SecurityTab />}
+
+      {tab === "backup" && <BackupTab />}
 
       {/* Danger zone tab */}
       {tab === "danger" && (

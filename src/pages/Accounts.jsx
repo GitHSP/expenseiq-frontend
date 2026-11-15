@@ -4,6 +4,7 @@ import {
 } from "recharts";
 import Icon from "../components/Icon";
 import { BalanceEditor } from "../components/AvailableBalance";
+import DocumentsPanel from "../components/DocumentsPanel";
 import { accountsAPI, financialPlannerAPI } from "../utils/api";
 
 // Accounts: every bank account and card the user has uploaded statements for.
@@ -260,6 +261,8 @@ Its ${statements.length} statement${statements.length === 1 ? "" : "s"} and all 
       {["chequing", "savings"].includes(account.kind) && !account.closed && (
         <BalanceEditor account={account} fmt={fmt} onSaved={onChanged} />
       )}
+
+      {open && <DocumentsPanel account={account.id} defaultKind="statement" />}
 
       {open && (
         <div style={{ marginTop: 12, borderTop: "1px solid var(--subtle2)" }}>

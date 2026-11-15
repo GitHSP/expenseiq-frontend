@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import Icon from "./Icon";
 import { CATEGORIES } from "../constants/categories";
 import { INCOME_CATEGORIES } from "../hooks/useIncome";
-import { statementsAPI } from "../utils/api";
+import { documentsAPI, statementsAPI } from "../utils/api";
 
 // Upload one or more bank/card statements (PDF, CSV, OFX, QFX), review the parsed
 // rows, then import the ones that are ticked. The backend guesses categories
@@ -74,6 +74,7 @@ export default function ImportStatementModal({ onClose, onImported, formatAmount
   const [step,     setStep]     = useState("upload");   // upload | review
   const [busy,     setBusy]     = useState(false);
   const [error,    setError]    = useState("");
+  const originals = useRef([]);                          // the picked files, kept as Documents after import
   const [preview,  setPreview]  = useState(null);
   const [flips,    setFlips]    = useState({});          // file index -> purchases are positive
   const [edits,    setEdits]    = useState({});          // row id -> { include?, kind?, category?, title?, tick? }
@@ -86,6 +87,7 @@ export default function ImportStatementModal({ onClose, onImported, formatAmount
   async function handleFiles(fileList) {
     const files = Array.from(fileList || []);
     if (!files.length) return;
+    originals.current = files;
     setError("");
     setBusy(true);
     try {
@@ -173,6 +175,10 @@ export default function ImportStatementModal({ onClose, onImported, formatAmount
         }),
       }));
       const result = await statementsAPI.importStatements(statements, ticks.map(r => r.checklist_match.id));
+      // Keep the original PDFs too (Accounts > Statements > Documents). The server
+      // links each one to its statement; a failure here doesn't affect the import.
+      originals.current.filter(f => /\.pdf$/i.test(f.name))
+        .forEach(f => documentsAPI.upload(f, { kind: "statement" }).catch(() => {}));
       onImported(result);
     } catch (err) {
       setError(err.message || "Import failed — nothing was saved.");

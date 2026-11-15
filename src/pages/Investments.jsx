@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import Icon from "../components/Icon";
 import PolicyPlan, { PastePlan } from "../components/PolicyPlan";
+import DocumentsPanel from "../components/DocumentsPanel";
 import { financialPlannerAPI } from "../utils/api";
 
 // Investments: insurance policies with a cash value, chits, recurring and
@@ -548,6 +549,7 @@ function ExpectedValue({ s, m }) {
 
 function InvestmentCard({ inv, recurring, onEdit, onDelete, onAddPayment, onDeletePayment, onReplace, show, display }) {
   const [open, setOpen] = useState(false);
+  const [docsOpen, setDocsOpen] = useState(false);
   const kind = KINDS[inv.kind];
   const s = inv.summary || {};
   const m = v => show(v, inv.currency);
@@ -668,6 +670,11 @@ function InvestmentCard({ inv, recurring, onEdit, onDelete, onAddPayment, onDele
           {open && <ExpectedValue s={s} m={m} />}
         </>
       )}
+      <button className="btn-ghost" style={{ marginTop: 10, padding: "6px 0", fontSize: 12, color: "var(--muted)", display: "inline-flex", alignItems: "center", gap: 5 }}
+        onClick={() => setDocsOpen(o => !o)} aria-expanded={docsOpen}>
+        <Icon name="file-text" size={13} /> {docsOpen ? "Hide documents" : "Documents"}
+      </button>
+      {docsOpen && <DocumentsPanel investment={inv.id} defaultKind={inv.kind === "insurance" ? "statement" : "other"} />}
       {inv.kind === "chit" && (
         <>
           <button className="btn-secondary" style={{ marginTop: 12, padding: "6px 12px", fontSize: 12 }} onClick={() => setOpen(o => !o)}>
