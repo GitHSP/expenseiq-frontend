@@ -465,7 +465,7 @@ async function handleLogout() {
           />
         );
       case "day":
-        return <MyDay expenses={expenses} fmt={formatAmount} />;
+        return <MyDay expenses={expenses} fmt={formatAmount} onOpenMoney={() => setView("dashboard")} />;
       case "investments":
         return <Investments getRate={getRate} currency={currency} formatAmount={formatAmount}
                             showToast={showToast} recurring={recurring} />;

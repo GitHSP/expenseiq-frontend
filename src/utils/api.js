@@ -369,6 +369,7 @@ export const dayAPI = {
   deleteTask: (id) => day(`tasks/${id}/`, "DELETE"),
   plan: (data) => day("plan/", "POST", data),
   updateSlot: (id, data) => day(`slots/${id}/`, "PATCH", data),
+  smoke: (data) => day("smoke/", "POST", data),
 };
 
 export const financialPlannerAPI = {

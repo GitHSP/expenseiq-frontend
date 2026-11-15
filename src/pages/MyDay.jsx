@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import Icon from "../components/Icon";
 import { dayAPI } from "../utils/api";
 import QuoteCard from "../components/QuoteCard";
+import { FocusBar, MoneyToday, SmokeCard, startFocus } from "../components/DayExtras";
 
 // My day: tomorrow's plan in time slots (built around work), today's slots to
 // tick off, goals that need time (an exam, the gym) and the week's working
@@ -40,7 +41,17 @@ function Slots({ plan, run }) {
           <input type="checkbox" checked={s.done} style={{ width: 20, height: 20, accentColor: "var(--accent)", flexShrink: 0 }}
             onChange={() => run(() => dayAPI.updateSlot(s.id, { done: !s.done }))} />
           <span style={{ width: 94, fontSize: 13, fontWeight: 600, color: "var(--muted)", flexShrink: 0 }}>{s.start}–{s.end}</span>
-          <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 600, textDecoration: s.done ? "line-through" : "none" }}>{s.title}</span>
+          <span style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 600, textDecoration: s.done ? "line-through" : "none" }}>
+            {s.title}
+            {s.focused_minutes > 0 && <span style={{ display: "block", fontSize: 11, fontWeight: 500, color: "var(--muted)" }}>{mins(s.focused_minutes)} focused</span>}
+          </span>
+          {!s.done && ["goal", "task"].includes(s.kind) && (
+            <button className="btn-ghost" aria-label={`Start a focus timer for ${s.title}`} title="Focus timer"
+              style={{ padding: 8, minWidth: 40, minHeight: 40, color: "var(--accent-text)" }}
+              onClick={e => { e.preventDefault(); startFocus(s); }}>
+              <Icon name="play" size={16} />
+            </button>
+          )}
           <span style={{ width: 8, height: 8, borderRadius: 4, background: KIND_COLOR[s.kind], flexShrink: 0 }} />
         </label>
       ))}
@@ -225,7 +236,7 @@ function Week({ data, start, onSaved, run }) {
   );
 }
 
-export default function MyDay({ expenses, fmt }) {
+export default function MyDay({ expenses, fmt, onOpenMoney }) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState("");
   const [tab, setTab] = useState("today");
@@ -251,6 +262,9 @@ export default function MyDay({ expenses, fmt }) {
     <div style={{ maxWidth: 640, margin: "0 auto" }}>
       <div className="page-head"><h1 style={{ margin: 0, fontSize: 24 }}>My day</h1></div>
       <QuoteCard expenses={expenses} fmt={fmt} />
+      <FocusBar run={run} />
+      {data.smoke && <SmokeCard smoke={data.smoke} fmt={fmt} run={run} />}
+      <MoneyToday fmt={fmt} onOpen={onOpenMoney} />
 
       {data.prompts.set_week && !weekStart && (
         <Prompt icon="calendar" title="Set your working hours" sub="Glacier plans your days around them. It asks each Sunday."
