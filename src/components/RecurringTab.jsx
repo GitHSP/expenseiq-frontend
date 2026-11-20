@@ -114,8 +114,11 @@ export default function RecurringTab({
     + paysDebt.reduce((s, r) => s + Math.min(monthly(r), num(debtOf(r).current_balance)), 0);
   const savings     = emergencyFund && !emergencyFund.is_funded ? num(emergencyFund.monthly_contribution) : 0;
   const leftOver    = income - outgoing - debtPayments - savings;
+  // Where the extra goes: the first debt in the payoff order. With the user's own
+  // order that can be a 0% debt (a friend's loan); otherwise 0% debts are skipped.
+  const ownOrder    = activeDebts.some(d => d.priority !== null && d.priority !== undefined);
   const target      = [...activeDebts]
-    .filter(d => num(d.annual_interest_rate) > 0)
+    .filter(d => ownOrder || num(d.annual_interest_rate) > 0)
     .sort((a, b) => a.avalanche_order - b.avalanche_order)[0];
 
   function openAdd(category = "fixed_expense") {

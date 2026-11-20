@@ -77,13 +77,6 @@ const labelStyle = {
   marginBottom:  "5px",
 };
 
-// ▲ ▼ for the payoff order: big enough to tap on a phone.
-const orderBtn = {
-  width: 40, height: 30, display: "inline-flex", alignItems: "center", justifyContent: "center",
-  background: "var(--subtle)", border: "1px solid var(--border)", borderRadius: 8, color: "var(--text)",
-  fontSize: 13, cursor: "pointer", padding: 0, touchAction: "manipulation",
-};
-
 export default function FinancialPlanner({
   debts, recurring, emergencyFund, currentPlan, checklist, loaded,
   rolledOver,
@@ -101,6 +94,17 @@ export default function FinancialPlanner({
   const money = moneyUnit(unit, getRate);
   const [activeTab,    setActiveTab]    = useState("debts");
   const [moving,       setMoving]       = useState(false);      // changing the payoff order
+  // Urgent debts: paid first, in the order they were marked; the rest by interest.
+  const urgentDebts = debts.filter(d => d.is_active && d.priority !== null && d.priority !== undefined)
+                           .sort((a, b) => a.priority - b.priority);
+  async function toggleUrgent(debt) {
+    const ids = urgentDebts.map(d => d.id);
+    const next = ids.includes(debt.id) ? ids.filter(id => id !== debt.id) : [...ids, debt.id];
+    setMoving(true);
+    try { await setDebtOrder(next.length ? next : null); }
+    catch (e) { showMsg(e.message || "Couldn't change it. Deploy the latest server and try again."); }
+    finally { setMoving(false); }
+  }
   const [planMonth,    setPlanMonth]    = useState("this");
   // Card balances from statements, for the trend on each card and in total.
   const [cardHistory,  setCardHistory]  = useState({ cards: {}, total: [] });
@@ -463,11 +467,11 @@ export default function FinancialPlanner({
           )}
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16, flexWrap:"wrap", gap:8 }}>
             <div style={{ fontSize:13, color:C.muted, display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
-              {debts.some(d => d.priority !== null && d.priority !== undefined)
-                ? <>Your own order: extra money goes to #1 first
+              {urgentDebts.length
+                ? <>Urgent first ({urgentDebts.map(d => d.name).join(", ")}), then highest interest
                     {setDebtOrder && <button className="btn-ghost" style={{ padding:"4px 8px", fontSize:12, color:"var(--accent-text)" }}
-                      onClick={() => setDebtOrder(null).catch(e => showMsg(e.message))}>Highest interest first</button>}</>
-                : "Highest interest first (saves the most). Tap a debt's number to choose its place."}
+                      onClick={() => setDebtOrder(null).catch(e => showMsg(e.message))}>Clear urgent</button>}</>
+                : "Highest interest first (saves the most). Tap \"Pay first\" on any debt that's urgent."}
             </div>
             <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
               {(debts.length > 0 || recurring.length > 0) && (
@@ -558,50 +562,8 @@ export default function FinancialPlanner({
               <div key={debt.id} className="card" style={{ marginBottom:14, border:debt.is_active?`1px solid ${C.border}`:"1px dashed var(--border)", opacity:debt.is_active?1:0.6 }}>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:14 }}>
                   <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-                    <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:2, flexShrink:0 }}>
-                      {debt.is_active && setDebtOrder && (() => {
-                        const active = debts.filter(d => d.is_active);
-                        const at = active.findIndex(d => d.id === debt.id);
-                        // To any place in the list (1 = paid off first).
-                        const moveTo = async place => {
-                          const ids = active.map(d => d.id).filter(id => id !== debt.id);
-                          ids.splice(place - 1, 0, debt.id);
-                          setMoving(true);
-                          try { await setDebtOrder(ids); }
-                          catch (e) { showMsg(e.message || "Couldn't change the order. Deploy the latest server and try again."); }
-                          finally { setMoving(false); }
-                        };
-                        const move = async step => {
-                          const ids = active.map(d => d.id);
-                          [ids[at], ids[at + step]] = [ids[at + step], ids[at]];
-                          setMoving(true);
-                          try { await setDebtOrder(ids); }
-                          catch (e) { showMsg(e.message || "Couldn't change the order. Deploy the latest server and try again."); }
-                          finally { setMoving(false); }
-                        };
-                        return (
-                          <>
-                            <button aria-label={`Move ${debt.name} up`} disabled={at <= 0 || moving} onClick={() => move(-1)}
-                              style={{ ...orderBtn, opacity: at <= 0 ? 0.3 : 1 }}>▲</button>
-                            {/* Tap the number to pick its place: 1 puts it at the top. */}
-                            <select value={at + 1} disabled={moving} aria-label={`Payoff order for ${debt.name}`}
-                              title="Tap to choose its place in the payoff order"
-                              onChange={e => moveTo(parseInt(e.target.value, 10))}
-                              style={{ width:40, height:36, borderRadius:18, background:color, color:"var(--card)", border:"none",
-                                       fontSize:15, fontWeight:800, textAlign:"center", textAlignLast:"center", cursor:"pointer",
-                                       appearance:"none", WebkitAppearance:"none", MozAppearance:"none", padding:0 }}>
-                              {active.map((_, k) => <option key={k} value={k + 1}>{k + 1}</option>)}
-                            </select>
-                            <button aria-label={`Move ${debt.name} down`} disabled={at >= active.length - 1 || moving} onClick={() => move(1)}
-                              style={{ ...orderBtn, opacity: at >= active.length - 1 ? 0.3 : 1 }}>▼</button>
-                          </>
-                        );
-                      })()}
-                      {!(debt.is_active && setDebtOrder) && (
-                        <div style={{ width:32, height:32, borderRadius:"50%", background:color, color:"var(--card)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:800 }}>
-                          {debt.avalanche_order}
-                        </div>
-                      )}
+                    <div style={{ width:32, height:32, borderRadius:"50%", background:color, color:"var(--card)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:800, flexShrink:0 }}>
+                      {debt.avalanche_order}
                     </div>
                     <div>
                       <div style={{ fontWeight:800, fontSize:15, color:C.text, letterSpacing:"-0.3px" }}>{debt.name}</div>
@@ -613,6 +575,21 @@ export default function FinancialPlanner({
                           return payers.length ? ` · paid by "${payers.map(r => r.label).join('", "')}" in Recurring` : "";
                         })()}
                       </div>
+                      {/* Urgent: paid first, before everything sorted by interest. */}
+                      {debt.is_active && setDebtOrder && (() => {
+                        const urgent = debt.priority !== null && debt.priority !== undefined;
+                        return (
+                          <button disabled={moving} onClick={() => toggleUrgent(debt)} aria-pressed={urgent}
+                            style={{ marginTop:8, minHeight:34, padding:"6px 12px", borderRadius:100, fontSize:12, fontWeight:700,
+                                     cursor:"pointer", fontFamily:"inherit", display:"inline-flex", alignItems:"center", gap:5,
+                                     border:`1px solid ${urgent ? "var(--accent)" : "var(--border)"}`,
+                                     background: urgent ? "var(--accent-bg)" : "transparent",
+                                     color: urgent ? "var(--accent-text)" : "var(--muted)" }}>
+                            <Icon name={urgent ? "check-circle" : "plus"} size={13} />
+                            {urgent ? `Urgent · paid first${urgentDebts.length > 1 ? ` (#${debt.priority})` : ""}` : "Pay first"}
+                          </button>
+                        );
+                      })()}
                     </div>
                   </div>
                   <div style={{ display:"flex", gap:6 }}>
