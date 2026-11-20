@@ -13,13 +13,29 @@ const DB_VERSION = 2;
 const MESSAGES_STORE = "messages";
 const KEYS_STORE = "keys";
 
+// One database per account, so someone else logging in on this device never
+// sees this account's chat. AssistantWidget sets the account before the chat loads.
+let chatUser = "none";
+export function setChatUser(id) { chatUser = String(id || "none"); }
+export function getChatUser() { return chatUser; }
+
+// The old database was shared by every account on the device: removed once.
+function dropSharedDb() {
+  try {
+    if (localStorage.getItem("glacier_chat_per_account") === "1") return;
+    indexedDB.deleteDatabase(DB_NAME);
+    localStorage.setItem("glacier_chat_per_account", "1");
+  } catch {}
+}
+
 function openDb() {
   return new Promise((resolve, reject) => {
     if (!window.indexedDB) {
       reject(new Error("IndexedDB is not available in this browser."));
       return;
     }
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    dropSharedDb();
+    const req = indexedDB.open(`${DB_NAME}_${chatUser}`, DB_VERSION);
     req.onupgradeneeded = (event) => {
       const db = req.result;
       if (event.oldVersion < 2 && db.objectStoreNames.contains(MESSAGES_STORE)) {

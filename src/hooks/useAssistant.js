@@ -2,15 +2,18 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { assistantAPI } from "../utils/api";
 import {
   getAllMessages, addMessageRecord, putMessageRecords, clearMessages,
-  getStoredDek, setStoredDek,
+  getStoredDek, setStoredDek, getChatUser,
 } from "../utils/chatDb";
 import {
   generateDek, exportDek, importDek, encryptText, decryptText,
   deriveKek, wrapDek, unwrapDek, randomClientId,
 } from "../utils/crypto";
 
-const SYNC_FLAG_KEY   = "expenseiq_assistant_sync_enabled";
-const LAST_SYNCED_KEY = "expenseiq_assistant_last_synced_at";
+// Per account, like the chat itself (chatDb.js).
+const SYNC_FLAG = "expenseiq_assistant_sync_enabled";
+const LAST_SYNCED = "expenseiq_assistant_last_synced_at";
+const syncFlagKey = () => `${SYNC_FLAG}_${getChatUser()}`;
+const lastSyncedKey = () => `${LAST_SYNCED}_${getChatUser()}`;
 
 async function decryptRecord(dek, record) {
   try {
@@ -31,7 +34,7 @@ export function useAssistant() {
   const [loaded,   setLoaded]         = useState(false);
   const [sending,  setSending]        = useState(false);
   const [error,    setError]          = useState(null);
-  const [syncEnabled, setSyncEnabled] = useState(() => localStorage.getItem(SYNC_FLAG_KEY) === "true");
+  const [syncEnabled, setSyncEnabled] = useState(() => localStorage.getItem(syncFlagKey()) === "true");
   const [syncBusy,  setSyncBusy]      = useState(false);
   const [syncError, setSyncError]     = useState(null);
 
@@ -69,7 +72,7 @@ export function useAssistant() {
     if (!loaded || !syncEnabled || !dekRef.current) return;
     (async () => {
       try {
-        const since = localStorage.getItem(LAST_SYNCED_KEY);
+        const since = localStorage.getItem(lastSyncedKey());
         const remote = await assistantAPI.pullMessages(since);
         if (remote && remote.length) {
           const records = remote.map(m => ({
@@ -77,7 +80,7 @@ export function useAssistant() {
             createdAt: new Date(m.created_at).getTime(),
           }));
           await putMessageRecords(records);
-          localStorage.setItem(LAST_SYNCED_KEY, new Date().toISOString());
+          localStorage.setItem(lastSyncedKey(), new Date().toISOString());
           await loadFromLocal(dekRef.current);
         }
       } catch (err) {
@@ -93,7 +96,7 @@ export function useAssistant() {
       await assistantAPI.pushMessages(records.map(r => ({
         client_id: r.clientId, ciphertext: r.ciphertext, iv: r.iv,
       })));
-      localStorage.setItem(LAST_SYNCED_KEY, new Date().toISOString());
+      localStorage.setItem(lastSyncedKey(), new Date().toISOString());
     } catch (err) {
       console.error("Sync push failed:", err);
     }
@@ -152,7 +155,7 @@ export function useAssistant() {
     setError(null);
     if (syncEnabledRef.current) {
       try { await assistantAPI.clearSyncedMessages(); } catch (err) { console.error(err); }
-      localStorage.removeItem(LAST_SYNCED_KEY);
+      localStorage.removeItem(lastSyncedKey());
     }
   }, []);
 
@@ -188,7 +191,7 @@ export function useAssistant() {
           createdAt: new Date(m.created_at).getTime(),
         }));
         await putMessageRecords(records);
-        localStorage.setItem(LAST_SYNCED_KEY, new Date().toISOString());
+        localStorage.setItem(lastSyncedKey(), new Date().toISOString());
         await loadFromLocal(unwrapped);
       } else {
         const { kek, saltB64 } = await deriveKek(passphrase);
@@ -203,10 +206,10 @@ export function useAssistant() {
             client_id: r.clientId, ciphertext: r.ciphertext, iv: r.iv,
           })));
         }
-        localStorage.setItem(LAST_SYNCED_KEY, new Date().toISOString());
+        localStorage.setItem(lastSyncedKey(), new Date().toISOString());
       }
 
-      localStorage.setItem(SYNC_FLAG_KEY, "true");
+      localStorage.setItem(syncFlagKey(), "true");
       setSyncEnabled(true);
     } catch (err) {
       setSyncError(err.message || "Couldn't enable sync.");
@@ -219,8 +222,8 @@ export function useAssistant() {
   // Stops this device from syncing. Doesn't delete history already on the
   // server — use resetConversation (or another synced device) for that.
   const disableSync = useCallback(() => {
-    localStorage.removeItem(SYNC_FLAG_KEY);
-    localStorage.removeItem(LAST_SYNCED_KEY);
+    localStorage.removeItem(syncFlagKey());
+    localStorage.removeItem(lastSyncedKey());
     setSyncEnabled(false);
   }, []);
 

@@ -80,7 +80,7 @@ const labelStyle = {
 export default function FinancialPlanner({
   debts, recurring, emergencyFund, currentPlan, checklist, loaded,
   rolledOver,
-  addDebt, updateDebt, deleteDebt,
+  addDebt, updateDebt, deleteDebt, setDebtOrder,
   addRecurring, updateRecurring, deleteRecurring,
   updateEmergencyFund,
   addChecklistItem, toggleChecklistItem, deleteChecklistItem,
@@ -454,8 +454,12 @@ export default function FinancialPlanner({
             </div>
           )}
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16, flexWrap:"wrap", gap:8 }}>
-            <div style={{ fontSize:13, color:C.muted }}>
-              Sorted by highest APR — avalanche method
+            <div style={{ fontSize:13, color:C.muted, display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
+              {debts.some(d => d.priority !== null && d.priority !== undefined)
+                ? <>Your own order: extra money goes to #1 first
+                    {setDebtOrder && <button className="btn-ghost" style={{ padding:"4px 8px", fontSize:12, color:"var(--accent-text)" }}
+                      onClick={() => setDebtOrder(null).catch(e => showMsg(e.message))}>Highest interest first</button>}</>
+                : "Highest interest first (saves the most). Use ▲ ▼ to set your own order."}
             </div>
             <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
               {(debts.length > 0 || recurring.length > 0) && (
@@ -514,8 +518,8 @@ export default function FinancialPlanner({
                   <input style={inputStyle} type="number" placeholder="e.g. 15" value={debtForm.due_day} onChange={e => setDebtForm(p => ({ ...p, due_day:e.target.value }))} />
                 </div>
                 <div className="form-group">
-                  <label style={labelStyle}>Avalanche Priority (auto-set)</label>
-                  <input style={{ ...inputStyle, background:"var(--bg)", color:C.muted }} type="number" placeholder="Auto-calculated from APR" value={debtForm.avalanche_order} readOnly />
+                  <label style={labelStyle}>Payoff order</label>
+                  <input style={{ ...inputStyle, background:"var(--bg)", color:C.muted }} type="number" placeholder="Set with ▲ ▼ on the list" value={debtForm.avalanche_order} readOnly />
                 </div>
               </div>
               <div className="form-group">
@@ -546,8 +550,32 @@ export default function FinancialPlanner({
               <div key={debt.id} className="card" style={{ marginBottom:14, border:debt.is_active?`1px solid ${C.border}`:"1px dashed var(--border)", opacity:debt.is_active?1:0.6 }}>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:14 }}>
                   <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-                    <div style={{ width:32, height:32, borderRadius:"50%", background:color, color:"var(--card)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:800, flexShrink:0 }}>
-                      {debt.avalanche_order}
+                    <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:2, flexShrink:0 }}>
+                      {debt.is_active && setDebtOrder && (() => {
+                        const active = debts.filter(d => d.is_active);
+                        const at = active.findIndex(d => d.id === debt.id);
+                        const move = step => {
+                          const ids = active.map(d => d.id);
+                          [ids[at], ids[at + step]] = [ids[at + step], ids[at]];
+                          setDebtOrder(ids).catch(e => showMsg(e.message));
+                        };
+                        return (
+                          <>
+                            <button aria-label={`Move ${debt.name} up`} disabled={at <= 0} onClick={() => move(-1)}
+                              style={{ background:"none", border:"none", padding:"2px 6px", cursor: at <= 0 ? "default" : "pointer", color: at <= 0 ? "var(--faint)" : "var(--muted)", fontSize:11, lineHeight:1 }}>▲</button>
+                            <div style={{ width:32, height:32, borderRadius:"50%", background:color, color:"var(--card)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:800 }}>
+                              {debt.avalanche_order}
+                            </div>
+                            <button aria-label={`Move ${debt.name} down`} disabled={at >= active.length - 1} onClick={() => move(1)}
+                              style={{ background:"none", border:"none", padding:"2px 6px", cursor: at >= active.length - 1 ? "default" : "pointer", color: at >= active.length - 1 ? "var(--faint)" : "var(--muted)", fontSize:11, lineHeight:1 }}>▼</button>
+                          </>
+                        );
+                      })()}
+                      {!(debt.is_active && setDebtOrder) && (
+                        <div style={{ width:32, height:32, borderRadius:"50%", background:color, color:"var(--card)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:800 }}>
+                          {debt.avalanche_order}
+                        </div>
+                      )}
                     </div>
                     <div>
                       <div style={{ fontWeight:800, fontSize:15, color:C.text, letterSpacing:"-0.3px" }}>{debt.name}</div>

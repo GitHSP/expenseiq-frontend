@@ -442,6 +442,11 @@ export const financialPlannerAPI = {
     });
     return handleResponse(res);
   },
+  // The user's own payoff order (debt ids, first = first), or null for highest interest first.
+  setDebtOrder: async (order) => {
+    const res = await authFetch(`${FP_URL}/debts/priority/`, { method: "POST", headers: getHeaders(true), body: JSON.stringify({ order }) });
+    return handleResponse(res);
+  },
   deleteDebt: async (id) => {
     const res = await authFetch(`${FP_URL}/debts/${id}/`, {
       method: "DELETE", headers: getHeaders(true),

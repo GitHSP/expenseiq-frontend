@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import Assistant from "../pages/Assistant";
+import { setChatUser } from "../utils/chatDb";
 import Icon from "./Icon";
 
 // Floating chat button (bottom-right) that opens the assistant in a panel
 // over any page. The panel stays mounted while hidden so an in-flight
 // reply and the scroll position survive closing and reopening it.
-export default function AssistantWidget({ onActionsTaken }) {
+export default function AssistantWidget({ onActionsTaken, userId }) {
+  setChatUser(userId);          // before the chat loads: each account has its own history
   const [open, setOpen] = useState(false);
 
   useEffect(() => {

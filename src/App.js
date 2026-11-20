@@ -48,6 +48,21 @@ export default function App() {
 
   // ── Auth ──────────────────────────────────
   const { user, loading, login, loginTwoFactor, register, logout, logoutEverywhere, isLoggedIn } = useAuth();
+
+  // Someone else logging in on this device: clear what the last account kept
+  // here (plan settings, a running focus timer). Aurora's chat is per account.
+  useEffect(() => {
+    if (!user?.id) return;
+    try {
+      const last = localStorage.getItem("glacier_last_user");
+      if (last && last !== String(user.id)) {
+        ["glacier_focus", "glacier_plan_years", "glacier_plan_budget", "glacier_plan_hourly", "glacier_plan_debts"]
+          .forEach(k => localStorage.removeItem(k));
+        sessionStorage.removeItem("expenseiq_view");
+      }
+      localStorage.setItem("glacier_last_user", String(user.id));
+    } catch {}
+  }, [user?.id]);
   const [authView, setAuthView] = useState("landing");
   function goToAuthView(next) {
     setAuthView(next);
@@ -114,7 +129,7 @@ useEffect(() => {
   const {
     debts, recurring, emergencyFund, currentPlan, checklist,
     loaded: plannerLoaded, rolledOver,
-    addDebt, updateDebt, deleteDebt,
+    addDebt, updateDebt, deleteDebt, setDebtOrder,
     addRecurring, updateRecurring, deleteRecurring,
     updateEmergencyFund,
     addChecklistItem, toggleChecklistItem, deleteChecklistItem,
@@ -428,6 +443,7 @@ async function handleLogout() {
             addDebt={addDebt}
             updateDebt={updateDebt}
             deleteDebt={deleteDebt}
+            setDebtOrder={setDebtOrder}
             addRecurring={addRecurring}
             updateRecurring={updateRecurring}
             deleteRecurring={deleteRecurring}
@@ -543,7 +559,7 @@ async function handleLogout() {
         />
       )}
 
-      <AssistantWidget onActionsTaken={handleAssistantActions} />
+      <AssistantWidget key={user?.id || "none"} userId={user?.id} onActionsTaken={handleAssistantActions} />
 
       {showImport && (
         <ImportStatementModal

@@ -89,6 +89,12 @@ export function useFinancialPlanner(userId) {
     await loadData();
   }
 
+  // Payoff order: ids first to last, or null for highest interest first.
+  async function setDebtOrder(order) {
+    await financialPlannerAPI.setDebtOrder(order);
+    await loadData();
+  }
+
   // ── Recurring payments ──
   // The backend re-syncs this month's checklist on every change, so
   // refresh the plan and checklist alongside the list itself.
@@ -187,7 +193,7 @@ export function useFinancialPlanner(userId) {
   return {
     debts, recurring, emergencyFund, currentPlan, checklist,
     loaded, error, rolledOver,
-    addDebt, updateDebt, deleteDebt,
+    addDebt, updateDebt, deleteDebt, setDebtOrder,
     addRecurring, updateRecurring, deleteRecurring,
     updateEmergencyFund,
     addChecklistItem, toggleChecklistItem, deleteChecklistItem,
