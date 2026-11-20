@@ -90,9 +90,19 @@ export function useFinancialPlanner(userId) {
   }
 
   // Payoff order: ids first to last, or null for highest interest first.
+  // The list moves straight away; the rest refreshes quietly (no loading screen).
   async function setDebtOrder(order) {
-    await financialPlannerAPI.setDebtOrder(order);
-    await loadData();
+    if (order) {
+      const pos = new Map(order.map((id, i) => [id, i]));
+      setDebts(list => [...list]
+        .sort((a, b) => (pos.has(a.id) ? pos.get(a.id) : 1e6) - (pos.has(b.id) ? pos.get(b.id) : 1e6))
+        .map(d => (pos.has(d.id) ? { ...d, avalanche_order: pos.get(d.id) + 1, priority: pos.get(d.id) + 1 } : d)));
+    }
+    try {
+      await financialPlannerAPI.setDebtOrder(order);
+    } finally {
+      await loadData({ silent: true });   // the real order (and the checklist's extra payment) from the server
+    }
   }
 
   // ── Recurring payments ──

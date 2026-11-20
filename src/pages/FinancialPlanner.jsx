@@ -77,6 +77,13 @@ const labelStyle = {
   marginBottom:  "5px",
 };
 
+// ▲ ▼ for the payoff order: big enough to tap on a phone.
+const orderBtn = {
+  width: 40, height: 30, display: "inline-flex", alignItems: "center", justifyContent: "center",
+  background: "var(--subtle)", border: "1px solid var(--border)", borderRadius: 8, color: "var(--text)",
+  fontSize: 13, cursor: "pointer", padding: 0, touchAction: "manipulation",
+};
+
 export default function FinancialPlanner({
   debts, recurring, emergencyFund, currentPlan, checklist, loaded,
   rolledOver,
@@ -93,6 +100,7 @@ export default function FinancialPlanner({
   useEffect(() => { setUnit(currency); }, [currency]);      // follow the app's currency
   const money = moneyUnit(unit, getRate);
   const [activeTab,    setActiveTab]    = useState("debts");
+  const [moving,       setMoving]       = useState(false);      // changing the payoff order
   const [planMonth,    setPlanMonth]    = useState("this");
   // Card balances from statements, for the trend on each card and in total.
   const [cardHistory,  setCardHistory]  = useState({ cards: {}, total: [] });
@@ -554,20 +562,23 @@ export default function FinancialPlanner({
                       {debt.is_active && setDebtOrder && (() => {
                         const active = debts.filter(d => d.is_active);
                         const at = active.findIndex(d => d.id === debt.id);
-                        const move = step => {
+                        const move = async step => {
                           const ids = active.map(d => d.id);
                           [ids[at], ids[at + step]] = [ids[at + step], ids[at]];
-                          setDebtOrder(ids).catch(e => showMsg(e.message));
+                          setMoving(true);
+                          try { await setDebtOrder(ids); }
+                          catch (e) { showMsg(e.message || "Couldn't change the order. Deploy the latest server and try again."); }
+                          finally { setMoving(false); }
                         };
                         return (
                           <>
-                            <button aria-label={`Move ${debt.name} up`} disabled={at <= 0} onClick={() => move(-1)}
-                              style={{ background:"none", border:"none", padding:"2px 6px", cursor: at <= 0 ? "default" : "pointer", color: at <= 0 ? "var(--faint)" : "var(--muted)", fontSize:11, lineHeight:1 }}>▲</button>
+                            <button aria-label={`Move ${debt.name} up`} disabled={at <= 0 || moving} onClick={() => move(-1)}
+                              style={{ ...orderBtn, opacity: at <= 0 ? 0.3 : 1 }}>▲</button>
                             <div style={{ width:32, height:32, borderRadius:"50%", background:color, color:"var(--card)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:800 }}>
                               {debt.avalanche_order}
                             </div>
-                            <button aria-label={`Move ${debt.name} down`} disabled={at >= active.length - 1} onClick={() => move(1)}
-                              style={{ background:"none", border:"none", padding:"2px 6px", cursor: at >= active.length - 1 ? "default" : "pointer", color: at >= active.length - 1 ? "var(--faint)" : "var(--muted)", fontSize:11, lineHeight:1 }}>▼</button>
+                            <button aria-label={`Move ${debt.name} down`} disabled={at >= active.length - 1 || moving} onClick={() => move(1)}
+                              style={{ ...orderBtn, opacity: at >= active.length - 1 ? 0.3 : 1 }}>▼</button>
                           </>
                         );
                       })()}
