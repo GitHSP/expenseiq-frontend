@@ -35,7 +35,7 @@ function UserRow({ u, pages, onSave }) {
           </div>
         </div>
         <span style={{ fontSize: 12, fontWeight: 600, color: u.is_staff ? "var(--accent-text)" : all ? "var(--pos-text)" : "var(--muted)" }}>
-          {u.is_staff ? "Admin: every page" : all ? "Every page" : `${u.pages.length} of ${pages.length} pages`}
+          {u.is_staff ? "Admin: every page" : all ? "Every page" : u.is_default ? "Default pages (not set up yet)" : `${u.pages.length} of ${pages.length} pages`}
         </span>
       </div>
       {!u.is_staff && (
@@ -81,7 +81,8 @@ export default function AdminUsers() {
         <div>
           <h1 style={{ margin: 0, fontSize: 24 }}>Users</h1>
           <div style={{ fontSize: 13, color: "var(--muted)", marginTop: 4 }}>
-            Choose the pages each person can open. Profile is always there. Changes show the next time they open Glacier.
+            Choose the pages each person can open. New people get Dashboard, Expenses, Planner and Analytics, with Aurora
+            off until you allow it. Profile is always there. Changes show the next time they open Glacier.
           </div>
         </div>
       </div>
