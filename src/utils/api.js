@@ -405,6 +405,14 @@ export const backupAPI = {
   },
 };
 
+// Admin only: users and the pages each can open.
+export const adminAPI = {
+  users: async () => handleResponse(await authFetch(`${FP_URL}/admin/users/`, { headers: getHeaders(true) })),
+  setPages: async (id, pages) => handleResponse(await authFetch(`${FP_URL}/admin/users/${id}/`, {
+    method: "PATCH", headers: getHeaders(true), body: JSON.stringify({ pages }),
+  })),
+};
+
 export const dayAPI = {
   get: () => day(""),
   saveProfile: (data) => day("profile/", "PUT", data),

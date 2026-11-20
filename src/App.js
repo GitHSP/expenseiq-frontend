@@ -33,7 +33,8 @@ import Profile           from "./pages/Profile";
 
 // Utils
 import { exportToCSV } from "./utils/helpers";
-import { applyUserCategories } from "./constants/categories";
+import { applyUserCategories, NAV_ITEMS } from "./constants/categories";
+import AdminUsers from "./pages/AdminUsers";
 import { categoriesAPI } from "./utils/api";
 
 import FinancialPlanner   from "./pages/FinancialPlanner";
@@ -48,6 +49,14 @@ export default function App() {
 
   // ── Auth ──────────────────────────────────
   const { user, loading, login, loginTwoFactor, register, logout, logoutEverywhere, isLoggedIn } = useAuth();
+
+  // The pages this user can open (an admin chooses them on the Users page; Profile
+  // is always there). Admins also get the Users page.
+  const can = page => !user?.pages || user.pages.includes(page);
+  const navItems = [
+    ...NAV_ITEMS.filter(i => i.id === "profile" || can(i.id)),
+    ...(user?.is_staff ? [{ id: "users", label: "Users", icon: "user" }] : []),
+  ];
 
   // Someone else logging in on this device: clear what the last account kept
   // here (plan settings, a running focus timer). Aurora's chat is per account.
@@ -78,6 +87,11 @@ export default function App() {
   useEffect(() => {
     try { sessionStorage.setItem("expenseiq_view", view); } catch {}
   }, [view]);
+  // A page this user can't open (an admin switched it off): go to the first one they can.
+  const navIds = navItems.map(i => i.id).join(",");
+  useEffect(() => {
+    if (user && !navIds.split(",").includes(view)) setView(navIds.split(",")[0]);
+  }, [user, view, navIds]);
   const [accountsKey, setAccountsKey] = useState(0);   // bumped after an import to refresh Accounts
   // The user's categories (hidden ones left out, their own added) for every picker and chart.
   const [, setCategoriesVersion] = useState(0);
@@ -376,7 +390,7 @@ async function handleLogout() {
             refreshKey={accountsKey}
             onOpenRules={() => setView("accounts")}
             onOpenPlanner={() => setView("payments")}
-            onOpenDay={() => setView("day")}
+            onOpenDay={can("day") ? () => setView("day") : undefined}
             expenses={expenses}
             onEdit={openEditModal}
             onDelete={handleDelete}
@@ -480,8 +494,10 @@ async function handleLogout() {
             }}
           />
         );
+      case "users":
+        return <AdminUsers />;
       case "day":
-        return <MyDay expenses={expenses} fmt={formatAmount} onOpenMoney={() => setView("dashboard")} />;
+        return <MyDay expenses={expenses} fmt={formatAmount} onOpenMoney={can("dashboard") ? () => setView("dashboard") : undefined} />;
       case "investments":
         return <Investments getRate={getRate} currency={currency} formatAmount={formatAmount}
                             showToast={showToast} recurring={recurring} />;
@@ -513,6 +529,7 @@ async function handleLogout() {
 
       <Sidebar
         view={view}
+        items={navItems}
         setView={setView}
         onAddExpense={openAddModal}
         onExportCSV={() => { exportToCSV(expenses); showToast("CSV exported!"); }}
@@ -541,6 +558,7 @@ async function handleLogout() {
 
         <BottomNav
           view={view}
+          items={navItems}
           setView={setView}
           badges={badges}
           darkMode={darkMode}
@@ -559,7 +577,7 @@ async function handleLogout() {
         />
       )}
 
-      <AssistantWidget key={user?.id || "none"} userId={user?.id} onActionsTaken={handleAssistantActions} />
+      {can("aurora") && <AssistantWidget key={user?.id || "none"} userId={user?.id} onActionsTaken={handleAssistantActions} />}
 
       {showImport && (
         <ImportStatementModal

@@ -47,7 +47,7 @@ function InstallRow() {
   );
 }
 
-export default function BottomNav({ view, setView, badges, darkMode, onToggleDark }) {
+export default function BottomNav({ view, setView, badges, darkMode, onToggleDark, items = NAV_ITEMS }) {
   const [more, setMore] = useState(false);
   // The tapped item lights up at once; the page itself renders just after,
   // without holding up the tap (a big page can take a moment on a phone).
@@ -55,8 +55,10 @@ export default function BottomNav({ view, setView, badges, darkMode, onToggleDar
   const [, startTransition] = useTransition();
   useEffect(() => { setTapped(null); }, [view]);
   const current = tapped || view;
-  const main = NAV_ITEMS.filter(i => MAIN.includes(i.id)).sort((a, b) => MAIN.indexOf(a.id) - MAIN.indexOf(b.id));
-  const rest = NAV_ITEMS.filter(i => !MAIN.includes(i.id));
+  // The usual four at the bottom; if some are switched off, the next pages fill in.
+  const preferred = items.filter(i => MAIN.includes(i.id)).sort((a, b) => MAIN.indexOf(a.id) - MAIN.indexOf(b.id));
+  const main = [...preferred, ...items.filter(i => !MAIN.includes(i.id) && i.id !== "profile")].slice(0, 4);
+  const rest = items.filter(i => !main.includes(i));
   const inMore = rest.some(i => i.id === current);
   const moreBadge = rest.reduce((t, i) => t + (badges?.[i.id] || 0), 0);
   const go = id => {

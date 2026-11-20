@@ -7,7 +7,7 @@ import Logo from "./Logo";
 export default function Sidebar({
   view, setView, onAddExpense, onExportCSV,
   user, onLogout, currency, setCurrency,
-  badges, darkMode, onToggleDark,
+  badges, darkMode, onToggleDark, items = NAV_ITEMS,
 }) {
   const [collapsed, setCollapsed] = useState(false);
 
@@ -33,7 +33,7 @@ export default function Sidebar({
 
       {/* ── Navigation ── */}
       <nav className="sidebar-nav">
-        {NAV_ITEMS.map(item => (
+        {items.map(item => (
           <button
             key={item.id}
             className={`sidebar-item${view === item.id ? " active" : ""}`}
