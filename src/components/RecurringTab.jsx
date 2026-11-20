@@ -114,6 +114,14 @@ export default function RecurringTab({
     + paysDebt.reduce((s, r) => s + Math.min(monthly(r), num(debtOf(r).current_balance)), 0);
   const savings     = emergencyFund && !emergencyFund.is_funded ? num(emergencyFund.monthly_contribution) : 0;
   const leftOver    = income - outgoing - debtPayments - savings;
+  // An average month (26 paydays a year for every 2 weeks), as Analytics counts it.
+  const PER_MONTH = { weekly: 52 / 12, biweekly: 26 / 12 };
+  const avg = r => num(r.amount) * (PER_MONTH[r.frequency] || 1);
+  const avgLeft = active.filter(r => r.category === "income").reduce((s, r) => s + avg(r), 0)
+    - active.filter(r => r.category !== "income" && !debtOf(r)).reduce((s, r) => s + avg(r), 0)
+    - activeDebts.filter(d => !paysDebt.some(r => r.debt === d.id)).reduce((s, d) => s + Math.min(num(d.minimum_payment), num(d.current_balance)), 0)
+    - paysDebt.reduce((s, r) => s + Math.min(avg(r), num(debtOf(r).current_balance)), 0)
+    - savings;
   // Where the extra goes: the first debt in the payoff order. With the user's own
   // order that can be a 0% debt (a friend's loan); otherwise 0% debts are skipped.
   const ownOrder    = activeDebts.some(d => d.priority !== null && d.priority !== undefined);
@@ -214,9 +222,10 @@ export default function RecurringTab({
     { label: "Recurring Payments", value: fmt(outgoing),     sub: `${active.filter(r => r.category !== "income").length} payments`, color: "var(--accent-text)" },
     { label: "Debt Payments",      value: fmt(debtPayments), sub: `${activeDebts.length} debts${savings ? ` + ${fmt(savings)} savings` : ""}`, color: "var(--text)" },
     {
-      label: "Left Over",
+      label: "Left over this month",
       value: fmt(leftOver),
-      sub:   leftOver > 0 && target ? `Extra to ${target.name}` : leftOver < 0 ? "Payments exceed income" : "Nothing left over",
+      sub:   (leftOver > 0 && target ? `Extra to ${target.name}` : leftOver < 0 ? "Payments exceed income" : "Nothing left over")
+             + (Math.abs(avgLeft - leftOver) >= 1 ? ` · about ${fmt(avgLeft)} in an average month` : ""),
       color: leftOver >= 0 ? "#10b981" : "#f43f5e",
     },
   ];

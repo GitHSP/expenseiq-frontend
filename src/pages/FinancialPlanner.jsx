@@ -471,7 +471,7 @@ export default function FinancialPlanner({
                 ? <>Urgent first ({urgentDebts.map(d => d.name).join(", ")}), then highest interest
                     {setDebtOrder && <button className="btn-ghost" style={{ padding:"4px 8px", fontSize:12, color:"var(--accent-text)" }}
                       onClick={() => setDebtOrder(null).catch(e => showMsg(e.message))}>Clear urgent</button>}</>
-                : "Highest interest first (saves the most). Tap \"Pay first\" on any debt that's urgent."}
+                : "Highest interest first (saves the most). Tap \"Pay first\" on up to 3 urgent debts."}
             </div>
             <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
               {(debts.length > 0 || recurring.length > 0) && (
@@ -579,9 +579,11 @@ export default function FinancialPlanner({
                       {debt.is_active && setDebtOrder && (() => {
                         const urgent = debt.priority !== null && debt.priority !== undefined;
                         return (
-                          <button disabled={moving} onClick={() => toggleUrgent(debt)} aria-pressed={urgent}
+                          <button disabled={moving || (!urgent && urgentDebts.length >= 3)} onClick={() => toggleUrgent(debt)} aria-pressed={urgent}
+                            title={!urgent && urgentDebts.length >= 3 ? "Up to 3 urgent debts. Un-mark one first." : undefined}
                             style={{ marginTop:8, minHeight:34, padding:"6px 12px", borderRadius:100, fontSize:12, fontWeight:700,
                                      cursor:"pointer", fontFamily:"inherit", display:"inline-flex", alignItems:"center", gap:5,
+                                     opacity: !urgent && urgentDebts.length >= 3 ? 0.4 : 1,
                                      border:`1px solid ${urgent ? "var(--accent)" : "var(--border)"}`,
                                      background: urgent ? "var(--accent-bg)" : "transparent",
                                      color: urgent ? "var(--accent-text)" : "var(--muted)" }}>
