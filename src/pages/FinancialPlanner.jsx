@@ -467,7 +467,7 @@ export default function FinancialPlanner({
                 ? <>Your own order: extra money goes to #1 first
                     {setDebtOrder && <button className="btn-ghost" style={{ padding:"4px 8px", fontSize:12, color:"var(--accent-text)" }}
                       onClick={() => setDebtOrder(null).catch(e => showMsg(e.message))}>Highest interest first</button>}</>
-                : "Highest interest first (saves the most). Use ▲ ▼ to set your own order."}
+                : "Highest interest first (saves the most). Tap a debt's number to choose its place."}
             </div>
             <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
               {(debts.length > 0 || recurring.length > 0) && (
@@ -562,6 +562,15 @@ export default function FinancialPlanner({
                       {debt.is_active && setDebtOrder && (() => {
                         const active = debts.filter(d => d.is_active);
                         const at = active.findIndex(d => d.id === debt.id);
+                        // To any place in the list (1 = paid off first).
+                        const moveTo = async place => {
+                          const ids = active.map(d => d.id).filter(id => id !== debt.id);
+                          ids.splice(place - 1, 0, debt.id);
+                          setMoving(true);
+                          try { await setDebtOrder(ids); }
+                          catch (e) { showMsg(e.message || "Couldn't change the order. Deploy the latest server and try again."); }
+                          finally { setMoving(false); }
+                        };
                         const move = async step => {
                           const ids = active.map(d => d.id);
                           [ids[at], ids[at + step]] = [ids[at + step], ids[at]];
@@ -574,9 +583,15 @@ export default function FinancialPlanner({
                           <>
                             <button aria-label={`Move ${debt.name} up`} disabled={at <= 0 || moving} onClick={() => move(-1)}
                               style={{ ...orderBtn, opacity: at <= 0 ? 0.3 : 1 }}>▲</button>
-                            <div style={{ width:32, height:32, borderRadius:"50%", background:color, color:"var(--card)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:800 }}>
-                              {debt.avalanche_order}
-                            </div>
+                            {/* Tap the number to pick its place: 1 puts it at the top. */}
+                            <select value={at + 1} disabled={moving} aria-label={`Payoff order for ${debt.name}`}
+                              title="Tap to choose its place in the payoff order"
+                              onChange={e => moveTo(parseInt(e.target.value, 10))}
+                              style={{ width:40, height:36, borderRadius:18, background:color, color:"var(--card)", border:"none",
+                                       fontSize:15, fontWeight:800, textAlign:"center", textAlignLast:"center", cursor:"pointer",
+                                       appearance:"none", WebkitAppearance:"none", MozAppearance:"none", padding:0 }}>
+                              {active.map((_, k) => <option key={k} value={k + 1}>{k + 1}</option>)}
+                            </select>
                             <button aria-label={`Move ${debt.name} down`} disabled={at >= active.length - 1 || moving} onClick={() => move(1)}
                               style={{ ...orderBtn, opacity: at >= active.length - 1 ? 0.3 : 1 }}>▼</button>
                           </>
